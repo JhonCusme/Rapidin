@@ -1,0 +1,6 @@
+{
+  "appId": "com.rapidin.user",
+  "appName": "Rapidin Cliente",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

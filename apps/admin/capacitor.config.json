@@ -1,0 +1,6 @@
+{
+  "appId": "com.rapidin.admin",
+  "appName": "Rapidin Admin",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

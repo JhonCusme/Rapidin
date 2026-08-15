@@ -1,0 +1,41 @@
+{
+  "name": "rapidin-app",
+  "version": "1.0.0",
+  "description": "Rapidin - Aplicación de entregas hiperrápida (Uber Eats + Rappi + PedidosYa)",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "dev": "npx serve . -p 3000",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  },
+  "keywords": [
+    "delivery",
+    "pwa",
+    "rappi",
+    "uber-eats",
+    "pedidosya",
+    "capacitor",
+    "android",
+    "ios"
+  ],
+  "author": "Rapidin Team",
+  "license": "MIT"
+}

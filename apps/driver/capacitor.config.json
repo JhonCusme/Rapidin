@@ -1,0 +1,6 @@
+{
+  "appId": "com.rapidin.driver",
+  "appName": "Rapidin Driver",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

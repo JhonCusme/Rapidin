@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapidin - Super Admin 🛡️</title>
+  
+  <meta name="theme-color" content="#8B5CF6">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="../../assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../../shared/styles-core.css">
+  <style>
+    .admin-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .metric-card-admin {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+    .tab-admin-btn {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+    }
+    .tab-admin-btn.active {
+      color: #8B5CF6;
+      border-bottom-color: #8B5CF6;
+    }
+    .auth-gate-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE BLOQUEO (AUTH GATE) -->
+  <div id="auth-gate-screen" class="auth-gate-screen">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: #8B5CF6; margin-bottom: 1rem;"></i>
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Rapidin Super Admin</h1>
+      <p style="color: var(--text-secondary);">Ingresa al panel de control central de la plataforma</p>
+    </div>
+    
+    <div class="modal-card" style="width: 100%; max-width: 400px; box-shadow: none; border: 1px solid var(--border-color);">
+      <form id="gate-admin-form-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Propietario</label>
+          <input type="email" id="gate-admin-login-email" class="coupon-input" style="width: 100%;" value="admin@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña Maestra</label>
+          <input type="password" id="gate-admin-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem; font-size: 0.9rem; width: 100%; justify-content: center;">Ingresar al Panel de Control 🛡️</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-app-content" style="display: none;">
+  <header class="admin-header">
+    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="../../assets/logo.png" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover;">
+        <div>
+          <h2 style="font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+            Rapidin Admin Dashboard <span class="badge" style="background: #8B5CF6; color: #fff;">PROPIETARIO PLATAFORMA</span>
+          </h2>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Control Central de Negocios, Repartidores y Comisiones</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="background: rgba(139, 92, 246, 0.2); border: 1px solid #8B5CF6; padding: 0.5rem 1rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 800; color: #8B5CF6; cursor: pointer;" id="btn-admin-login">
+          <i class="fa-solid fa-shield-halved"></i> <span id="admin-user-label">SISTEMA ONLINE</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Pestañas de Navegación del Admin -->
+  <div style="background: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+    <div class="container" style="display: flex; gap: 1rem;">
+      <button class="tab-admin-btn active" id="atab-btn-overview"><i class="fa-solid fa-chart-line"></i> Monitoreo Global</button>
+      <button class="tab-admin-btn" id="atab-btn-stores"><i class="fa-solid fa-store"></i> Gestión de Comercios (18)</button>
+      <button class="tab-admin-btn" id="atab-btn-drivers"><i class="fa-solid fa-motorcycle"></i> Gestión de Repartidores (24)</button>
+      <button class="tab-admin-btn" id="atab-btn-fees"><i class="fa-solid fa-percent"></i> Configurar Comisiones</button>
+    </div>
+  </div>
+
+  <main class="container" style="padding: 2rem 1.25rem;">
+    <!-- TAB 1: OVERVIEW GLOBAL -->
+    <div id="atab-content-overview">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="metric-card-admin">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Volumen de Ventas Plataforma (GMV)</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--text-primary); font-family: var(--font-heading); margin: 0.2rem 0;" id="admin-gmv">$1,482.50</div>
+          <span style="font-size: 0.75rem; color: #10B981; font-weight: 700;">+24% vs semana pasada</span>
+        </div>
+
+        <div class="metric-card-admin" style="border-color: #8B5CF6; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,51,102,0.15));">
+          <div style="font-size: 0.8rem; color: #8B5CF6; font-weight: 800; text-transform: uppercase;">Comisión Neta Plataforma (<span id="fee-pct-badge">15</span>%)</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: #8B5CF6; font-family: var(--font-heading); margin: 0.2rem 0;" id="admin-net-commission">$222.37</div>
+          <span style="font-size: 0.75rem; color: var(--text-secondary);">Tu ganancia directa libre</span>
+        </div>
+
+        <div class="metric-card-admin">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Comercios Registrados</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: #10B981; font-family: var(--font-heading); margin: 0.2rem 0;">18</div>
+          <span style="font-size: 0.75rem; color: var(--text-secondary);">100% operativos</span>
+        </div>
+
+        <div class="metric-card-admin">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Repartidores en Línea</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--brand-secondary); font-family: var(--font-heading); margin: 0.2rem 0;">24</div>
+          <span style="font-size: 0.75rem; color: var(--text-secondary);">En calles de la ciudad</span>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="fa-solid fa-chart-line" style="color: #8B5CF6;"></i> Flujo Global de Pedidos en Tiempo Real
+        </h2>
+      </div>
+
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <thead>
+            <tr style="background: var(--bg-main); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 1rem;">ID Pedido</th>
+              <th style="padding: 1rem;">Comercio</th>
+              <th style="padding: 1rem;">Cliente</th>
+              <th style="padding: 1rem;">Monto Total</th>
+              <th style="padding: 1rem;">Comisión Rapidin</th>
+              <th style="padding: 1rem;">Estado Actual</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: COMERCIOS -->
+    <div id="atab-content-stores" style="display: none;">
+      <h2 style="margin-bottom: 1.5rem;">Gestión y Aprobación de Socios Comerciales</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;" id="admin-stores-list"></div>
+    </div>
+
+    <!-- TAB 3: REPARTIDORES -->
+    <div id="atab-content-drivers" style="display: none;">
+      <h2 style="margin-bottom: 1.5rem;">Gestión de la Flota de Repartidores</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;" id="admin-drivers-list"></div>
+    </div>
+
+    <!-- TAB 4: COMISIONES -->
+    <div id="atab-content-fees" style="display: none;">
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px;">
+        <h2 style="margin-bottom: 1rem;">Ajuste de Tarifa de Comisión de Rapidin 💸</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Define la comisión porcentual cobrada automáticamente a cada restaurante por cada venta realizada en la plataforma.</p>
+        <label style="font-weight: 700; display: block; margin-bottom: 0.5rem;">Comisión Porcentual: <span id="fee-slider-val" style="color: #8B5CF6; font-size: 1.2rem;">15%</span></label>
+        <input type="range" min="5" max="30" value="15" id="fee-range-input" style="width: 100%; accent-color: #8B5CF6; margin-bottom: 1.5rem;">
+        <button class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem 1.5rem; font-size: 0.9rem; width: 100%; justify-content: center;" onclick="saveFeeSetting()">
+          Guardar Configuración Global 🛡️
+        </button>
+      </div>
+    </div>
+  </div>
+  </main>
+  </div> <!-- Fin de main-app-content -->
+
+  <!-- MODAL LOGIN ADMIN MAESTRO -->
+  <div class="modal-backdrop" id="modal-admin-login">
+    <div class="modal-card" style="max-width: 420px; padding: 2rem;">
+      <h2 style="font-size: 1.3rem; margin-bottom: 1.25rem;">Acceso Propietario Plataforma 🛡️</h2>
+      <form id="form-admin-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo Propietario Admin</label>
+          <input type="email" id="admin-login-email" class="coupon-input" style="width: 100%;" value="admin@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña Maestra</label>
+          <input type="password" id="admin-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem; font-size: 0.9rem; width: 100%; justify-content: center;">Ingresar al Panel de Control 🛡️</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../shared/i18n.js"></script>
+  <script src="../../shared/db.js"></script>
+  <script src="../../shared/sync.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const modalAdminLogin = document.getElementById('modal-admin-login');
+    const adminUserLabel = document.getElementById('admin-user-label');
+
+    function checkAdminAuth() {
+      const admin = window.rapidinDB.getCurrentUser('admin');
+      if (admin && adminUserLabel) adminUserLabel.textContent = admin.name;
+    }
+
+    document.getElementById('btn-admin-login')?.addEventListener('click', () => {
+      const admin = window.rapidinDB.getCurrentUser('admin');
+      if (admin) {
+        if (confirm(`Conectado como propietario: ${admin.name}\n¿Deseas cerrar sesión?`)) {
+          window.rapidinDB.logout('admin');
+          window.location.reload();
+        }
+      } else {
+        if (modalAdminLogin) modalAdminLogin.classList.add('active');
+      }
+    });
+
+    document.getElementById('form-admin-login')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('admin-login-email').value;
+      const pass = document.getElementById('admin-login-password').value;
+      const res = window.rapidinDB.login(email, pass, 'admin');
+      if (res.success) {
+        alert(`¡Bienvenido al Panel Maestro, ${res.user.name}!`);
+        if (modalAdminLogin) modalAdminLogin.classList.remove('active');
+        checkAdminAuth();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // --- AUTH GATE LOGIC ---
+    function checkAuthGate() {
+      const admin = window.rapidinDB.getCurrentUser('admin');
+      if (admin) {
+        document.getElementById('auth-gate-screen').style.display = 'none';
+        document.getElementById('main-app-content').style.display = 'block';
+        if (adminUserLabel) adminUserLabel.textContent = admin.name;
+      } else {
+        document.getElementById('auth-gate-screen').style.display = 'flex';
+        document.getElementById('main-app-content').style.display = 'none';
+      }
+    }
+
+    document.getElementById('gate-admin-form-login')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gate-admin-login-email').value;
+      const pass = document.getElementById('gate-admin-login-password').value;
+      const res = await window.rapidinDB.login(email, pass, 'admin');
+      if (res.success) {
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // Ejecutar chequeo al inicio
+    checkAuthGate();
+  </script>
+</body>
+</html>

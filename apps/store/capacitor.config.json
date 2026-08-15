@@ -1,0 +1,6 @@
+{
+  "appId": "com.rapidin.store",
+  "appName": "Rapidin Store",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}

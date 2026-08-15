@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Rapidin - Cliente 📱</title>
+  
+  <meta name="theme-color" content="#FF3366">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="../../assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../../shared/styles-core.css">
+  <link rel="stylesheet" href="../../styles.css">
+  <style>
+    .country-selector {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.825rem;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+    .auth-gate-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE BLOQUEO (AUTH GATE) -->
+  <div id="auth-gate-screen" class="auth-gate-screen">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <img src="../../assets/logo.png" alt="Rapidin Logo" style="width: 80px; margin-bottom: 1rem; border-radius: 20px;">
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Bienvenido a Rapidin</h1>
+      <p style="color: var(--text-secondary);">Inicia sesión para pedir lo que quieras</p>
+    </div>
+    
+    <div class="modal-card" style="width: 100%; max-width: 400px; box-shadow: none; border: 1px solid var(--border-color);">
+      <form id="gate-form-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Electrónico</label>
+          <input type="email" id="gate-login-email" class="coupon-input" style="width: 100%;" value="cliente@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
+          <div style="position: relative;">
+            <input type="password" id="gate-login-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" value="123" required>
+            <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('gate-login-password', this)"></i>
+          </div>
+        </div>
+        <button type="submit" class="btn-checkout" style="margin-bottom: 1rem; width: 100%;">Ingresar a mi Cuenta 🚀</button>
+      </form>
+      <button type="button" class="btn-checkout" style="background: var(--bg-main); border: 1px solid var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; width: 100%;" onclick="document.getElementById('modal-register-user').classList.add('active')">
+        <i class="fa-solid fa-user-plus"></i> Crear Nueva Cuenta
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRO CLIENTE -->
+  <div class="modal-backdrop" id="modal-register-user" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 400px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.4rem;">Registro Cliente 📱</h2>
+        <button class="btn-close-modal" onclick="document.getElementById('modal-register-user').classList.remove('active')" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-register-user">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre Completo</label>
+          <input type="text" id="reg-user-name" class="coupon-input" style="width: 100%;" placeholder="Ej: Ana López" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo Electrónico</label>
+          <input type="email" id="reg-user-email" class="coupon-input" style="width: 100%;" placeholder="ana@email.com" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña</label>
+          <div style="position: relative;">
+            <input type="password" id="reg-user-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" required>
+            <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('reg-user-password', this)"></i>
+          </div>
+          <div style="height: 4px; width: 100%; background: var(--border-color); margin-top: 0.4rem; border-radius: 2px; overflow: hidden;">
+            <div id="password-strength-bar" style="height: 100%; width: 0%; transition: 0.3s; background: transparent;"></div>
+          </div>
+          <span id="password-strength-text" style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 0.2rem;"></span>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Confirmar Contraseña</label>
+          <div style="position: relative;">
+            <input type="password" id="reg-user-password-confirm" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" required>
+            <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('reg-user-password-confirm', this)"></i>
+          </div>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Teléfono Móvil</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <select id="reg-user-phone-prefix" class="coupon-input" style="width: 100px; padding: 0.5rem;">
+              <option value="+51" data-code="PE">🇵🇪 +51 (Perú)</option>
+              <option value="+593" data-code="EC">🇪🇨 +593 (Ecuador)</option>
+              <option value="+52" data-code="MX">🇲🇽 +52 (México)</option>
+              <option value="+57" data-code="CO">🇨🇴 +57 (Colombia)</option>
+              <option value="+54" data-code="AR">🇦🇷 +54 (Argentina)</option>
+              <option value="+56" data-code="CL">🇨🇱 +56 (Chile)</option>
+              <option value="+58" data-code="VE">🇻🇪 +58 (Venezuela)</option>
+              <option value="+591" data-code="BO">🇧🇴 +591 (Bolivia)</option>
+              <option value="+595" data-code="PY">🇵🇾 +595 (Paraguay)</option>
+              <option value="+598" data-code="UY">🇺🇾 +598 (Uruguay)</option>
+              <option value="+55" data-code="BR">🇧🇷 +55 (Brasil)</option>
+              <option value="+507" data-code="PA">🇵🇦 +507 (Panamá)</option>
+              <option value="+506" data-code="CR">🇨🇷 +506 (Costa Rica)</option>
+              <option value="+502" data-code="GT">🇬🇹 +502 (Guatemala)</option>
+              <option value="+504" data-code="HN">🇭🇳 +504 (Honduras)</option>
+              <option value="+503" data-code="SV">🇸🇻 +503 (El Salvador)</option>
+              <option value="+505" data-code="NI">🇳🇮 +505 (Nicaragua)</option>
+              <option value="+53" data-code="CU">🇨🇺 +53 (Cuba)</option>
+              <option value="+1" data-code="DO">🇩🇴 +1 (R. Dominicana)</option>
+              <option value="+1" data-code="PR">🇵🇷 +1 (Puerto Rico)</option>
+              <option value="+1" data-code="US">🇺🇸 +1 (USA)</option>
+              <option value="+34" data-code="ES">🇪🇸 +34 (España)</option>
+            </select>
+            <input type="tel" id="reg-user-phone" class="coupon-input" style="flex: 1;" placeholder="987654321" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-checkout" style="width: 100%;">Registrarme 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-app-content" style="display: none;">
+  <!-- Header App Cliente -->
+  <header class="header">
+    <div class="container header-content">
+      <div class="logo-brand" id="btn-go-home">
+        <img src="../../assets/logo.png" alt="Rapidin Logo" class="logo-icon" onerror="this.src='https://images.unsplash.com/photo-1550547660-d9450f859349?w=80'">
+        <span>Rapidin</span>
+      </div>
+
+      <!-- Selector de País Internacional -->
+      <select class="country-selector" id="select-country"></select>
+
+      <button class="badge badge-gold" id="btn-open-vip-modal" style="cursor: pointer; padding: 0.4rem 0.8rem;">
+        👑 RAPIDIN PRIME VIP
+      </button>
+
+      <div class="delivery-toggle">
+        <button class="toggle-btn active" id="mode-delivery"><i class="fa-solid fa-motorcycle"></i> Envío</button>
+        <button class="toggle-btn" id="mode-pickup"><i class="fa-solid fa-bag-shopping"></i> Retiro</button>
+      </div>
+
+      <div class="address-picker">
+        <i class="fa-solid fa-location-dot"></i>
+        <span id="user-address-display">Av. Larco 124, Miraflores</span>
+      </div>
+
+      <div class="search-bar">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" class="search-input" id="global-search" placeholder="Busca hamburguesas, sushi, medicinas...">
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-user-auth" title="Mi Cuenta / Login"><i class="fa-solid fa-user"></i></button>
+        <button class="icon-btn" id="btn-user-logout" title="Cerrar Sesión" style="display: none; color: #ff3366;"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <button class="icon-btn" id="btn-view-tracking" title="Seguimiento de Pedido"><i class="fa-solid fa-route"></i></button>
+        <button class="icon-btn" id="btn-toggle-theme"><i class="fa-solid fa-moon"></i></button>
+        <button class="icon-btn" id="btn-open-cart">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span class="cart-count-badge" id="cart-badge-count">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MODAL VIP PRIME PASS -->
+  <div class="modal-backdrop" id="modal-vip-pass">
+    <div class="modal-card" style="max-width: 440px; padding: 2rem; text-align: center; background: linear-gradient(135deg, #161F30 0%, #2A153E 100%);">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">👑</div>
+      <h2 style="font-size: 1.5rem; color: #FFC107; margin-bottom: 0.5rem;">Rapidin Prime VIP Pass</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Únete al club exclusivo de entregas ilimitadas sin costo de envío y ofertas exclusivas.</p>
+      
+      <div style="background: rgba(255,193,7,0.1); border: 1px solid #FFC107; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; text-align: left;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 700;">
+          <i class="fa-solid fa-check" style="color: #FFC107;"></i> Envío $0 GRATIS ilimitado en todas tus compras
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 700;">
+          <i class="fa-solid fa-check" style="color: #FFC107;"></i> 10% Cashback acumulable en Rapidin Cash
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 700;">
+          <i class="fa-solid fa-check" style="color: #FFC107;"></i> Asignación prioritaria de repartidor
+        </div>
+      </div>
+
+      <button class="btn-checkout" style="background: linear-gradient(135deg, #FFC107, #FF9800); color: #000; font-weight: 900; margin-bottom: 0.75rem;" id="btn-subscribe-vip-action">
+        Suscribirme por $4.99 / Mes 👑
+      </button>
+      <button class="btn-close-modal" id="btn-close-vip-pass" style="position: static; width: 100%; border-radius: var(--radius-full); background: transparent; color: var(--text-muted);">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL AUTENTICACIÓN -->
+  <div class="modal-backdrop" id="modal-auth">
+    <div class="modal-card" style="max-width: 440px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.4rem;" id="auth-title">Iniciar Sesión en Rapidin</h2>
+        <button class="btn-close-modal" id="btn-close-auth" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="form-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Electrónico</label>
+          <input type="email" id="login-email" class="coupon-input" style="width: 100%;" value="cliente@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
+          <div style="position: relative;">
+            <input type="password" id="login-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" value="123" required>
+            <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('login-password', this)"></i>
+          </div>
+        </div>
+        <button type="submit" class="btn-checkout" style="margin-bottom: 1rem;">Ingresar a mi Cuenta 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Vista Principal -->
+  <main class="container" id="app-view">
+    <section id="view-home">
+      <div class="hero-section">
+        <div class="deals-carousel" id="deals-carousel-container"></div>
+      </div>
+      <div class="categories-section">
+        <div class="categories-scroll" id="categories-container"></div>
+      </div>
+      <div class="section-header">
+        <h2 class="section-title"><i class="fa-solid fa-fire" style="color: var(--brand-primary);"></i> <span id="stores-title">Tiendas Destacadas</span></h2>
+        <span class="badge badge-gold" id="stores-count-badge">5 disponibles</span>
+      </div>
+      <div class="stores-grid" id="stores-container"></div>
+    </section>
+
+    <!-- Detalle Tienda -->
+    <section id="view-store-detail" style="display: none;"></section>
+
+    <!-- Rastreo en Vivo -->
+    <section id="view-tracking" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fa-solid fa-map-location-dot" style="color: var(--brand-primary);"></i> Seguimiento en Vivo <span id="tracking-order-id" style="color: var(--brand-secondary); font-size: 0.9rem;">#RPD-98421</span></h2>
+        <button class="btn-back-nav" id="btn-back-from-tracking" style="position: static;"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+      </div>
+      <div class="tracking-view">
+        <div class="tracking-grid">
+          <div id="map-container"></div>
+          <div class="tracking-sidebar">
+            <div>
+              <div class="eta-card">
+                <span style="font-size: 0.8rem; text-transform: uppercase;">Tiempo estimado de entrega</span>
+                <div class="eta-time" id="tracking-eta-display">12 MIN</div>
+                <div class="eta-status" id="tracking-status-display">Repartidor en camino 🛵</div>
+              </div>
+              <div class="timeline" id="tracking-timeline-container"></div>
+            </div>
+
+            <div>
+              <div class="courier-card" id="courier-info-card"></div>
+              <button class="btn-checkout" style="margin-top: 1rem; background: var(--brand-secondary);" id="btn-open-live-chat">
+                <i class="fa-solid fa-comment-dots"></i> Chat en Vivo con Repartidor 💬
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL CHAT -->
+  <div class="modal-backdrop" id="modal-chat-user">
+    <div class="modal-card" style="max-width: 440px;">
+      <div style="padding: 1rem 1.25rem; background: var(--bg-main); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-comments" style="color: var(--brand-primary);"></i> Chat con Carlos (Repartidor)
+        </h3>
+        <button class="btn-close-modal" id="btn-close-chat" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="height: 320px; overflow-y: auto; padding: 1rem;" id="chat-messages-container"></div>
+      <div style="padding: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem;">
+        <input type="text" id="chat-input-text" class="coupon-input" placeholder="Escribe un mensaje..." style="flex: 1;">
+        <button class="btn-checkout" style="width: auto; padding: 0 1.25rem;" id="btn-send-chat-msg">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Personalización -->
+  <div class="modal-backdrop" id="modal-customizer">
+    <div class="modal-card">
+      <div class="modal-header-img" id="modal-product-img-wrap">
+        <button class="btn-close-modal" id="btn-close-product-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <h3 id="modal-product-name">Nombre</h3>
+        <p id="modal-product-desc" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;"></p>
+        <div id="modal-options-container"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="quantity-picker">
+          <button class="qty-btn" id="modal-qty-minus">-</button>
+          <span id="modal-qty-count" style="font-weight: 800;">1</span>
+          <button class="qty-btn" id="modal-qty-plus">+</button>
+        </div>
+        <button class="btn-add-to-cart" id="btn-confirm-add-cart">
+          <span>Agregar al pedido</span>
+          <span id="modal-total-price">$0.00</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer Carrito -->
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h3><i class="fa-solid fa-bag-shopping" style="color: var(--brand-primary);"></i> Tu Pedido Rapidin</h3>
+      <button class="btn-close-modal" id="btn-close-cart" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="cart-body">
+      <div id="cart-items-container"></div>
+      <div style="margin-top: 1.5rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Propina al repartidor</label>
+        <div class="tip-selector">
+          <div class="tip-pill" data-tip="0">$0</div>
+          <div class="tip-pill active" data-tip="1.50">$1.50</div>
+          <div class="tip-pill" data-tip="2.50">$2.50</div>
+          <div class="tip-pill" data-tip="4.00">$4.00</div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Cupón</label>
+        <div class="coupon-box">
+          <input type="text" class="coupon-input" id="coupon-code-input" placeholder="Ej: RAPIDINVIP">
+          <button class="btn-apply-coupon" id="btn-apply-coupon">Aplicar</button>
+        </div>
+      </div>
+      <div class="cart-summary">
+        <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
+        <div class="summary-row"><span>Tarifa de Envío</span><span id="summary-shipping">$1.99</span></div>
+        <div class="summary-row"><span>Propina</span><span id="summary-tip">$1.50</span></div>
+        <div class="summary-row total"><span>Total</span><span id="summary-total" style="color: var(--brand-primary);">$0.00</span></div>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="btn-checkout" id="btn-process-checkout">Confirmar Pedido Rapidin 🚀</button>
+    </div>
+  </div>
+  </div> <!-- Fin de main-app-content -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../../shared/i18n.js"></script>
+  <script src="../../shared/db.js"></script>
+  <script src="../../shared/sync.js"></script>
+  <script src="../../shared/payments.js"></script>
+  <script src="../../shared/chat.js"></script>
+  <script src="../../shared/rating.js"></script>
+  <script src="../../shared/vip.js"></script>
+  <script src="../../shared/promos.js"></script>
+  <script src="../../data.js"></script>
+  <script src="../../app.js"></script>
+
+  <script>
+    const selectCountry = document.getElementById('select-country');
+    if (selectCountry && window.rapidinI18n) {
+      // Poblar dinámicamente con la lista global
+      const countries = window.rapidinI18n.getCountryList();
+      selectCountry.innerHTML = '';
+      countries.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        opt.textContent = `${c.name} (${c.symbol})`;
+        selectCountry.appendChild(opt);
+      });
+      selectCountry.value = window.rapidinI18n.currentCountryCode;
+      selectCountry.addEventListener('change', (e) => window.rapidinI18n.setCountry(e.target.value));
+    }
+
+    // Modal VIP
+    const modalVip = document.getElementById('modal-vip-pass');
+    document.getElementById('btn-open-vip-modal')?.addEventListener('click', () => {
+      if (modalVip) modalVip.classList.add('active');
+    });
+    document.getElementById('btn-close-vip-pass')?.addEventListener('click', () => {
+      if (modalVip) modalVip.classList.remove('active');
+    });
+    document.getElementById('btn-subscribe-vip-action')?.addEventListener('click', () => {
+      window.rapidinVip.subscribeVip();
+      alert('👑 ¡Bienvenido a Rapidin Prime VIP! Ahora disfrutas de Envíos Gratis ilimitados y Cashback.');
+      if (modalVip) modalVip.classList.remove('active');
+    });
+
+    // --- AUTH GATE LOGIC ---
+    function checkAuthGate() {
+      const user = window.rapidinDB.getCurrentUser('user');
+      if (user) {
+        document.getElementById('auth-gate-screen').style.display = 'none';
+        document.getElementById('main-app-content').style.display = 'block';
+        document.getElementById('btn-user-logout').style.display = 'inline-flex';
+        document.getElementById('btn-user-auth').style.display = 'none';
+      } else {
+        document.getElementById('auth-gate-screen').style.display = 'flex';
+        document.getElementById('main-app-content').style.display = 'none';
+        document.getElementById('btn-user-logout').style.display = 'none';
+        document.getElementById('btn-user-auth').style.display = 'inline-flex';
+      }
+    }
+
+    document.getElementById('btn-user-logout')?.addEventListener('click', () => {
+      if (confirm('¿Deseas cerrar tu sesión actual?')) {
+        window.rapidinDB.logout('user');
+        window.location.reload();
+      }
+    });
+
+    document.getElementById('gate-form-login')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gate-login-email').value;
+      const pass = document.getElementById('gate-login-password').value;
+      const res = await window.rapidinDB.login(email, pass, 'user');
+      if (res.success) {
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    document.getElementById('form-register-user')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const password = document.getElementById('reg-user-password').value;
+      const confirmPassword = document.getElementById('reg-user-password-confirm').value;
+      
+      if (password !== confirmPassword) {
+        alert('❌ Las contraseñas no coinciden. Por favor verifica.');
+        return;
+      }
+
+      const userData = {
+        role: 'user',
+        name: document.getElementById('reg-user-name').value,
+        email: document.getElementById('reg-user-email').value,
+        password: password,
+        phone: document.getElementById('reg-user-phone-prefix').value + ' ' + document.getElementById('reg-user-phone').value,
+        address: ''
+      };
+      const res = await window.rapidinDB.registerUser(userData);
+      if (res.success) {
+        document.getElementById('modal-register-user').classList.remove('active');
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // Ejecutar chequeo al inicio
+    checkAuthGate();
+
+    // Auto-detectar país para el prefijo de teléfono cuando se abre el modal
+    document.getElementById('modal-register-user')?.addEventListener('click', function(e) {
+      if(e.target === this) return; // ignore clicks on backdrop itself for this specific logic
+    });
+    // Se inicializa el selector con el pais detectado globalmente
+    setTimeout(() => {
+      const currentCountry = window.rapidinI18n?.currentCountryCode || 'PE';
+      const prefixSelect = document.getElementById('reg-user-phone-prefix');
+      if (prefixSelect) {
+        for (let i = 0; i < prefixSelect.options.length; i++) {
+          if (prefixSelect.options[i].getAttribute('data-code') === currentCountry) {
+            prefixSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }, 500);
+
+    // Lógica de Barra de Seguridad de Contraseña
+    document.getElementById('reg-user-password')?.addEventListener('input', (e) => {
+      const val = e.target.value;
+      const bar = document.getElementById('password-strength-bar');
+      const txt = document.getElementById('password-strength-text');
+      
+      let strength = 0;
+      if (val.length > 5) strength += 1;
+      if (val.length > 8) strength += 1;
+      if (/[A-Z]/.test(val)) strength += 1;
+      if (/[0-9]/.test(val)) strength += 1;
+      if (/[^A-Za-z0-9]/.test(val)) strength += 1;
+
+      if (val.length === 0) {
+        bar.style.width = '0%';
+        bar.style.background = 'transparent';
+        txt.textContent = '';
+      } else if (strength <= 2) {
+        bar.style.width = '33%';
+        bar.style.background = '#ff3366'; // Rojo - Débil
+        txt.textContent = 'Débil (Usa números y mayúsculas)';
+        txt.style.color = '#ff3366';
+      } else if (strength === 3 || strength === 4) {
+        bar.style.width = '66%';
+        bar.style.background = '#FFC107'; // Amarillo - Media
+        txt.textContent = 'Media (Agrega algún símbolo para mejorarla)';
+        txt.style.color = '#FFC107';
+      } else {
+        bar.style.width = '100%';
+        bar.style.background = '#10B981'; // Verde - Fuerte
+        txt.textContent = '¡Contraseña Fuerte!';
+        txt.style.color = '#10B981';
+      }
+    });
+
+    window.togglePasswordVisibility = function(inputId, iconElement) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        iconElement.classList.remove('fa-eye-slash');
+        iconElement.classList.add('fa-eye');
+        iconElement.style.color = 'var(--brand-primary)';
+      } else {
+        input.type = 'password';
+        iconElement.classList.remove('fa-eye');
+        iconElement.classList.add('fa-eye-slash');
+        iconElement.style.color = 'var(--text-muted)';
+      }
+    };
+
+  </script>
+</body>
+</html>

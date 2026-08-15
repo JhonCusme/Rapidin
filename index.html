@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapidin Platform - Portal de Aplicaciones 🚀</title>
+  
+  <meta name="theme-color" content="#FF3366">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="shared/styles-core.css">
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: radial-gradient(circle at top right, #1E1035, #0B0F19 60%);
+    }
+
+    .hero-suite {
+      text-align: center;
+      padding: 3rem 1rem 1.5rem;
+    }
+
+    .suite-title {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #FF3366, #FF6600, #00DFD8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .suite-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 1.25rem 2rem;
+    }
+
+    .app-suite-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+
+    .app-suite-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .card-user { border-top: 4px solid #FF3366; }
+    .card-store { border-top: 4px solid #10B981; }
+    .card-driver { border-top: 4px solid #FF6600; }
+    .card-admin { border-top: 4px solid #8B5CF6; }
+
+    .app-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-launch-app {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Simulador Integrado Multipantalla */
+    .simulator-container {
+      max-width: 1400px;
+      margin: 0 auto 3rem;
+      padding: 0 1.25rem;
+    }
+    .simulator-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+    .sim-frame-wrap {
+      background: var(--bg-main);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      height: 520px;
+      display: flex;
+      flex-direction: column;
+    }
+    .sim-frame-header {
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div>
+    <!-- Encabezado Suite -->
+    <div class="hero-suite">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <img src="assets/logo.png" style="width: 56px; height: 56px; border-radius: 16px; box-shadow: var(--shadow-glow);">
+        <h1 class="suite-title">Rapidin Platform</h1>
+      </div>
+      <p style="color: var(--text-secondary); max-width: 680px; margin: 0 auto 1.5rem; font-size: 1.05rem;">
+        Ecosistema completo de 4 aplicaciones 100% independientes (Uber Eats + Rappi + PedidosYa) para Clientes, Restaurantes, Repartidores y Super Admin.
+      </p>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button class="btn-launch-app" style="max-width: 320px; margin: 0; background: linear-gradient(135deg, #FF3366, #FF6600); box-shadow: var(--shadow-glow);" onclick="launchAllDemoTabs()">
+          <i class="fa-solid fa-up-right-from-square"></i> Abrir 4 Apps en Pestañas
+        </button>
+        <button class="btn-launch-app" style="max-width: 320px; margin: 0; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary);" onclick="toggleQuadSimulator()">
+          <i class="fa-solid fa-desktop"></i> Alternar Simulador Multipantalla en Vivo
+        </button>
+      </div>
+    </div>
+
+    <!-- Cuadrícula de Acceso Directo -->
+    <div class="suite-grid">
+      
+      <!-- 1. App Cliente -->
+      <div class="app-suite-card card-user">
+        <div>
+          <div class="app-icon-wrap" style="background: rgba(255,51,102,0.15); color: #FF3366;">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+          </div>
+          <span class="badge" style="background: #FF3366; color: #fff; margin-bottom: 0.5rem;">APP CLIENTE PWA</span>
+          <h2 style="font-size: 1.3rem; margin-bottom: 0.4rem;">1. Rapidin Usuario</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">
+            Catálogo multi-servicio (Comida, Turbo 15m, Supermercado, Farmacia), personalización, carrito, cupones y mapa en vivo.
+          </p>
+        </div>
+        <a href="apps/user/index.html" target="_blank" class="btn-launch-app" style="background: #FF3366;">
+          Abrir App Cliente 📱 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 2. App Restaurante -->
+      <div class="app-suite-card card-store">
+        <div>
+          <div class="app-icon-wrap" style="background: rgba(16,185,129,0.15); color: #10B981;">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <span class="badge" style="background: #10B981; color: #000; margin-bottom: 0.5rem;">APP COMERCIO PWA</span>
+          <h2 style="font-size: 1.3rem; margin-bottom: 0.4rem;">2. Rapidin Store</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">
+            App para restaurantes. Alertas sonoras de pedidos entrantes, aceptación en 1-clic, menú y reporte de ventas.
+          </p>
+        </div>
+        <a href="apps/store/index.html" target="_blank" class="btn-launch-app" style="background: #10B981; color: #000;">
+          Abrir App Restaurante 🏪 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 3. App Repartidor -->
+      <div class="app-suite-card card-driver">
+        <div>
+          <div class="app-icon-wrap" style="background: rgba(255,102,0,0.15); color: #FF6600;">
+            <i class="fa-solid fa-motorcycle"></i>
+          </div>
+          <span class="badge" style="background: #FF6600; color: #fff; margin-bottom: 0.5rem;">APP DRIVER PWA</span>
+          <h2 style="font-size: 1.3rem; margin-bottom: 0.4rem;">3. Rapidin Driver</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">
+            App para motorizados. Interruptor de disponibilidad, aceptación de viajes cercanos, navegación GPS y billetera.
+          </p>
+        </div>
+        <a href="apps/driver/index.html" target="_blank" class="btn-launch-app" style="background: #FF6600;">
+          Abrir App Repartidor 🛵 <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- 4. App Super Admin -->
+      <div class="app-suite-card card-admin">
+        <div>
+          <div class="app-icon-wrap" style="background: rgba(139,92,246,0.15); color: #8B5CF6;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <span class="badge" style="background: #8B5CF6; color: #fff; margin-bottom: 0.5rem;">PANEL PROPIETARIO</span>
+          <h2 style="font-size: 1.3rem; margin-bottom: 0.4rem;">4. Super Admin</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">
+            Tu panel privado. Métricas de ventas en tiempo real, comisión del 15% configurable y gestión de choferes/comercios.
+          </p>
+        </div>
+        <a href="apps/admin/index.html" target="_blank" class="btn-launch-app" style="background: #8B5CF6;">
+          Abrir Panel Admin 🛡️ <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- SIMULADOR MULTIPANTALLA INTEGRADO EN VIVO -->
+    <div class="simulator-container" id="quad-simulator-container">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-border-all" style="color: var(--brand-primary);"></i>
+          Simulador Multipantalla Interactivo en Vivo
+        </h2>
+        <span class="badge badge-gold">PRUEBA EN TIEMPO REAL</span>
+      </div>
+
+      <div class="simulator-grid">
+        <!-- Frame 1: Cliente -->
+        <div class="sim-frame-wrap">
+          <div class="sim-frame-header" style="background: rgba(255,51,102,0.15); color: #FF3366;">
+            <span>📱 1. APP CLIENTE</span>
+            <a href="apps/user/index.html" target="_blank" style="color: inherit;"><i class="fa-solid fa-up-right-from-square"></i></a>
+          </div>
+          <iframe src="apps/user/index.html" title="Rapidin Cliente"></iframe>
+        </div>
+
+        <!-- Frame 2: Restaurante -->
+        <div class="sim-frame-wrap">
+          <div class="sim-frame-header" style="background: rgba(16,185,129,0.15); color: #10B981;">
+            <span>🏪 2. APP RESTAURANTE</span>
+            <a href="apps/store/index.html" target="_blank" style="color: inherit;"><i class="fa-solid fa-up-right-from-square"></i></a>
+          </div>
+          <iframe src="apps/store/index.html" title="Rapidin Store"></iframe>
+        </div>
+
+        <!-- Frame 3: Repartidor -->
+        <div class="sim-frame-wrap">
+          <div class="sim-frame-header" style="background: rgba(255,102,0,0.15); color: #FF6600;">
+            <span>🛵 3. APP REPARTIDOR</span>
+            <a href="apps/driver/index.html" target="_blank" style="color: inherit;"><i class="fa-solid fa-up-right-from-square"></i></a>
+          </div>
+          <iframe src="apps/driver/index.html" title="Rapidin Driver"></iframe>
+        </div>
+
+        <!-- Frame 4: Super Admin -->
+        <div class="sim-frame-wrap">
+          <div class="sim-frame-header" style="background: rgba(139,92,246,0.15); color: #8B5CF6;">
+            <span>🛡️ 4. SUPER ADMIN</span>
+            <a href="apps/admin/index.html" target="_blank" style="color: inherit;"><i class="fa-solid fa-up-right-from-square"></i></a>
+          </div>
+          <iframe src="apps/admin/index.html" title="Rapidin Admin"></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer style="text-align: center; padding: 1.5rem; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;">
+    Rapidin Platform Suite © 2026 • 4 Aplicaciones PWA & Compilación Nativa Android / iOS con Capacitor
+  </footer>
+
+  <script>
+    function launchAllDemoTabs() {
+      window.open('apps/user/index.html', '_blank');
+      window.open('apps/store/index.html', '_blank');
+      window.open('apps/driver/index.html', '_blank');
+      window.open('apps/admin/index.html', '_blank');
+    }
+
+    function toggleQuadSimulator() {
+      const el = document.getElementById('quad-simulator-container');
+      if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
+  </script>
+
+</body>
+</html>

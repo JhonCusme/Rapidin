@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapidin - Partner Store 🏪</title>
+  
+  <meta name="theme-color" content="#10B981">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="../../assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../../shared/styles-core.css">
+  <style>
+    .store-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .status-pill {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10B981;
+      color: #10B981;
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .order-card-store {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      transition: var(--transition);
+    }
+    .order-card-store.new-alert {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
+      animation: pulseAlert 1.5s infinite;
+    }
+    @keyframes pulseAlert {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+      100% { transform: scale(1); }
+    }
+    .btn-action-store {
+      background: #10B981;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab-store-btn {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+    }
+    .tab-store-btn.active {
+      color: #10B981;
+      border-bottom-color: #10B981;
+    }
+    .auth-gate-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE BLOQUEO (AUTH GATE) -->
+  <div id="auth-gate-screen" class="auth-gate-screen">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <i class="fa-solid fa-store" style="font-size: 3rem; color: #10B981; margin-bottom: 1rem;"></i>
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Rapidin Comercios</h1>
+      <p style="color: var(--text-secondary);">Ingresa a tu panel de cocina y gestión</p>
+    </div>
+    
+    <div class="modal-card" style="width: 100%; max-width: 400px; box-shadow: none; border: 1px solid var(--border-color);">
+      <form id="gate-store-form-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo de Comercio</label>
+          <input type="email" id="gate-store-login-email" class="coupon-input" style="width: 100%;" value="comercio@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
+          <input type="password" id="gate-store-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="btn-action-store" style="margin-bottom: 1rem; width: 100%; justify-content: center;">Ingresar al Panel 👨‍🍳</button>
+      </form>
+      <button type="button" class="btn-action-store" style="background: var(--bg-main); border: 1px solid #10B981; color: #10B981; font-size: 0.85rem; width: 100%; justify-content: center;" onclick="document.getElementById('modal-store-register').classList.add('active')">
+        <i class="fa-solid fa-store"></i> Unirse como Restaurante Socio
+      </button>
+    </div>
+  </div>
+
+  <div id="main-app-content" style="display: none;">
+  <!-- Header App Restaurante -->
+  <header class="store-header">
+    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=200" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover;">
+        <div>
+          <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.4rem;">
+            Burger Prime & Grill <span class="badge" style="background: #10B981; color:#000;">SOCIO OFICIAL</span>
+          </h2>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">ID Comercio: #STORE-001 • Av. Principal 452</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="status-pill" style="background: var(--bg-main);" id="btn-store-register">
+          <i class="fa-solid fa-store"></i> <span>Registrar Nuevo Comercio</span>
+        </button>
+        <button class="status-pill" style="background: var(--bg-main);" id="btn-store-login">
+          <i class="fa-solid fa-user-lock"></i> <span id="store-user-label">Ingresar Comercio</span>
+        </button>
+        <div class="status-pill" id="btn-toggle-store-status">
+          <i class="fa-solid fa-circle" style="font-size: 0.6rem;"></i>
+          <span id="store-status-text">ABIERTO • RECIBIENDO PEDIDOS</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Pestañas de Navegación del Comercio -->
+  <div style="background: var(--bg-main); border-bottom: 1px solid var(--border-color);">
+    <div class="container" style="display: flex; gap: 1rem;">
+      <button class="tab-store-btn active" id="tab-btn-orders"><i class="fa-solid fa-bell"></i> Pedidos en Cocina (<span id="orders-badge-count">1</span>)</button>
+      <button class="tab-store-btn" id="tab-btn-catalog"><i class="fa-solid fa-utensils"></i> Menú y Disponibilidad</button>
+      <button class="tab-store-btn" id="tab-btn-metrics"><i class="fa-solid fa-chart-line"></i> Reporte de Ventas</button>
+    </div>
+  </div>
+
+  <main class="container" style="padding: 2rem 1.25rem;">
+    <!-- TAB 1: PEDIDOS -->
+    <div id="tab-content-orders">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Ventas del Día</div>
+          <div style="font-size: 1.8rem; font-weight: 900; color: #10B981; font-family: var(--font-heading);">$342.80</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Pedidos Completados</div>
+          <div style="font-size: 1.8rem; font-weight: 900; color: var(--text-primary); font-family: var(--font-heading);">18</div>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Tiempo Prom. Preparación</div>
+          <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand-secondary); font-family: var(--font-heading);">14 MIN</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-bell" style="color: var(--brand-primary);"></i> Pedidos en Cocina
+        </h2>
+        <button class="btn-action-store" style="background: var(--bg-card); border: 1px solid var(--border-color);" onclick="simulateNewIncomingOrder()">
+          <i class="fa-solid fa-plus"></i> Simular Pedido Entrante
+        </button>
+      </div>
+
+      <div id="store-orders-list"></div>
+    </div>
+
+    <!-- TAB 2: CATÁLOGO -->
+    <div id="tab-content-catalog" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <h2>Gestión de Carta y Disponibilidad</h2>
+        <button class="btn-action-store" onclick="alert('¡Nuevo producto agregado al catálogo con éxito!')">
+          <i class="fa-solid fa-plus"></i> Agregar Nuevo Platillo
+        </button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;" id="catalog-items-grid"></div>
+    </div>
+
+    <!-- TAB 3: REPORTES -->
+    <div id="tab-content-metrics" style="display: none;">
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <h2 style="margin-bottom: 1rem;">Reporte Consolidado de Ventas 📊</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Tu comercio ha generado <strong>$342.80</strong> el día de hoy con un ticket promedio de $19.04 por pedido.</p>
+        <button class="btn-action-store" onclick="alert('Descargando reporte en CSV...')">
+          <i class="fa-solid fa-file-csv"></i> Exportar Reporte CSV
+        </button>
+      </div>
+    </div>
+  </main>
+  </div> <!-- Fin de main-app-content -->
+
+  <!-- MODAL REGISTRO NUEVO COMERCIO -->
+  <div class="modal-backdrop" id="modal-store-register" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 480px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.3rem;">Únete como Comercio Socio 🏪</h2>
+        <button class="btn-close-modal" id="btn-close-store-reg" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-store-register">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre del Restaurante / Comercio</label>
+          <input type="text" id="reg-store-name" class="coupon-input" style="width: 100%;" placeholder="Ej: Taco Loco Express" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Categoría</label>
+          <select id="reg-store-cat" class="coupon-input" style="width: 100%;">
+            <option value="Restaurantes">Restaurantes & Comida</option>
+            <option value="Supermercado">Supermercado & Abarrotes</option>
+            <option value="Farmacia">Farmacia 24/7</option>
+            <option value="Licores">Licores & Bebidas</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo Electrónico de Contacto</label>
+          <input type="email" id="reg-store-email" class="coupon-input" style="width: 100%;" placeholder="contacto@tacoloco.com" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña de Acceso</label>
+          <input type="password" id="reg-store-password" class="coupon-input" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Dirección Física</label>
+          <input type="text" id="reg-store-address" class="coupon-input" style="width: 100%;" placeholder="Av. Reforma 200, CDMX" required>
+        </div>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Enviar Solicitud a Rapidin Super Admin 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIN COMERCIO -->
+  <div class="modal-backdrop" id="modal-store-login">
+    <div class="modal-card" style="max-width: 420px; padding: 2rem;">
+      <h2 style="font-size: 1.3rem; margin-bottom: 1.25rem;">Acceso Socio Restaurante 🏪</h2>
+      <form id="form-store-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo de Comercio</label>
+          <input type="email" id="store-login-email" class="coupon-input" style="width: 100%;" value="comercio@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña</label>
+          <input type="password" id="store-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Ingresar al Panel de Cocina 👨‍🍳</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../shared/i18n.js"></script>
+  <script src="../../shared/db.js"></script>
+  <script src="../../shared/sync.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const modalStoreLogin = document.getElementById('modal-store-login');
+    const modalStoreRegister = document.getElementById('modal-store-register');
+
+    document.getElementById('btn-store-register')?.addEventListener('click', () => {
+      if (modalStoreRegister) modalStoreRegister.classList.add('active');
+    });
+
+    document.getElementById('btn-close-store-reg')?.addEventListener('click', () => {
+      if (modalStoreRegister) modalStoreRegister.classList.remove('active');
+    });
+
+    document.getElementById('form-store-register')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const storeData = {
+        role: 'store',
+        name: document.getElementById('reg-store-name').value,
+        category: document.getElementById('reg-store-cat').value,
+        email: document.getElementById('reg-store-email').value,
+        password: document.getElementById('reg-store-password').value,
+        address: document.getElementById('reg-store-address').value
+      };
+      
+      const res = await window.rapidinDB.registerUser(storeData);
+      if (res.success) {
+        alert(`🏪 ¡Comercio "${storeData.name}" registrado correctamente!`);
+        if (modalStoreRegister) modalStoreRegister.classList.remove('active');
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // --- AUTH GATE LOGIC ---
+    function checkAuthGate() {
+      const store = window.rapidinDB.getCurrentUser('store');
+      if (store) {
+        document.getElementById('auth-gate-screen').style.display = 'none';
+        document.getElementById('main-app-content').style.display = 'block';
+        const label = document.getElementById('store-user-label');
+        if (label) label.textContent = 'Salir (' + store.name + ')';
+      } else {
+        document.getElementById('auth-gate-screen').style.display = 'flex';
+        document.getElementById('main-app-content').style.display = 'none';
+      }
+    }
+
+    document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gate-store-login-email').value;
+      const pass = document.getElementById('gate-store-login-password').value;
+      const res = await window.rapidinDB.login(email, pass, 'store');
+      if (res.success) {
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    document.getElementById('btn-store-login')?.addEventListener('click', () => {
+      const store = window.rapidinDB.getCurrentUser('store');
+      if (store) {
+        if (confirm(`Conectado como comercio: ${store.name}\n¿Deseas cerrar sesión?`)) {
+          window.rapidinDB.logout('store');
+          window.location.reload();
+        }
+      }
+    });
+
+    // Ejecutar chequeo al inicio
+    checkAuthGate();
+  </script>
+</body>
+</html>

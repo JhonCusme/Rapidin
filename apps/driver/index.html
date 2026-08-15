@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapidin - Repartidor 🛵</title>
+  
+  <meta name="theme-color" content="#FF6600">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="../../assets/icons/icon-192.png">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../../shared/styles-core.css">
+  <style>
+    .driver-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .driver-status-btn {
+      background: #FF6600;
+      color: #fff;
+      padding: 0.5rem 1.2rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-job {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    #driver-map {
+      width: 100%;
+      height: 260px;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+      border: 1px solid var(--border-color);
+    }
+    .auth-gate-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-main); z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE BLOQUEO (AUTH GATE) -->
+  <div id="auth-gate-screen" class="auth-gate-screen">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <i class="fa-solid fa-motorcycle" style="font-size: 3rem; color: #FF6600; margin-bottom: 1rem;"></i>
+      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Rapidin Repartidores</h1>
+      <p style="color: var(--text-secondary);">Ingresa a tu consola de entregas y ganancias</p>
+    </div>
+    
+    <div class="modal-card" style="width: 100%; max-width: 400px; box-shadow: none; border: 1px solid var(--border-color);">
+      <form id="gate-driver-form-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo de Chofer</label>
+          <input type="email" id="gate-driver-login-email" class="coupon-input" style="width: 100%;" value="driver@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
+          <input type="password" id="gate-driver-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="driver-status-btn" style="margin-bottom: 1rem; width: 100%; justify-content: center;">Ingresar a la Consola 🛵</button>
+      </form>
+      <button type="button" class="driver-status-btn" style="background: var(--bg-main); border: 1px solid #FF6600; color: #FF6600; font-size: 0.85rem; width: 100%; justify-content: center;" onclick="document.getElementById('modal-driver-register').classList.add('active')">
+        <i class="fa-solid fa-id-card"></i> Postular como Repartidor
+      </button>
+    </div>
+  </div>
+
+  <div id="main-app-content" style="display: none;">
+  <header class="driver-header">
+    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 0.85rem;" id="btn-driver-login" style="cursor: pointer;">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover;">
+        <div>
+          <h2 style="font-size: 1.15rem;" id="driver-name-label">Carlos Ruiz 🛵</h2>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Honda CB 190 Red (RPD-77) • ★ 4.96</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button class="driver-status-btn" style="background: var(--bg-main); border: 1px solid var(--border-color);" id="btn-driver-register">
+          <i class="fa-solid fa-id-card"></i> Postular como Repartidor
+        </button>
+        <button class="driver-status-btn" id="btn-driver-status">
+          <i class="fa-solid fa-bolt"></i> CONECTADO
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 2rem 1.25rem;">
+    <!-- Resumen de Billetera -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+      <div style="background: linear-gradient(135deg, rgba(255,102,0,0.15), rgba(255,51,102,0.15)); border: 1px solid var(--brand-secondary); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Ganancia Hoy</div>
+        <div style="font-size: 2rem; font-weight: 900; color: var(--brand-secondary); font-family: var(--font-heading);" id="driver-total-earnings">$78.50</div>
+      </div>
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Entregas Realizadas</div>
+        <div style="font-size: 2rem; font-weight: 900; color: var(--text-primary); font-family: var(--font-heading);" id="driver-trips-count">8</div>
+      </div>
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Propinas Recibidas</div>
+        <div style="font-size: 2rem; font-weight: 900; color: #10B981; font-family: var(--font-heading);">$14.00</div>
+      </div>
+    </div>
+
+    <!-- Mapa GPS Navegación -->
+    <div class="card-job">
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-location-crosshairs" style="color: var(--brand-secondary);"></i>
+        Navegación GPS del Repartidor en Vivo
+      </h3>
+      <div id="driver-map"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-compass"></i> Posición GPS actual: Miraflores, Lima</span>
+        <button class="badge" style="background: var(--brand-secondary); color: #fff; padding: 0.5rem 1rem;" onclick="simulateDriverGPSMovement()">
+          <i class="fa-solid fa-play"></i> Simular Movimiento GPS 🛵
+        </button>
+      </div>
+    </div>
+
+    <!-- Sección de Trabajos / Entregas -->
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="fa-solid fa-motorcycle" style="color: var(--brand-secondary);"></i> Entregas Disponibles Cercanas
+      </h2>
+    </div>
+
+    <div id="driver-jobs-list"></div>
+  </main>
+  </div> <!-- Fin de main-app-content -->
+
+  <!-- MODAL POSTULACIÓN REPARTIDOR -->
+  <div class="modal-backdrop" id="modal-driver-register" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 480px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.3rem;">Postulación de Repartidor 🛵</h2>
+        <button class="btn-close-modal" id="btn-close-driver-reg" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-driver-register">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre Completo</label>
+          <input type="text" id="reg-driver-name" class="coupon-input" style="width: 100%;" placeholder="Ej: Roberto Gómez" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Tipo de Vehículo</label>
+          <select id="reg-driver-vehicle-type" class="coupon-input" style="width: 100%;">
+            <option value="Motocicleta">Motocicleta</option>
+            <option value="Bicicleta">Bicicleta / E-Bike</option>
+            <option value="Automóvil">Automóvil / Furgón</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Placa / Identificación de Vehículo</label>
+          <input type="text" id="reg-driver-plate" class="coupon-input" style="width: 100%;" placeholder="Placa: RPD-99" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo Electrónico</label>
+          <input type="email" id="reg-driver-email" class="coupon-input" style="width: 100%;" placeholder="roberto@gmail.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña de Acceso</label>
+          <input type="password" id="reg-driver-password" class="coupon-input" style="width: 100%;" required>
+        </div>
+        <button type="submit" class="driver-status-btn" style="width: 100%; justify-content: center;">Enviar Solicitud de Chofer 🛵</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIN DRIVER -->
+  <div class="modal-backdrop" id="modal-driver-login">
+    <div class="modal-card" style="max-width: 420px; padding: 2rem;">
+      <h2 style="font-size: 1.3rem; margin-bottom: 1.25rem;">Acceso Repartidor Rapidin 🛵</h2>
+      <form id="form-driver-login">
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo de Chofer</label>
+          <input type="email" id="driver-login-email" class="coupon-input" style="width: 100%;" value="driver@rapidin.com" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña</label>
+          <input type="password" id="driver-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+        </div>
+        <button type="submit" class="driver-status-btn" style="width: 100%; justify-content: center;">Ingresar a la Consola 🛵</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../../shared/i18n.js"></script>
+  <script src="../../shared/db.js"></script>
+  <script src="../../shared/sync.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const modalDriverLogin = document.getElementById('modal-driver-login');
+    const modalDriverRegister = document.getElementById('modal-driver-register');
+
+    document.getElementById('btn-driver-register')?.addEventListener('click', () => {
+      if (modalDriverRegister) modalDriverRegister.classList.add('active');
+    });
+
+    document.getElementById('btn-close-driver-reg')?.addEventListener('click', () => {
+      if (modalDriverRegister) modalDriverRegister.classList.remove('active');
+    });
+
+    document.getElementById('form-driver-register')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const driverData = {
+        role: 'driver',
+        name: document.getElementById('reg-driver-name').value,
+        vehicle_type: document.getElementById('reg-driver-vehicle-type').value,
+        vehicle_plate: document.getElementById('reg-driver-plate').value,
+        email: document.getElementById('reg-driver-email').value,
+        password: document.getElementById('reg-driver-password').value
+      };
+      
+      const res = await window.rapidinDB.registerUser(driverData);
+      if (res.success) {
+        alert(`🛵 ¡Repartidor "${driverData.name}" registrado correctamente!`);
+        if (modalDriverRegister) modalDriverRegister.classList.remove('active');
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    // --- AUTH GATE LOGIC ---
+    function checkAuthGate() {
+      const driver = window.rapidinDB.getCurrentUser('driver');
+      if (driver) {
+        document.getElementById('auth-gate-screen').style.display = 'none';
+        document.getElementById('main-app-content').style.display = 'block';
+        const label = document.getElementById('driver-name-label');
+        if (label) label.textContent = driver.name + ' 🛵';
+      } else {
+        document.getElementById('auth-gate-screen').style.display = 'flex';
+        document.getElementById('main-app-content').style.display = 'none';
+      }
+    }
+
+    document.getElementById('gate-driver-form-login')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('gate-driver-login-email').value;
+      const pass = document.getElementById('gate-driver-login-password').value;
+      const res = await window.rapidinDB.login(email, pass, 'driver');
+      if (res.success) {
+        checkAuthGate();
+      } else {
+        alert(res.message);
+      }
+    });
+
+    document.getElementById('btn-driver-login')?.addEventListener('click', () => {
+      const driver = window.rapidinDB.getCurrentUser('driver');
+      if (driver) {
+        if (confirm(`Conectado como chofer: ${driver.name}\n¿Deseas cerrar sesión?`)) {
+          window.rapidinDB.logout('driver');
+          window.location.reload();
+        }
+      }
+    });
+
+    // Ejecutar chequeo al inicio
+    checkAuthGate();
+  </script>
+</body>
+</html>

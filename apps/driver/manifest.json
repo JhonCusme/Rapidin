@@ -1,0 +1,16 @@
+{
+  "name": "Rapidin Repartidor - Driver App",
+  "short_name": "Rapidin Driver",
+  "description": "Aplicación para repartidores de Rapidin: Acepta entregas, navega por GPS y gana dinero al instante",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#FF6600",
+  "icons": [
+    {
+      "src": "../../assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

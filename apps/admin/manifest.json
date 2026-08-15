@@ -1,0 +1,16 @@
+{
+  "name": "Rapidin Super Admin - Platform Dashboard",
+  "short_name": "Rapidin Admin",
+  "description": "Panel de control del propietario de Rapidin: Métricas globales, comisiones y monitoreo en vivo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#8B5CF6",
+  "icons": [
+    {
+      "src": "../../assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
