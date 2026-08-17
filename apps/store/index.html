@@ -116,8 +116,8 @@
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <img src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=200" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover;">
         <div>
-          <h2 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.4rem;">
-            Burger Prime & Grill <span class="badge" style="background: #10B981; color:#000;">SOCIO OFICIAL</span>
+          <h2 id="store-header-name" style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.4rem;">
+            Restaurante <span class="badge" style="background: #10B981; color:#000;">SOCIO OFICIAL</span>
           </h2>
           <span style="font-size: 0.8rem; color: var(--text-secondary);">ID Comercio: #STORE-001 • Av. Principal 452</span>
         </div>
@@ -181,7 +181,7 @@
     <div id="tab-content-catalog" style="display: none;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
         <h2>Gestión de Carta y Disponibilidad</h2>
-        <button class="btn-action-store" onclick="alert('¡Nuevo producto agregado al catálogo con éxito!')">
+        <button class="btn-action-store" onclick="window.rapidinAlert('¡Nuevo producto agregado al catálogo con éxito!')">
           <i class="fa-solid fa-plus"></i> Agregar Nuevo Platillo
         </button>
       </div>
@@ -193,7 +193,7 @@
       <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
         <h2 style="margin-bottom: 1rem;">Reporte Consolidado de Ventas 📊</h2>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Tu comercio ha generado <strong>$342.80</strong> el día de hoy con un ticket promedio de $19.04 por pedido.</p>
-        <button class="btn-action-store" onclick="alert('Descargando reporte en CSV...')">
+        <button class="btn-action-store" onclick="window.rapidinAlert('Descargando reporte en CSV...')">
           <i class="fa-solid fa-file-csv"></i> Exportar Reporte CSV
         </button>
       </div>
@@ -260,6 +260,7 @@
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
+  <script src="../../shared/ui-core.js"></script>
   <script src="app.js"></script>
   <script>
     const modalStoreLogin = document.getElementById('modal-store-login');
@@ -286,11 +287,11 @@
       
       const res = await window.rapidinDB.registerUser(storeData);
       if (res.success) {
-        alert(`🏪 ¡Comercio "${storeData.name}" registrado correctamente!`);
+        window.rapidinAlert(`🏪 ¡Comercio "${storeData.name}" registrado correctamente!`);
         if (modalStoreRegister) modalStoreRegister.classList.remove('active');
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 
@@ -302,6 +303,8 @@
         document.getElementById('main-app-content').style.display = 'block';
         const label = document.getElementById('store-user-label');
         if (label) label.textContent = 'Salir (' + store.name + ')';
+        const headerName = document.getElementById('store-header-name');
+        if (headerName) headerName.innerHTML = `${store.name} <span class="badge" style="background: #10B981; color:#000;">SOCIO OFICIAL</span>`;
       } else {
         document.getElementById('auth-gate-screen').style.display = 'flex';
         document.getElementById('main-app-content').style.display = 'none';
@@ -316,7 +319,7 @@
       if (res.success) {
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 

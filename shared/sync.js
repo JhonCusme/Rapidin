@@ -3,7 +3,7 @@
    ========================================================================== */
 
 const RAPIDIN_STORAGE_KEY_ORDERS = 'rapidin_shared_orders';
-const API_URL = 'http://localhost:3000/api';
+const SYNC_API_URL = 'http://localhost:3000/api';
 
 class RapidinSyncEngine {
   constructor() {
@@ -95,22 +95,11 @@ class RapidinSyncEngine {
     });
   }
 
-  getOrders() {
-    try {
-      const data = localStorage.getItem(RAPIDIN_STORAGE_KEY_ORDERS);
-      return data ? JSON.parse(data) : this._getInitialOrdersMock();
-    } catch (e) {
-      return this._getInitialOrdersMock();
-    }
-  }
 
-  saveOrders(orders) {
-    localStorage.setItem(RAPIDIN_STORAGE_KEY_ORDERS, JSON.stringify(orders));
-  }
 
   async createOrder(orderData) {
     try {
-      const response = await fetch(`${API_URL}/orders`, {
+      const response = await fetch(`${SYNC_API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -118,10 +107,6 @@ class RapidinSyncEngine {
       const data = await response.json();
       
       if (data.success) {
-        // Guardar localmente solo para cache
-        const orders = this.getOrders();
-        orders.unshift(data.order);
-        this.saveOrders(orders);
         return data.order;
       }
       return null;
@@ -133,7 +118,7 @@ class RapidinSyncEngine {
 
   async updateOrderStatus(orderId, newStatus, extraData = {}) {
     try {
-      const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+      const response = await fetch(`${SYNC_API_URL}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ statusStep: newStatus, statusText: extraData.statusText || '', extraData })
@@ -141,14 +126,6 @@ class RapidinSyncEngine {
       const data = await response.json();
       
       if (data.success) {
-        // Actualizar cache local
-        const orders = this.getOrders();
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-          order.statusStep = newStatus;
-          Object.assign(order, extraData);
-          this.saveOrders(orders);
-        }
         return data.payload;
       }
       return null;
@@ -158,40 +135,7 @@ class RapidinSyncEngine {
     }
   }
 
-  _getInitialOrdersMock() {
-    const mock = [
-      {
-        id: 'RPD-98421',
-        statusStep: 1,
-        statusText: 'El restaurante está preparando tu pedido',
-        storeId: 'store-1',
-        storeName: 'Burger Prime & Grill',
-        customerName: 'Juan Pérez',
-        customerAddress: 'Av. Larco 124, Miraflores',
-        customerPhone: '+51 912 345 678',
-        total: 23.40,
-        subtotal: 17.80,
-        shippingFee: 1.99,
-        platformCommission: 3.51,
-        driverTip: 1.50,
-        createdAt: new Date().toLocaleTimeString(),
-        items: [
-          { name: 'Double Bacon Smoked Burger', quantity: 1, price: 11.90 },
-          { name: 'Papas Supremas Cheddar & Tocino', quantity: 1, price: 5.90 }
-        ],
-        courier: {
-          id: 'driver-101',
-          name: 'Carlos Ruiz',
-          vehicle: 'Honda CB 190 Red (RPD-77)',
-          phone: '+51 987 654 321',
-          rating: 4.96,
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
-        }
-      }
-    ];
-    this.saveOrders(mock);
-    return mock;
-  }
+
 }
 
 window.rapidinSync = new RapidinSyncEngine();

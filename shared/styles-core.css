@@ -95,3 +95,99 @@ button {
   font-weight: 800;
   text-transform: uppercase;
 }
+
+/* ==========================================
+   ANIMACIONES PREMIUM (Fase 5)
+   ========================================== */
+
+/* Skeleton Loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: var(--radius-md);
+  color: transparent !important;
+  pointer-events: none;
+}
+.skeleton * {
+  visibility: hidden;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Toast Notifications */
+.rapidin-toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  pointer-events: none;
+}
+.rapidin-toast {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: var(--font-body);
+  transform: translateX(120%) scale(0.9);
+  opacity: 0;
+  animation: toast-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: auto;
+}
+.rapidin-toast.hiding {
+  animation: toast-slide-out 0.3s forwards;
+}
+.rapidin-toast-icon {
+  font-size: 1.5rem;
+}
+@keyframes toast-slide-in {
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes toast-slide-out {
+  to { transform: translateX(120%) scale(0.9); opacity: 0; }
+}
+
+/* Modal Smooth Transitions */
+.modal-backdrop.active .modal-card {
+  animation: modal-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes modal-pop {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Ripple Button Effect */
+.ripple-btn {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+.ripple-btn:active::after {
+  animation: ripple 0.6s ease-out;
+}
+@keyframes ripple {
+  0% { transform: scale(0) translate(-50%, -50%); opacity: 0.5; }
+  100% { transform: scale(40) translate(-50%, -50%); opacity: 0; }
+}

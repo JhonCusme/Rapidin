@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     modalOptionsState: {},
     selectedTip: 1.50,
     appliedCoupon: null,
-    activeOrder: RAPIDIN_DATA.activeOrder,
+    activeOrder: null,
+    categories: [],
+    flashDeals: [],
     map: null,
     courierMarker: null,
     routePolyline: null,
@@ -33,6 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
     registerServiceWorker();
     setupPwaPrompt();
     setupEventListeners();
+    
+    // Fetch global config from DB API
+    const config = await window.rapidinDB.getConfig();
+    if (config) {
+      state.categories = config.categories || [];
+      state.flashDeals = config.flashDeals || [];
+    }
+    
+    // Recuperar orden activa previa si existe
+    const savedOrderId = localStorage.getItem('rapidin_active_order_id');
+    if (savedOrderId) {
+      state.activeOrder = await window.rapidinDB.getOrder(savedOrderId);
+      if (state.activeOrder && state.activeOrder.status_step >= 3) {
+        state.activeOrder = null; // ya completada
+        localStorage.removeItem('rapidin_active_order_id');
+      }
+    }
+
     renderFlashDeals();
     renderCategories();
     
@@ -132,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('deals-carousel-container');
     if (!container) return;
 
-    container.innerHTML = RAPIDIN_DATA.flashDeals.map(deal => `
+    container.innerHTML = state.flashDeals.map(deal => `
       <div class="deal-card" style="background: ${deal.gradient};">
         <div>
           <span class="deal-tag">${deal.tag}</span>
@@ -154,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startFlashDealsTimer() {
     setInterval(() => {
-      RAPIDIN_DATA.flashDeals.forEach(deal => {
+      state.flashDeals.forEach(deal => {
         if (deal.endsInSeconds > 0) {
           deal.endsInSeconds--;
           const hours = Math.floor(deal.endsInSeconds / 3600);
@@ -182,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('categories-container');
     if (!container) return;
 
-    container.innerHTML = RAPIDIN_DATA.categories.map(cat => `
+    container.innerHTML = state.categories.map(cat => `
       <button class="category-chip ${state.activeCategory === cat.id ? 'active' : ''}" data-cat-id="${cat.id}">
         <i class="fa-solid ${cat.icon}"></i>
         <span>${cat.name}</span>
@@ -221,13 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const q = state.searchQuery.toLowerCase();
       filteredStores = filteredStores.filter(s =>
         s.name.toLowerCase().includes(q) ||
-        s.tags.some(t => t.toLowerCase().includes(q)) ||
-        s.products.some(p => p.name.toLowerCase().includes(q))
+        s.tags.some(t => t.toLowerCase().includes(q))
       );
     }
 
     if (titleEl) {
-      const catObj = RAPIDIN_DATA.categories.find(c => c.id === state.activeCategory);
+      const catObj = state.categories.find(c => c.id === state.activeCategory);
       titleEl.textContent = catObj ? (catObj.id === 'all' ? 'Tiendas y Restaurantes Destacados' : catObj.name) : 'Tiendas';
     }
 
@@ -325,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.openProductCustomizer = function(storeId, productId) {
-    const store = RAPIDIN_DATA.stores.find(s => s.id === storeId);
+    const store = CURRENT_STORES.find(s => s.id === storeId);
     if (!store) return;
     const product = store.products.find(p => p.id === productId);
     if (!product) return;
@@ -662,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-process-checkout')?.addEventListener('click', async () => {
       if (state.cart.length === 0) {
-        alert('Tu carrito está vacío. Agrega productos para realizar un pedido.');
+        window.rapidinAlert('Tu carrito está vacío. Agrega productos para realizar un pedido.');
         return;
       }
 
@@ -674,6 +693,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
+        const subtotal = state.cart.reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
+        const orderTotal = subtotal + 1.99 + state.selectedTip;
+
+        // PAGO: Interceptamos con el motor de pagos (Payphone / Tarjeta)
+        if (window.rapidinPayments) {
+          try {
+            await window.rapidinPayments.processPayment(orderTotal);
+          } catch (payError) {
+            console.warn('Pago no completado:', payError);
+            return; // Detenemos el flujo si el pago falla o se cancela
+          }
+        }
+
         const orderId = 'RPD-' + Math.floor(10000 + Math.random() * 90000);
         const orderData = {
           id: orderId,
@@ -683,8 +715,8 @@ document.addEventListener('DOMContentLoaded', () => {
           storeName: state.selectedStore ? state.selectedStore.name : 'Burger Prime',
           customerName: window.rapidinDB.getCurrentUser('user')?.name || 'Cliente Rapidin',
           customerAddress: document.getElementById('user-address-display')?.textContent || 'Ubicación Desconocida',
-          total: state.cart.reduce((s, i) => s + (i.unitPrice * i.quantity), 0) + 1.99 + state.selectedTip,
-          subtotal: state.cart.reduce((s, i) => s + (i.unitPrice * i.quantity), 0),
+          total: orderTotal,
+          subtotal: subtotal,
           shippingFee: 1.99,
           driverTip: state.selectedTip,
           createdAt: new Date().toLocaleTimeString(),
@@ -697,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const response = await Promise.race([
             fetch('http://localhost:3000/api/orders', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: window.rapidinDB.getAuthHeaders('user'),
               body: JSON.stringify(orderData)
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
@@ -708,7 +740,10 @@ document.addEventListener('DOMContentLoaded', () => {
           console.warn('No se pudo guardar pedido en backend:', fetchErr.message);
         }
 
-        alert('🚀 ¡Pedido confirmado por Rapidin! ' + (savedToServer ? 'Notificación enviada al restaurante.' : 'Pedido guardado localmente.'));
+        window.rapidinAlert('🚀 ¡Pedido confirmado por Rapidin! ' + (savedToServer ? 'Notificación enviada al restaurante.' : 'Pedido guardado localmente.'));
+        state.activeOrder = orderData;
+        localStorage.setItem('rapidin_active_order_id', orderId);
+        
         state.cart = [];
         updateCartBadge();
         renderCartItems();
@@ -717,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Error en checkout:', err);
-        alert('❌ Error al procesar pedido: ' + err.message);
+        window.rapidinAlert('❌ Error al procesar pedido: ' + err.message);
       } finally {
         if (btn) {
           btn.textContent = originalText;

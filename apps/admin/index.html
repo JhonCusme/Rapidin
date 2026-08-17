@@ -98,6 +98,7 @@
       <button class="tab-admin-btn" id="atab-btn-stores"><i class="fa-solid fa-store"></i> Gestión de Comercios (18)</button>
       <button class="tab-admin-btn" id="atab-btn-drivers"><i class="fa-solid fa-motorcycle"></i> Gestión de Repartidores (24)</button>
       <button class="tab-admin-btn" id="atab-btn-fees"><i class="fa-solid fa-percent"></i> Configurar Comisiones</button>
+      <button class="tab-admin-btn" id="atab-btn-integrations"><i class="fa-solid fa-plug"></i> Integraciones (Payphone)</button>
     </div>
   </div>
 
@@ -177,6 +178,25 @@
         </button>
       </div>
     </div>
+
+    <!-- TAB 5: INTEGRACIONES -->
+    <div id="atab-content-integrations" style="display: none;">
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px;">
+        <h2 style="margin-bottom: 1rem;">Configuración de Pasarela de Pagos (Payphone) 💳</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Ingresa el Token de Autenticación de tu cuenta de Payphone Developer para procesar cobros reales con tarjetas.</p>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-weight: 700; display: block; margin-bottom: 0.5rem;">Payphone Authorization Token:</label>
+          <input type="text" id="admin-payphone-token" class="coupon-input" style="width: 100%; font-family: monospace;" placeholder="Ej: Bearer eyJhbGciOiJIUzI1NiIs..." value="">
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-weight: 700; display: block; margin-bottom: 0.5rem;">Payphone App ID:</label>
+          <input type="text" id="admin-payphone-appid" class="coupon-input" style="width: 100%; font-family: monospace;" placeholder="Ej: 12345678-abcd-..." value="">
+        </div>
+        <button class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem 1.5rem; font-size: 0.9rem; width: 100%; justify-content: center;" onclick="savePayphoneToken()">
+          Guardar Credenciales de Pago 🛡️
+        </button>
+      </div>
+    </div>
   </div>
   </main>
   </div> <!-- Fin de main-app-content -->
@@ -202,6 +222,7 @@
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
+  <script src="../../shared/ui-core.js"></script>
   <script src="app.js"></script>
   <script>
     const modalAdminLogin = document.getElementById('modal-admin-login');
@@ -230,11 +251,11 @@
       const pass = document.getElementById('admin-login-password').value;
       const res = window.rapidinDB.login(email, pass, 'admin');
       if (res.success) {
-        alert(`¡Bienvenido al Panel Maestro, ${res.user.name}!`);
+        window.rapidinAlert(`¡Bienvenido al Panel Maestro, ${res.user.name}!`);
         if (modalAdminLogin) modalAdminLogin.classList.remove('active');
         checkAdminAuth();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 
@@ -259,12 +280,56 @@
       if (res.success) {
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 
     // Ejecutar chequeo al inicio
     checkAuthGate();
+
+    // Lógica para pestañas del Admin
+    const tabOverview = document.getElementById('atab-btn-overview');
+    const tabStores = document.getElementById('atab-btn-stores');
+    const tabDrivers = document.getElementById('atab-btn-drivers');
+    const tabFees = document.getElementById('atab-btn-fees');
+    const tabIntegrations = document.getElementById('atab-btn-integrations');
+
+    const contentOverview = document.getElementById('atab-content-overview');
+    const contentStores = document.getElementById('atab-content-stores');
+    const contentDrivers = document.getElementById('atab-content-drivers');
+    const contentFees = document.getElementById('atab-content-fees');
+    const contentIntegrations = document.getElementById('atab-content-integrations');
+
+    function switchAdminTab(activeBtn, activeTab) {
+      [tabOverview, tabStores, tabDrivers, tabFees, tabIntegrations].forEach(b => b?.classList.remove('active'));
+      [contentOverview, contentStores, contentDrivers, contentFees, contentIntegrations].forEach(t => { if (t) t.style.display = 'none'; });
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeTab) activeTab.style.display = 'block';
+    }
+
+    tabOverview?.addEventListener('click', () => switchAdminTab(tabOverview, contentOverview));
+    tabStores?.addEventListener('click', () => switchAdminTab(tabStores, contentStores));
+    tabDrivers?.addEventListener('click', () => switchAdminTab(tabDrivers, contentDrivers));
+    tabFees?.addEventListener('click', () => switchAdminTab(tabFees, contentFees));
+    tabIntegrations?.addEventListener('click', () => switchAdminTab(tabIntegrations, contentIntegrations));
+
+    // Payphone Token Save
+    const tokenInput = document.getElementById('admin-payphone-token');
+    const appIdInput = document.getElementById('admin-payphone-appid');
+    if (tokenInput) {
+      tokenInput.value = localStorage.getItem('RAPIDIN_PAYPHONE_TOKEN') || '';
+    }
+    if (appIdInput) {
+      appIdInput.value = localStorage.getItem('RAPIDIN_PAYPHONE_APPID') || '';
+    }
+    
+    window.savePayphoneToken = function() {
+      const token = document.getElementById('admin-payphone-token').value;
+      const appId = document.getElementById('admin-payphone-appid').value;
+      localStorage.setItem('RAPIDIN_PAYPHONE_TOKEN', token);
+      localStorage.setItem('RAPIDIN_PAYPHONE_APPID', appId);
+      window.rapidinAlert('¡Credenciales de Payphone (Token y App ID) guardadas correctamente!');
+    };
   </script>
 </body>
 </html>

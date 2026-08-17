@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (step > 0.005) {
         clearInterval(interval);
-        alert('📍 Simulación GPS: ¡Has llegado a la ubicación del cliente!');
+        window.rapidinAlert('📍 Simulación GPS: ¡Has llegado a la ubicación del cliente!');
       }
     }, 500);
   };
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.acceptTrip = async function(orderId) {
     await window.rapidinSync.updateOrderStatus(orderId, 2, { statusText: 'Repartidor en camino con tu paquete 🛵' });
-    alert('🛵 ¡Viaje Aceptado! La app de Cliente y Restaurante han sido actualizadas.');
+    window.rapidinAlert('🛵 ¡Viaje Aceptado! La app de Cliente y Restaurante han sido actualizadas.');
     renderDriverJobs();
   };
 
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('driver-total-earnings').textContent = `$${earnings.toFixed(2)}`;
     document.getElementById('driver-trips-count').textContent = completedTrips;
 
-    alert(`🎉 ¡Entrega completada! $${driverPay.toFixed(2)} agregados a tu billetera.`);
+    window.rapidinAlert(`🎉 ¡Entrega completada! $${driverPay.toFixed(2)} agregados a tu billetera.`);
     renderDriverJobs();
   };
 

@@ -206,6 +206,7 @@
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
+  <script src="../../shared/ui-core.js"></script>
   <script src="app.js"></script>
   <script>
     const modalDriverLogin = document.getElementById('modal-driver-login');
@@ -232,11 +233,11 @@
       
       const res = await window.rapidinDB.registerUser(driverData);
       if (res.success) {
-        alert(`🛵 ¡Repartidor "${driverData.name}" registrado correctamente!`);
+        window.rapidinAlert(`🛵 ¡Repartidor "${driverData.name}" registrado correctamente!`);
         if (modalDriverRegister) modalDriverRegister.classList.remove('active');
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 
@@ -262,7 +263,7 @@
       if (res.success) {
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 

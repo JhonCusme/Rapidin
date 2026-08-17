@@ -35,15 +35,15 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE BLOQUEO (AUTH GATE) -->
-  <div id="auth-gate-screen" class="auth-gate-screen">
-    <div style="text-align: center; margin-bottom: 2rem;">
-      <img src="../../assets/logo.png" alt="Rapidin Logo" style="width: 80px; margin-bottom: 1rem; border-radius: 20px;">
-      <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Bienvenido a Rapidin</h1>
-      <p style="color: var(--text-secondary);">Inicia sesión para pedir lo que quieras</p>
-    </div>
-    
-    <div class="modal-card" style="width: 100%; max-width: 400px; box-shadow: none; border: 1px solid var(--border-color);">
+  <!-- MODAL LOGIN CLIENTE (OPCIONAL) -->
+  <div id="modal-user-login" class="modal-backdrop">
+    <div class="modal-card" style="width: 100%; max-width: 400px; padding: 2rem; position: relative; border: 1px solid var(--border-color);">
+      <button class="btn-close-modal" onclick="document.getElementById('modal-user-login').classList.remove('active')" style="position: absolute; top: 1rem; right: 1rem; z-index: 10;"><i class="fa-solid fa-xmark"></i></button>
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="../../assets/logo.png" alt="Rapidin Logo" style="width: 80px; margin-bottom: 1rem; border-radius: 20px;">
+        <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Bienvenido a Rapidin</h1>
+        <p style="color: var(--text-secondary);">Inicia sesión para pedir lo que quieras</p>
+      </div>
       <form id="gate-form-login">
         <div style="margin-bottom: 1rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Electrónico</label>
@@ -58,7 +58,7 @@
         </div>
         <button type="submit" class="btn-checkout" style="margin-bottom: 1rem; width: 100%;">Ingresar a mi Cuenta 🚀</button>
       </form>
-      <button type="button" class="btn-checkout" style="background: var(--bg-main); border: 1px solid var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; width: 100%;" onclick="document.getElementById('modal-register-user').classList.add('active')">
+      <button type="button" class="btn-checkout" style="background: var(--bg-main); border: 1px solid var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; width: 100%;" onclick="document.getElementById('modal-user-login').classList.remove('active'); document.getElementById('modal-register-user').classList.add('active');">
         <i class="fa-solid fa-user-plus"></i> Crear Nueva Cuenta
       </button>
     </div>
@@ -243,7 +243,12 @@
         <h2 class="section-title"><i class="fa-solid fa-fire" style="color: var(--brand-primary);"></i> <span id="stores-title">Tiendas Destacadas</span></h2>
         <span class="badge badge-gold" id="stores-count-badge">5 disponibles</span>
       </div>
-      <div class="stores-grid" id="stores-container"></div>
+      <div class="stores-grid" id="stores-container">
+        <!-- Skeletons -->
+        <div class="store-card skeleton" style="height: 200px;"></div>
+        <div class="store-card skeleton" style="height: 200px;"></div>
+        <div class="store-card skeleton" style="height: 200px;"></div>
+      </div>
     </section>
 
     <!-- Detalle Tienda -->
@@ -366,13 +371,8 @@
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
   <script src="../../shared/payments.js"></script>
-  <script src="../../shared/chat.js"></script>
-  <script src="../../shared/rating.js"></script>
-  <script src="../../shared/vip.js"></script>
-  <script src="../../shared/promos.js"></script>
-  <script src="../../data.js"></script>
+  <script src="../../shared/ui-core.js"></script>
   <script src="../../app.js"></script>
-
   <script>
     const selectCountry = document.getElementById('select-country');
     if (selectCountry && window.rapidinI18n) {
@@ -399,23 +399,31 @@
     });
     document.getElementById('btn-subscribe-vip-action')?.addEventListener('click', () => {
       window.rapidinVip.subscribeVip();
-      alert('👑 ¡Bienvenido a Rapidin Prime VIP! Ahora disfrutas de Envíos Gratis ilimitados y Cashback.');
+      window.rapidinAlert('👑 ¡Bienvenido a Rapidin Prime VIP! Ahora disfrutas de Envíos Gratis ilimitados y Cashback.');
       if (modalVip) modalVip.classList.remove('active');
     });
 
-    // --- AUTH GATE LOGIC ---
+    // --- AUTH LOGIC (LOGIN OPCIONAL) ---
     function checkAuthGate() {
       const user = window.rapidinDB.getCurrentUser('user');
+      
+      // Siempre mostramos el main-app-content porque es opcional
+      const mainApp = document.getElementById('main-app-content');
+      if (mainApp) mainApp.style.display = 'block';
+
       if (user) {
-        document.getElementById('auth-gate-screen').style.display = 'none';
-        document.getElementById('main-app-content').style.display = 'block';
-        document.getElementById('btn-user-logout').style.display = 'inline-flex';
-        document.getElementById('btn-user-auth').style.display = 'none';
+        document.getElementById('modal-user-login').classList.remove('active');
+        const btnLogout = document.getElementById('btn-user-logout');
+        if (btnLogout) btnLogout.style.display = 'inline-flex';
+        
+        const btnAuth = document.getElementById('btn-user-auth');
+        if (btnAuth) btnAuth.style.display = 'none';
       } else {
-        document.getElementById('auth-gate-screen').style.display = 'flex';
-        document.getElementById('main-app-content').style.display = 'none';
-        document.getElementById('btn-user-logout').style.display = 'none';
-        document.getElementById('btn-user-auth').style.display = 'inline-flex';
+        const btnLogout = document.getElementById('btn-user-logout');
+        if (btnLogout) btnLogout.style.display = 'none';
+        
+        const btnAuth = document.getElementById('btn-user-auth');
+        if (btnAuth) btnAuth.style.display = 'inline-flex';
       }
     }
 
@@ -432,10 +440,15 @@
       const pass = document.getElementById('gate-login-password').value;
       const res = await window.rapidinDB.login(email, pass, 'user');
       if (res.success) {
+        window.rapidinAlert('🎉 ¡Has iniciado sesión con éxito!');
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
+    });
+
+    document.getElementById('btn-user-auth')?.addEventListener('click', () => {
+      document.getElementById('modal-user-login').classList.add('active');
     });
 
     document.getElementById('form-register-user')?.addEventListener('submit', async (e) => {
@@ -445,7 +458,7 @@
       const confirmPassword = document.getElementById('reg-user-password-confirm').value;
       
       if (password !== confirmPassword) {
-        alert('❌ Las contraseñas no coinciden. Por favor verifica.');
+        window.rapidinAlert('❌ Las contraseñas no coinciden. Por favor verifica.');
         return;
       }
 
@@ -462,7 +475,7 @@
         document.getElementById('modal-register-user').classList.remove('active');
         checkAuthGate();
       } else {
-        alert(res.message);
+        window.rapidinAlert(res.message);
       }
     });
 

@@ -24,6 +24,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('❌ Error conectando a la base de datos:', err.message);
   } else {
     console.log('📦 Conectado a la Base de Datos SQLite (rapidin.db)');
+    db.run("ALTER TABLE users ADD COLUMN active BOOLEAN DEFAULT 1", (err) => {});
   }
 });
 
@@ -241,6 +242,22 @@ app.get('/api/orders/pending', (req, res) => {
   });
 });
 
+// 3.4 Obtener un pedido por ID
+app.get('/api/orders/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = `SELECT orders.*, stores.name as storeName FROM orders LEFT JOIN stores ON orders.store_id = stores.id WHERE orders.id = ?`;
+  db.get(sql, [id], (err, row) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error fetching order' });
+    if (!row) return res.status(404).json({ success: false, message: 'Order not found' });
+    
+    const order = {
+      ...row,
+      items: row.items_json ? JSON.parse(row.items_json) : []
+    };
+    res.json({ success: true, order });
+  });
+});
+
 // 3.3 Actualizar estado de pedido
 app.put('/api/orders/:id/status', (req, res) => {
   const { id } = req.params;
@@ -328,6 +345,78 @@ app.get('/api/products/:storeId', (req, res) => {
     }));
     
     res.json({ success: true, products });
+  });
+});
+
+// 6. Configuración global (Categorías, Ofertas)
+app.get('/api/config', (req, res) => {
+  res.json({
+    success: true,
+    categories: [
+      { id: 'all', name: 'Todo', icon: 'fa-border-all', badge: null },
+      { id: 'turbo', name: 'Turbo 15m', icon: 'fa-bolt', badge: '15 MIN' },
+      { id: 'restaurants', name: 'Restaurantes', icon: 'fa-utensils', badge: 'Populares' },
+      { id: 'supermarket', name: 'Supermercado', icon: 'fa-basket-shopping', badge: 'Ofertas' },
+      { id: 'pharmacy', name: 'Farmacia 24/7', icon: 'fa-kit-medical', badge: '24 hrs' },
+      { id: 'drinks', name: 'Licores & Fiesta', icon: 'fa-wine-glass', badge: 'Frio' },
+      { id: 'express', name: 'Mándame Algo', icon: 'fa-box-open', badge: 'Nuevo' }
+    ],
+    flashDeals: [
+      { id: 'deal-1', title: '⚡ Rapidin Turbo - 40% OFF', subtitle: 'En frutas, verduras y snacks', code: 'TURBO40', tag: 'OFERTA FLASH', gradient: 'linear-gradient(135deg, #FF3366 0%, #FF6600 100%)', endsInSeconds: 3590 },
+      { id: 'deal-2', title: '🍔 2x1 en Hamburguesas Prime', subtitle: 'Lleva la segunda gratis', code: '2X1BURGER', tag: 'VIP', gradient: 'linear-gradient(135deg, #7928CA 0%, #FF0080 100%)', endsInSeconds: 7190 }
+    ]
+  });
+});
+
+// ==========================================
+// ADMIN REST ENDPOINTS
+// ==========================================
+
+app.get('/api/admin/overview', (req, res) => {
+  const data = {};
+  db.get("SELECT COUNT(*) as count FROM users WHERE role = 'store'", [], (err, storeRow) => {
+    data.storeCount = storeRow ? storeRow.count : 0;
+    db.get("SELECT COUNT(*) as count FROM users WHERE role = 'driver'", [], (err, driverRow) => {
+      data.driverCount = driverRow ? driverRow.count : 0;
+      db.get("SELECT SUM(total_amount_usd) as gmv, SUM(platform_commission_usd) as commission FROM orders", [], (err, orderRow) => {
+        data.gmv = orderRow && orderRow.gmv ? orderRow.gmv : 0;
+        data.commission = orderRow && orderRow.commission ? orderRow.commission : 0;
+        res.json({ success: true, payload: data });
+      });
+    });
+  });
+});
+
+app.get('/api/admin/orders', (req, res) => {
+  const sql = `
+    SELECT o.id, u.name as storeName, o.customer_address as customerName, o.total_amount_usd as total, o.status_text as statusText 
+    FROM orders o 
+    LEFT JOIN users u ON o.store_id = u.id 
+    ORDER BY o.created_at DESC LIMIT 50
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.json({ success: false });
+    res.json({ success: true, payload: rows });
+  });
+});
+
+app.get('/api/admin/users/:role', (req, res) => {
+  const role = req.params.role;
+  db.all("SELECT id, name, email, active FROM users WHERE role = ?", [role], (err, rows) => {
+    if (err) return res.json({ success: false });
+    res.json({ success: true, payload: rows });
+  });
+});
+
+app.put('/api/admin/users/:id/toggle', (req, res) => {
+  const id = req.params.id;
+  db.get("SELECT active FROM users WHERE id = ?", [id], (err, row) => {
+    if (err || !row) return res.json({ success: false });
+    const newState = row.active ? 0 : 1;
+    db.run("UPDATE users SET active = ? WHERE id = ?", [newState, id], (err) => {
+      if (err) return res.json({ success: false });
+      res.json({ success: true, active: newState });
+    });
   });
 });
 
