@@ -3,7 +3,15 @@
    ========================================================================== */
 
 const RAPIDIN_STORAGE_KEY_ORDERS = 'rapidin_shared_orders';
-const SYNC_API_URL = 'http://localhost:3000/api';
+
+function rapidinSyncAuthHeaders() {
+  // Usa el token del rol que esté conectado en este dispositivo/app.
+  for (const role of ['user', 'store', 'driver', 'admin']) {
+    const user = window.rapidinDB && window.rapidinDB.getCurrentUser(role);
+    if (user && user.token) return window.rapidinDB.getAuthHeaders(role);
+  }
+  return { 'Content-Type': 'application/json' };
+}
 
 class RapidinSyncEngine {
   constructor() {
@@ -13,10 +21,10 @@ class RapidinSyncEngine {
 
     // Cargar cliente Socket.IO dinámicamente desde el backend
     const script = document.createElement('script');
-    script.src = 'http://localhost:3000/socket.io/socket.io.js';
+    script.src = `${window.RAPIDIN_API_BASE}/socket.io/socket.io.js`;
     script.onload = () => {
       if (window.io) {
-        this.socket = window.io('http://localhost:3000');
+        this.socket = window.io(window.RAPIDIN_API_BASE);
         
         this.socket.on('ORDER_CREATED', (orderData) => {
           this.playAudioAlert('bell');
@@ -99,9 +107,9 @@ class RapidinSyncEngine {
 
   async createOrder(orderData) {
     try {
-      const response = await fetch(`${SYNC_API_URL}/orders`, {
+      const response = await fetch(`${window.RAPIDIN_API_BASE}/api/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: rapidinSyncAuthHeaders(),
         body: JSON.stringify(orderData)
       });
       const data = await response.json();
@@ -118,9 +126,9 @@ class RapidinSyncEngine {
 
   async updateOrderStatus(orderId, newStatus, extraData = {}) {
     try {
-      const response = await fetch(`${SYNC_API_URL}/orders/${orderId}/status`, {
+      const response = await fetch(`${window.RAPIDIN_API_BASE}/api/orders/${orderId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: rapidinSyncAuthHeaders(),
         body: JSON.stringify({ statusStep: newStatus, statusText: extraData.statusText || '', extraData })
       });
       const data = await response.json();

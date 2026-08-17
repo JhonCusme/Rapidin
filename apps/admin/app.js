@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const commission = order.total * commissionPct; // Para mostrar un cálculo local o podríamos usar el de BD
       return `
         <tr style="border-bottom: 1px solid var(--border-color);">
-          <td style="padding: 1rem; font-weight: 800; color: var(--brand-primary);">${order.id}</td>
-          <td style="padding: 1rem; font-weight: 700;">${order.storeName || 'Tienda Rapidin'}</td>
-          <td style="padding: 1rem; color: var(--text-secondary);">${order.customerName || 'Invitado'}</td>
+          <td style="padding: 1rem; font-weight: 800; color: var(--brand-primary);">${escapeHtml(order.id)}</td>
+          <td style="padding: 1rem; font-weight: 700;">${escapeHtml(order.storeName || 'Tienda Rapidin')}</td>
+          <td style="padding: 1rem; color: var(--text-secondary);">${escapeHtml(order.customerName || 'Invitado')}</td>
           <td style="padding: 1rem; font-weight: 800; color: #10B981;">$${(order.total || 0).toFixed(2)}</td>
           <td style="padding: 1rem; font-weight: 800; color: #8B5CF6;">+$${commission.toFixed(2)}</td>
           <td style="padding: 1rem;">
             <span class="badge" style="background: rgba(139,92,246,0.15); color: #8B5CF6; border: 1px solid #8B5CF6;">
-              ${order.statusText}
+              ${escapeHtml(order.statusText)}
             </span>
           </td>
         </tr>
@@ -51,13 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = storesList.map(s => `
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 style="font-size: 1.1rem;">${s.name}</h3>
+          <h3 style="font-size: 1.1rem;">${escapeHtml(s.name)}</h3>
           <span class="badge" style="background: ${s.active ? '#10B981' : '#FF3366'}; color: ${s.active ? '#000' : '#fff'};">
             ${s.active ? 'ACTIVO' : 'PAUSADO'}
           </span>
         </div>
         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          Correo: ${s.email}
+          Correo: ${escapeHtml(s.email)}
         </div>
         <button class="badge" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 0.4rem 0.8rem;" onclick="toggleUserStatusAdmin('${s.id}')">
           ${s.active ? 'Pausar Comercio' : 'Activar Comercio'}
@@ -75,13 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = driversList.map(d => `
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 style="font-size: 1.1rem;">${d.name}</h3>
+          <h3 style="font-size: 1.1rem;">${escapeHtml(d.name)}</h3>
           <span class="badge" style="background: ${d.active ? '#10B981' : '#FF3366'}; color: ${d.active ? '#000' : '#fff'};">
             ${d.active ? 'APROBADO' : 'SUSPENDIDO'}
           </span>
         </div>
         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          Correo: ${d.email}
+          Correo: ${escapeHtml(d.email)}
         </div>
         <button class="badge" style="background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 0.4rem 0.8rem;" onclick="toggleUserStatusAdmin('${d.id}')">
           ${d.active ? 'Suspender Chofer' : 'Aprobar Chofer'}

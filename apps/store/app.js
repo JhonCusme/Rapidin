@@ -16,8 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const badgeEl = document.getElementById('orders-badge-count');
     if (!listEl) return;
 
+    const store = window.rapidinDB.getCurrentUser('store');
+    if (!store || !store.storeId) return;
+
     try {
-      const response = await fetch('http://localhost:3000/api/orders/store/store-1');
+      const response = await fetch(`${window.RAPIDIN_API_BASE}/api/orders/store/${store.storeId}`, {
+        headers: window.rapidinDB.getAuthHeaders('store')
+      });
       const data = await response.json();
       const orders = data.success ? data.orders : [];
 
@@ -38,9 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="order-card-store ${order.statusStep === 0 ? 'new-alert' : ''}">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
           <div>
-            <span class="badge" style="background: var(--brand-primary); color: #fff; margin-bottom: 0.4rem;">ORDEN #${order.id}</span>
-            <h3 style="font-size: 1.15rem;">Cliente: ${order.customerName}</h3>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> ${order.customerAddress} • ${order.createdAt || 'Hace instantes'}</span>
+            <span class="badge" style="background: var(--brand-primary); color: #fff; margin-bottom: 0.4rem;">ORDEN #${escapeHtml(order.id)}</span>
+            <h3 style="font-size: 1.15rem;">Cliente: ${escapeHtml(order.customerName)}</h3>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(order.customerAddress)} • ${escapeHtml(order.createdAt || 'Hace instantes')}</span>
           </div>
           <div style="text-align: right;">
             <div style="font-size: 1.4rem; font-weight: 900; color: #10B981;">$${order.total.toFixed(2)}</div>
@@ -52,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">Items a preparar:</div>
           ${order.items.map(item => `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0;">
-              <span><strong>${item.quantity}x</strong> ${item.name} ${item.notes ? `<span style="color: var(--brand-secondary);">(${item.notes})</span>` : ''}</span>
+              <span><strong>${item.quantity}x</strong> ${escapeHtml(item.name)} ${item.notes ? `<span style="color: var(--brand-secondary);">(${escapeHtml(item.notes)})</span>` : ''}</span>
               <span style="font-weight: 700;">$${(item.price * item.quantity).toFixed(2)}</span>
             </div>
           `).join('')}
@@ -61,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">Estado Actual: </span>
-            <span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${order.statusText}</span>
+            <span class="badge" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">${escapeHtml(order.statusText)}</span>
           </div>
 
           <div>
@@ -75,12 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
               </button>
             ` : `
               <span class="badge" style="background: #10B981; color: #000; padding: 0.5rem 1rem;">
-                <i class="fa-solid fa-check"></i> ENTREGADO A REPARTIDOR (${order.courier ? order.courier.name : 'Asignado'})
+                <i class="fa-solid fa-check"></i> ENTREGADO A REPARTIDOR (${escapeHtml(order.courier ? order.courier.name : 'Asignado')})
               </span>
             `}
           </div>
         </div>
-      </div>
       </div>
     `).join('');
     } catch (e) {
@@ -120,27 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.updateOrderStep = async function(orderId, newStep, statusText) {
     await window.rapidinSync.updateOrderStatus(orderId, newStep, { statusText });
     renderOrders();
-  };
-
-  window.simulateNewIncomingOrder = function() {
-    const newId = 'RPD-' + Math.floor(10000 + Math.random() * 90000);
-    window.rapidinSync.createOrder({
-      id: newId,
-      statusStep: 0,
-      statusText: 'Nuevo pedido entrante recibido',
-      storeId: 'store-1',
-      storeName: 'Burger Prime & Grill',
-      customerName: 'María Fernanda',
-      customerAddress: 'Calle los Cerezos 410',
-      total: 28.50,
-      subtotal: 25.00,
-      shippingFee: 3.50,
-      driverTip: 0,
-      createdAt: new Date().toLocaleTimeString(),
-      items: [
-        { name: 'Truffle Smash Burger', quantity: 2, price: 13.50 }
-      ]
-    }).then(() => renderOrders());
   };
 
   // Manejo de Pestañas

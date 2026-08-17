@@ -2,9 +2,14 @@
    RAPIDIN - EXPRESS BACKEND REST API, SQLITE & WEBSOCKETS SERVER
    ========================================================================== */
 
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const sqlite3 = require('sqlite3').verbose();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -13,9 +18,42 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = 'rapidin_super_secret_key_2026';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// ==========================================
+// SEGURIDAD: SECRETOS Y CONFIGURACIÓN
+// ==========================================
+
+if (NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET no está definido. En producción es obligatorio configurarlo en .env');
+  process.exit(1);
+}
+// En desarrollo, si no hay JWT_SECRET, generamos uno aleatorio para esta ejecución
+// (las sesiones no sobrevivirán a un reinicio, pero nunca usamos un secreto fijo en el código).
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET no configurado: se generó uno temporal solo para esta sesión de desarrollo.');
+}
+
+const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY || null;
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,capacitor://localhost,http://localhost')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Peticiones sin "origin" (apps nativas, curl, mismo servidor) se permiten.
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('No permitido por CORS'));
+  }
+};
+
+const io = new Server(server, { cors: corsOptions });
 
 // Conectar a SQLite
 const dbPath = path.join(__dirname, 'db', 'rapidin.db');
@@ -28,9 +66,50 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-app.use(cors());
-app.use(express.json());
+// helmet añade cabeceras de seguridad estándar (HSTS, noSniff, frameguard, etc).
+// La CSP por defecto se desactiva porque el frontend usa CDNs (Font Awesome, Leaflet,
+// Unsplash, CartoDB) y estilos/scripts inline extensivamente; una CSP estricta rompería
+// la UI. El resto de protecciones de helmet permanecen activas.
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname)));
+
+// Límite de intentos en endpoints de autenticación para dificultar fuerza bruta / enumeración
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados intentos. Intenta de nuevo en unos minutos.' }
+});
+app.use('/api/auth', authLimiter);
+
+// ==========================================
+// MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
+// ==========================================
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Token de acceso requerido' });
+  }
+  jwt.verify(token, JWT_SECRET, (err, payload) => {
+    if (err) return res.status(403).json({ success: false, message: 'Token inválido o expirado' });
+    req.user = payload;
+    next();
+  });
+}
+
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'No tienes permisos para esta acción' });
+    }
+    next();
+  };
+}
 
 // ==========================================
 // API REST ENDPOINTS
@@ -139,6 +218,36 @@ app.post('/api/auth/register-driver', async (req, res) => {
 });
 
 
+// 1.3 Registro de Administrador (Auth) - protegido por clave de configuración
+app.post('/api/auth/register-admin', async (req, res) => {
+  const { email, password, name, setupKey } = req.body;
+  if (!ADMIN_SETUP_KEY) {
+    return res.status(403).json({ success: false, message: 'El registro de administradores está deshabilitado (configura ADMIN_SETUP_KEY en .env)' });
+  }
+  if (!setupKey || setupKey !== ADMIN_SETUP_KEY) {
+    return res.status(403).json({ success: false, message: 'Clave de configuración inválida' });
+  }
+  if (!email || !password || !name) {
+    return res.status(400).json({ success: false, message: 'Faltan datos requeridos' });
+  }
+
+  const userId = 'usr-' + Date.now();
+  const passwordHash = await bcrypt.hash(password, 10);
+  const userRole = 'admin';
+
+  const sql = `INSERT INTO users (id, role, email, password_hash, name) VALUES (?, ?, ?, ?, ?)`;
+  db.run(sql, [userId, userRole, email, passwordHash, name], function(err) {
+    if (err) {
+      if (err.message.includes('UNIQUE')) {
+        return res.status(400).json({ success: false, message: 'El correo ya está registrado' });
+      }
+      return res.status(500).json({ success: false, message: 'Error interno de BD' });
+    }
+    const token = jwt.sign({ id: userId, email, role: userRole }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, token, user: { id: userId, email, name, role: userRole } });
+  });
+});
+
 // 2. Login de Usuario (Auth)
 app.post('/api/auth/login', (req, res) => {
   const { email, password, role } = req.body;
@@ -157,18 +266,18 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // 3. Crear Pedido (Orders)
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
   const newOrder = req.body;
   const orderId = newOrder.id; // 'RPD-12345'
-  
+
   const sql = `
     INSERT INTO orders (
-      id, store_id, customer_address, items_json,
+      id, customer_id, store_id, customer_address, items_json,
       subtotal_usd, shipping_fee_usd, driver_tip_usd, total_amount_usd, platform_commission_usd,
       status_step, status_text
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
-  
+
   const itemsJson = JSON.stringify(newOrder.items || []);
   const subtotal = newOrder.subtotal || 0;
   const shipping = newOrder.shippingFee || 1.99;
@@ -178,6 +287,7 @@ app.post('/api/orders', (req, res) => {
 
   db.run(sql, [
     orderId,
+    req.user.id,
     newOrder.storeId,
     newOrder.customerAddress || '',
     itemsJson,
@@ -201,8 +311,11 @@ app.post('/api/orders', (req, res) => {
 });
 
 // 3.1 Obtener pedidos de una tienda
-app.get('/api/orders/store/:storeId', (req, res) => {
+app.get('/api/orders/store/:storeId', authenticateToken, requireRole('store', 'admin'), (req, res) => {
   const { storeId } = req.params;
+  if (req.user.role === 'store' && req.user.storeId !== storeId) {
+    return res.status(403).json({ success: false, message: 'No puedes ver pedidos de otro comercio' });
+  }
   const sql = `
     SELECT orders.*, stores.name as storeName 
     FROM orders 
@@ -222,7 +335,7 @@ app.get('/api/orders/store/:storeId', (req, res) => {
 });
 
 // 3.2 Obtener pedidos pendientes para conductores (listos para recoger o en preparación)
-app.get('/api/orders/pending', (req, res) => {
+app.get('/api/orders/pending', authenticateToken, requireRole('driver', 'admin'), (req, res) => {
   // status_step 1 o 2
   const sql = `
     SELECT orders.*, stores.name as storeName 
@@ -243,13 +356,21 @@ app.get('/api/orders/pending', (req, res) => {
 });
 
 // 3.4 Obtener un pedido por ID
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const sql = `SELECT orders.*, stores.name as storeName FROM orders LEFT JOIN stores ON orders.store_id = stores.id WHERE orders.id = ?`;
   db.get(sql, [id], (err, row) => {
     if (err) return res.status(500).json({ success: false, message: 'Error fetching order' });
     if (!row) return res.status(404).json({ success: false, message: 'Order not found' });
-    
+
+    const isOwner = req.user.role === 'admin'
+      || req.user.id === row.customer_id
+      || (req.user.role === 'store' && req.user.storeId === row.store_id)
+      || req.user.role === 'driver';
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: 'No autorizado para ver este pedido' });
+    }
+
     const order = {
       ...row,
       items: row.items_json ? JSON.parse(row.items_json) : []
@@ -259,7 +380,7 @@ app.get('/api/orders/:id', (req, res) => {
 });
 
 // 3.3 Actualizar estado de pedido
-app.put('/api/orders/:id/status', (req, res) => {
+app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'driver', 'admin'), (req, res) => {
   const { id } = req.params;
   const { statusStep, statusText, extraData } = req.body;
   
@@ -371,6 +492,8 @@ app.get('/api/config', (req, res) => {
 // ==========================================
 // ADMIN REST ENDPOINTS
 // ==========================================
+
+app.use('/api/admin', authenticateToken, requireRole('admin'));
 
 app.get('/api/admin/overview', (req, res) => {
   const data = {};

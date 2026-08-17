@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch((err) => console.log('[PWA] SW error:', err));
+        navigator.serviceWorker.register('/sw.js').catch((err) => console.log('[PWA] SW error:', err));
       });
     }
   }
@@ -254,24 +254,25 @@ document.addEventListener('DOMContentLoaded', () => {
       badgeCountEl.textContent = `${filteredStores.length} disponibles`;
     }
 
+    const FALLBACK_IMG = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600';
     container.innerHTML = filteredStores.map(store => `
       <div class="store-card" onclick="openStoreDetail('${store.id}')">
         <div class="store-cover-wrap">
-          <img src="${store.image}" alt="${store.name}" class="store-cover-img" loading="lazy">
+          <img src="${escapeHtml(store.image || FALLBACK_IMG)}" alt="${escapeHtml(store.name)}" class="store-cover-img" loading="lazy">
           <div class="store-badge-overlay">
-            <span class="badge ${store.isTurbo ? 'badge-turbo' : 'badge-primary'}">${store.badge}</span>
+            <span class="badge ${store.isTurbo ? 'badge-turbo' : 'badge-primary'}">${escapeHtml(store.badge)}</span>
           </div>
-          <img src="${store.logo}" alt="${store.name} Logo" class="store-logo-img">
+          <img src="${escapeHtml(store.logo || FALLBACK_IMG)}" alt="${escapeHtml(store.name)} Logo" class="store-logo-img">
         </div>
         <div class="store-info">
-          <h3 class="store-title">${store.name}</h3>
+          <h3 class="store-title">${escapeHtml(store.name)}</h3>
           <div class="store-meta">
-            <div class="meta-item meta-rating"><i class="fa-solid fa-star"></i> <span>${store.rating} (${store.reviewsCount})</span></div>
-            <div class="meta-item"><i class="fa-solid fa-clock"></i> <span>${store.deliveryTime}</span></div>
+            <div class="meta-item meta-rating"><i class="fa-solid fa-star"></i> <span>${escapeHtml(store.rating)} (${escapeHtml(store.reviewsCount)})</span></div>
+            <div class="meta-item"><i class="fa-solid fa-clock"></i> <span>${escapeHtml(store.deliveryTime)}</span></div>
             <div class="meta-item"><i class="fa-solid fa-motorcycle"></i> <span>${state.deliveryMode === 'pickup' ? 'Retiro Gratis' : formatMoney(store.deliveryFee)}</span></div>
           </div>
           <div class="store-tags">
-            ${store.tags.map(tag => `<span class="store-tag">${tag}</span>`).join('')}
+            ${store.tags.map(tag => `<span class="store-tag">${escapeHtml(tag)}</span>`).join('')}
           </div>
         </div>
       </div>
@@ -293,24 +294,24 @@ document.addEventListener('DOMContentLoaded', () => {
     detailView.innerHTML = `
       <div class="store-detail-header">
         <div class="store-banner">
-          <img src="${store.image}" alt="${store.name}" class="store-banner-img">
+          <img src="${escapeHtml(store.image)}" alt="${escapeHtml(store.name)}" class="store-banner-img">
           <button class="btn-back-nav" onclick="switchView('view-home')">
             <i class="fa-solid fa-arrow-left"></i> Volver
           </button>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
           <div>
-            <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">${store.name}</h1>
+            <h1 style="font-size: 1.8rem; margin-bottom: 0.4rem;">${escapeHtml(store.name)}</h1>
             <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem;">
-              <i class="fa-solid fa-location-dot" style="color: var(--brand-primary);"></i> ${store.address}
+              <i class="fa-solid fa-location-dot" style="color: var(--brand-primary);"></i> ${escapeHtml(store.address)}
             </p>
             <div class="store-meta">
-              <span class="meta-item meta-rating"><i class="fa-solid fa-star"></i> ${store.rating} (${store.reviewsCount} opiniones)</span>
-              <span class="meta-item"><i class="fa-solid fa-clock"></i> ${store.deliveryTime}</span>
+              <span class="meta-item meta-rating"><i class="fa-solid fa-star"></i> ${escapeHtml(store.rating)} (${escapeHtml(store.reviewsCount)} opiniones)</span>
+              <span class="meta-item"><i class="fa-solid fa-clock"></i> ${escapeHtml(store.deliveryTime)}</span>
               <span class="meta-item"><i class="fa-solid fa-bag-shopping"></i> Mínimo ${formatMoney(store.minOrder)}</span>
             </div>
           </div>
-          <span class="badge ${store.isTurbo ? 'badge-turbo' : 'badge-gold'}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">${store.badge}</span>
+          <span class="badge ${store.isTurbo ? 'badge-turbo' : 'badge-gold'}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">${escapeHtml(store.badge)}</span>
         </div>
       </div>
 
@@ -323,16 +324,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="product-card" onclick="openProductCustomizer('${store.id}', '${p.id}')">
             <div class="product-details">
               <div>
-                <h4 class="product-name">${p.name}</h4>
-                <p class="product-desc">${p.description}</p>
+                <h4 class="product-name">${escapeHtml(p.name)}</h4>
+                <p class="product-desc">${escapeHtml(p.description)}</p>
               </div>
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <span class="product-price">${formatMoney(p.price)}</span>
-                ${p.calories ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${p.calories}</span>` : ''}
+                ${p.calories ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(p.calories)}</span>` : ''}
               </div>
             </div>
             <div class="product-img-wrap">
-              <img src="${p.image}" alt="${p.name}">
+              <img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}">
               <button class="btn-add-product"><i class="fa-solid fa-plus"></i></button>
             </div>
           </div>
@@ -506,10 +507,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       container.innerHTML = state.cart.map(item => `
         <div class="cart-item">
-          <img src="${item.image}" alt="${item.name}" style="width: 54px; height: 54px; border-radius: 10px; object-fit: cover;">
+          <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" style="width: 54px; height: 54px; border-radius: 10px; object-fit: cover;">
           <div class="cart-item-info">
-            <div class="cart-item-title">${item.name}</div>
-            ${item.optionsText ? `<div class="cart-item-options">${item.optionsText}</div>` : ''}
+            <div class="cart-item-title">${escapeHtml(item.name)}</div>
+            ${item.optionsText ? `<div class="cart-item-options">${escapeHtml(item.optionsText)}</div>` : ''}
             <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem;">
               <span style="font-weight: 800; color: var(--brand-primary); font-size: 0.9rem;">${formatMoney(item.unitPrice * item.quantity)}</span>
               <div class="quantity-picker" style="padding: 0.15rem 0.5rem;">
@@ -617,10 +618,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!card) return;
 
     card.innerHTML = `
-      <img src="${courier.avatar}" alt="${courier.name}" class="courier-avatar">
+      <img src="${escapeHtml(courier.avatar)}" alt="${escapeHtml(courier.name)}" class="courier-avatar">
       <div class="courier-info">
-        <div class="courier-name">${courier.name}</div>
-        <div class="courier-vehicle">${courier.vehicle} • ★ ${courier.rating}</div>
+        <div class="courier-name">${escapeHtml(courier.name)}</div>
+        <div class="courier-vehicle">${escapeHtml(courier.vehicle)} • ★ ${escapeHtml(courier.rating)}</div>
       </div>
     `;
   }
@@ -685,6 +686,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (!window.rapidinDB.getCurrentUser('user')) {
+        window.rapidinAlert('🔒 Inicia sesión o crea una cuenta gratis para confirmar tu pedido.');
+        document.getElementById('modal-user-login')?.classList.add('active');
+        return;
+      }
+
       const btn = document.getElementById('btn-process-checkout');
       const originalText = btn?.textContent || 'Confirmar Pedido';
       if (btn) {
@@ -727,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let savedToServer = false;
         try {
           const response = await Promise.race([
-            fetch('http://localhost:3000/api/orders', {
+            fetch(`${window.RAPIDIN_API_BASE}/api/orders`, {
               method: 'POST',
               headers: window.rapidinDB.getAuthHeaders('user'),
               body: JSON.stringify(orderData)

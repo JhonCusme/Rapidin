@@ -59,11 +59,11 @@
       <form id="gate-admin-form-login">
         <div style="margin-bottom: 1rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Propietario</label>
-          <input type="email" id="gate-admin-login-email" class="coupon-input" style="width: 100%;" value="admin@rapidin.com" required>
+          <input type="email" id="gate-admin-login-email" class="coupon-input" style="width: 100%;" placeholder="tu-correo@rapidin.com" required>
         </div>
         <div style="margin-bottom: 1.25rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña Maestra</label>
-          <input type="password" id="gate-admin-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+          <input type="password" id="gate-admin-login-password" class="coupon-input" style="width: 100%;" required>
         </div>
         <button type="submit" class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem; font-size: 0.9rem; width: 100%; justify-content: center;">Ingresar al Panel de Control 🛡️</button>
       </form>
@@ -208,17 +208,18 @@
       <form id="form-admin-login">
         <div style="margin-bottom: 1rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo Propietario Admin</label>
-          <input type="email" id="admin-login-email" class="coupon-input" style="width: 100%;" value="admin@rapidin.com" required>
+          <input type="email" id="admin-login-email" class="coupon-input" style="width: 100%;" placeholder="tu-correo@rapidin.com" required>
         </div>
         <div style="margin-bottom: 1.25rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña Maestra</label>
-          <input type="password" id="admin-login-password" class="coupon-input" style="width: 100%;" value="123" required>
+          <input type="password" id="admin-login-password" class="coupon-input" style="width: 100%;" required>
         </div>
         <button type="submit" class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem; font-size: 0.9rem; width: 100%; justify-content: center;">Ingresar al Panel de Control 🛡️</button>
       </form>
     </div>
   </div>
 
+  <script src="../../shared/config.js"></script>
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
@@ -245,11 +246,11 @@
       }
     });
 
-    document.getElementById('form-admin-login')?.addEventListener('submit', (e) => {
+    document.getElementById('form-admin-login')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('admin-login-email').value;
       const pass = document.getElementById('admin-login-password').value;
-      const res = window.rapidinDB.login(email, pass, 'admin');
+      const res = await window.rapidinDB.login(email, pass, 'admin');
       if (res.success) {
         window.rapidinAlert(`¡Bienvenido al Panel Maestro, ${res.user.name}!`);
         if (modalAdminLogin) modalAdminLogin.classList.remove('active');

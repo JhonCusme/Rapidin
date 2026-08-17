@@ -1,22 +1,16 @@
 const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'rapidin.db');
-const dataJsPath = path.join(__dirname, '../data.js');
 
 const db = new sqlite3.Database(dbPath);
 
 console.log('🌱 Iniciando seedeo de la base de datos...');
 
-// Cargar data.js
-const dataJsContent = fs.readFileSync(dataJsPath, 'utf8');
-// Convertir la const global en un objeto evaluable
-let dataJsEvaluated = dataJsContent.replace('const RAPIDIN_DATA', 'global.RAPIDIN_DATA');
-eval(dataJsEvaluated);
+const RAPIDIN_DATA = require('./data.js');
 
 if (!RAPIDIN_DATA || !RAPIDIN_DATA.stores) {
-  console.error('No se pudo cargar RAPIDIN_DATA desde data.js');
+  console.error('No se pudo cargar los datos desde db/data.js');
   process.exit(1);
 }
 

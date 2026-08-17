@@ -2,6 +2,18 @@
    RAPIDIN - UI CORE UTILITIES (TOASTS, ANIMATIONS)
    ========================================================================== */
 
+// Escapa texto antes de insertarlo con innerHTML, para evitar XSS con datos
+// que vienen de otros usuarios (nombres, direcciones, mensajes de chat, etc).
+window.escapeHtml = function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 class RapidinUI {
   constructor() {
     this.toastContainer = null;
@@ -36,8 +48,8 @@ class RapidinUI {
         <i class="fa-solid ${icon}"></i>
       </div>
       <div>
-        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700;">${title}</h4>
-        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${message}</p>
+        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700;">${escapeHtml(title)}</h4>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(message)}</p>
       </div>
     `;
 

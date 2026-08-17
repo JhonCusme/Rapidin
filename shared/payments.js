@@ -25,31 +25,18 @@ class RapidinPaymentEngine {
   processPayment(amount, details = {}) {
     return new Promise((resolve, reject) => {
       if (this.selectedMethod === 'card') {
-        const token = localStorage.getItem('RAPIDIN_PAYPHONE_TOKEN');
-        const appId = localStorage.getItem('RAPIDIN_PAYPHONE_APPID');
-        if (!token || !appId) {
-          window.rapidinAlert('Payphone no está configurado completamente. Falta Token o App ID en el Admin.');
-          return reject('Payphone no configurado');
-        }
+        console.log('Iniciando Payphone Checkout (simulación)...');
 
-        console.log('Iniciando Payphone Checkout Real...');
-        
-        // Creamos un modal para hospedar el botón real de Payphone
+        // Creamos un modal para hospedar el checkout simulado de Payphone
         const popup = document.createElement('div');
         popup.style.position = 'fixed';
         popup.style.top = '0'; popup.style.left = '0'; popup.style.width = '100%'; popup.style.height = '100%';
         popup.style.backgroundColor = 'rgba(0,0,0,0.8)';
         popup.style.zIndex = '99999';
         popup.style.display = 'flex'; popup.style.alignItems = 'center'; popup.style.justifyContent = 'center';
-        
+
         popup.innerHTML = `
-          <div style="background: #fff; color: #333; padding: 2rem; border-radius: 12px; text-align: center; width: 340px; font-family: sans-serif; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-            <img src="https://www.payphone.app/wp-content/uploads/2020/09/Recurso-7.png" style="width: 150px; margin-bottom: 1rem;">
-            <h3 style="margin-bottom: 0.5rem; color: #f36c21;">Completar Pago Seguro</h3>
-            <p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Monto a pagar: <strong>$${amount.toFixed(2)}</strong></p>
-            <div id="pp-button-container" style="margin-bottom: 1rem; min-height: 50px;">Cargando Payphone...</div>
-            <button id="btn-cancel-pp" style="background: #ccc; color: #333; border: none; padding: 10px 20px; border-radius: 6px; width: 100%; cursor: pointer;">Cancelar Orden</button>
-          <div style="background: white; width: 100%; max-width: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+          <div style="background: white; width: 100%; max-width: 340px; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); font-family: sans-serif;">
             <div style="background: #FF6B00; padding: 20px; text-align: center; color: white;">
               <h2 style="margin: 0; font-size: 1.5rem;">Payphone</h2>
               <p style="margin: 5px 0 0; opacity: 0.9;">Entorno de Simulación</p>
@@ -59,7 +46,7 @@ class RapidinPaymentEngine {
                 $${amount.toFixed(2)}
               </div>
               <p style="color: #666; margin-bottom: 25px;">Estás a punto de simular un pago exitoso en la plataforma.</p>
-              
+
               <button id="btn-mock-pay" style="width: 100%; padding: 15px; background: #FF6B00; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
                 Simular Pago Exitoso
               </button>
@@ -70,10 +57,12 @@ class RapidinPaymentEngine {
           </div>
         `;
 
+        document.body.appendChild(popup);
+
         document.getElementById('btn-mock-pay').addEventListener('click', () => {
           document.getElementById('btn-mock-pay').innerHTML = 'Procesando...';
           document.getElementById('btn-mock-pay').style.opacity = '0.7';
-          
+
           setTimeout(() => {
             document.body.removeChild(popup);
             resolve({
@@ -90,11 +79,6 @@ class RapidinPaymentEngine {
           document.body.removeChild(popup);
           reject('Pago cancelado por el usuario (Simulación)');
         });
-      };
-
-      // Mostramos el mock directamente
-      renderMockPayphoneBox();
-
       } else {
         // Otros métodos de pago (efectivo, yape, etc)
         setTimeout(() => {

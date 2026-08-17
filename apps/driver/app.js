@@ -53,7 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
 
     try {
-      const response = await fetch('http://localhost:3000/api/orders/pending');
+      const response = await fetch(`${window.RAPIDIN_API_BASE}/api/orders/pending`, {
+        headers: window.rapidinDB.getAuthHeaders('driver')
+      });
       const data = await response.json();
       const orders = data.success ? data.orders : [];
 
@@ -77,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="card-job">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
             <div>
-              <span class="badge" style="background: var(--brand-secondary); color: #fff; margin-bottom: 0.4rem;">VIAJE DISPONIBLE #${order.id}</span>
-              <h3 style="font-size: 1.2rem;">${order.storeName || order.store_id}</h3>
-              <p style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-map-pin"></i> Destino: ${order.customer_address || order.customerAddress || 'Ubicación desconocida'}</p>
+              <span class="badge" style="background: var(--brand-secondary); color: #fff; margin-bottom: 0.4rem;">VIAJE DISPONIBLE #${escapeHtml(order.id)}</span>
+              <h3 style="font-size: 1.2rem;">${escapeHtml(order.storeName || order.store_id)}</h3>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-map-pin"></i> Destino: ${escapeHtml(order.customer_address || order.customerAddress || 'Ubicación desconocida')}</p>
             </div>
             <div style="text-align: right;">
               <div style="font-size: 1.6rem; font-weight: 900; color: #10B981; font-family: var(--font-heading);">$${driverPay.toFixed(2)}</div>

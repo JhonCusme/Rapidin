@@ -6,7 +6,7 @@ const RAPIDIN_KEY_AUTH_USER = 'rapidin_auth_user';
 const RAPIDIN_KEY_AUTH_STORE = 'rapidin_auth_store';
 const RAPIDIN_KEY_AUTH_DRIVER = 'rapidin_auth_driver';
 const RAPIDIN_KEY_AUTH_ADMIN = 'rapidin_auth_admin';
-const API_URL = 'http://localhost:3000/api';
+const API_URL = `${window.RAPIDIN_API_BASE}/api`;
 
 class RapidinDatabase {
   
@@ -28,13 +28,8 @@ class RapidinDatabase {
           ...data.user
         }));
         return { success: true, user: data.user };
-      } else {
-        // En caso de que no exista en DB (ej. modo Demo), forzamos registro automático
-        // solo para que el modo "Demo 1 clic" funcione fácil mientras desarrollas.
-        return await this.registerUser({
-          email, password, role, name: email.split('@')[0]
-        });
       }
+      return { success: false, message: data.message || 'No se pudo iniciar sesión' };
     } catch (e) {
       console.error('API no disponible. Asegúrate de iniciar server.js');
       return { success: false, message: 'Servidor no disponible.' };
@@ -95,7 +90,7 @@ class RapidinDatabase {
   
   async getStores(lat = null, lng = null) {
     try {
-      let url = 'http://localhost:3000/api/stores';
+      let url = `${window.RAPIDIN_API_BASE}/api/stores`;
       if (lat !== null && lng !== null) {
         url += `?lat=${lat}&lng=${lng}`;
       }
