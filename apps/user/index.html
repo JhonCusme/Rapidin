@@ -29,38 +29,3753 @@
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: var(--bg-main); z-index: 9999;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 2rem;
+      padding: 0;
+    }
+
+    /* --- RAPIDIN WELCOME SCREEN --- */
+    .welcome-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4rem 1.5rem 2rem;
+      background: radial-gradient(circle at top center, rgba(255, 51, 102, 0.15), var(--bg-main) 70%);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .welcome-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .welcome-title {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+      letter-spacing: -1px;
+    }
+
+    .welcome-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 280px;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .welcome-graphic {
+      width: 220px;
+      height: 220px;
+      margin: 2.5rem 0;
+      background: linear-gradient(135deg, rgba(255,51,102,0.1), rgba(255,102,0,0.1));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 50px rgba(255, 51, 102, 0.15);
+    }
+    
+    .welcome-graphic-main {
+      font-size: 5.5rem;
+      color: var(--brand-primary);
+      animation: floatGraphic 4s ease-in-out infinite;
+    }
+
+    .welcome-floating-icon {
+      position: absolute;
+      background: var(--bg-card);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .float-1 { top: 10%; left: -5%; color: var(--brand-accent); font-size: 1.2rem; animation: floatGraphic 3s ease-in-out infinite alternate; }
+    .float-2 { bottom: 15%; right: -10%; color: var(--brand-success); font-size: 1.2rem; animation: floatGraphic 3.5s ease-in-out infinite alternate-reverse; }
+
+    @keyframes floatGraphic {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .welcome-actions {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .btn-auth-social {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1.1rem;
+      border-radius: var(--radius-full);
+      font-size: 1rem;
+      font-weight: 700;
+      transition: var(--transition);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .btn-auth-social:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-auth-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1.1rem;
+      border-radius: var(--radius-full);
+      font-size: 1.05rem;
+      font-weight: 800;
+      background: var(--brand-primary);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(255, 51, 102, 0.3);
+      transition: var(--transition);
+      border: none;
+    }
+
+    .btn-auth-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(255, 51, 102, 0.4);
+      background: var(--brand-primary-hover);
+    }
+
+    .auth-separator {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin: 0.25rem 0;
+      font-weight: 600;
+    }
+
+    .auth-separator::before,
+    .auth-separator::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .auth-separator::before { margin-right: 1em; }
+    .auth-separator::after { margin-left: 1em; }
+
+    .welcome-legal {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .welcome-legal a {
+      color: var(--text-secondary);
+      text-decoration: underline;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .welcome-legal a:hover {
+      color: var(--brand-primary);
+    }
+
+    /* --- PANTALLA 2: PHONE AUTH --- */
+    .phone-auth-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      position: relative;
+    }
+    .phone-auth-header {
+      padding-top: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .btn-back-auth {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+    .btn-back-auth:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-color);
+    }
+    .phone-auth-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .auth-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+    }
+    .auth-subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      line-height: 1.4;
+    }
+    .phone-input-group {
+      display: flex;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+    }
+    .phone-input-group:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.15);
+    }
+    .btn-country-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1.1rem 1rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-right: 1px solid var(--border-color);
+      border-radius: var(--radius-md) 0 0 var(--radius-md);
+    }
+    .btn-country-selector:hover {
+      background: var(--bg-card-hover);
+    }
+    .phone-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 1.1rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      outline: none;
+      width: 100%;
+      letter-spacing: 1px;
+    }
+    .phone-input::placeholder {
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: normal;
+    }
+    .phone-error-msg {
+      color: var(--brand-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+      min-height: 20px;
+    }
+    .phone-auth-footer {
+      padding: 1.5rem 0 2rem;
+    }
+    .btn-auth-primary:disabled {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      border: 1px solid var(--border-color);
+      transform: none;
+    }
+
+    /* --- PANTALLA 3: SMS VERIFY --- */
+    .sms-code-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .sms-box {
+      width: 45px;
+      height: 55px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-align: center;
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+    }
+    .sms-box:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.15);
+      transform: translateY(-2px);
+    }
+    #btn-resend-sms:not(:disabled) {
+      color: var(--brand-primary) !important;
+      cursor: pointer;
+    }
+    #btn-resend-sms:not(:disabled):hover {
+      text-decoration: underline;
+    }
+
+    /* --- PANTALLA 5: LOCATION --- */
+    .location-btn-auto {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255, 51, 102, 0.05);
+      border: 1px solid rgba(255, 51, 102, 0.3);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    .location-btn-auto:hover {
+      background: rgba(255, 51, 102, 0.1);
+      border-color: var(--brand-primary);
+    }
+    .location-btn-icon {
+      font-size: 1.5rem;
+      color: var(--brand-primary);
+    }
+    .location-btn-title {
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 0.2rem;
+      display: block;
+    }
+    .location-btn-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .location-search-wrapper {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .location-search-icon {
+      position: absolute;
+      left: 1.2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    .location-search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1rem 1.1rem 3rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: var(--transition);
+      font-size: 1rem;
+    }
+    .location-search-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.15);
+    }
+    .mock-map-container {
+      background: #1a202c url('data:image/svg+xml;utf8,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path d="M40 0v40H0V0h40zM1 1v38h38V1H1z" fill="%232d3748" fill-opacity="0.5"/></svg>');
+      border-radius: var(--radius-md);
+      height: 180px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+      margin-bottom: 2rem;
+    }
+    .mock-map-pin {
+      font-size: 2.5rem;
+      color: var(--brand-primary);
+      text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      animation: float-pin 2s ease-in-out infinite;
+      position: absolute;
+      top: 35%;
+    }
+    @keyframes float-pin {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .mock-map-card {
+      position: absolute;
+      bottom: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.8rem;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+      width: 85%;
+    }
+
+    /* --- PANTALLA 6: HOME --- */
+    .app-main-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+    }
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 1.5rem 1rem;
+      background: var(--bg-main);
+      z-index: 10;
+    }
+    .home-location-selector {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    .home-location-label {
+      font-size: 0.8rem;
+      color: var(--brand-primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.2rem;
+    }
+    .home-location-address {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .home-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .home-content {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 90px;
+    }
+    .home-content::-webkit-scrollbar {
+      display: none;
+    }
+    .home-search-container {
+      padding: 0 1.5rem 1.5rem;
+    }
+    .home-search-bar {
+      display: flex;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 1rem 1.5rem;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      font-weight: 500;
+      gap: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .home-search-bar:hover {
+      border-color: var(--brand-primary);
+      box-shadow: 0 6px 16px rgba(255,51,102,0.15);
+    }
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0 1.5rem 1rem;
+    }
+    .horizontal-scroll {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      padding: 0 1.5rem 1rem;
+      scrollbar-width: none;
+    }
+    .horizontal-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .category-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 75px;
+      cursor: pointer;
+    }
+    .category-icon {
+      width: 60px;
+      height: 60px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      transition: var(--transition);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .category-item:hover .category-icon {
+      background: rgba(255,51,102,0.1);
+      border-color: var(--brand-primary);
+      transform: translateY(-3px);
+    }
+    .category-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    .rapidin-ahora-section {
+      background: linear-gradient(135deg, rgba(255,51,102,0.1) 0%, rgba(30,16,53,0) 100%);
+      padding: 1.5rem 0;
+      margin: 1rem 0 2rem;
+      border-top: 1px solid rgba(255,51,102,0.2);
+      border-bottom: 1px solid rgba(255,51,102,0.2);
+    }
+    .rapidin-ahora-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      margin: 0 1.5rem 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .rapidin-ahora-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0 1.5rem 1.5rem;
+    }
+    .quick-card {
+      min-width: 140px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .quick-card-title {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+    .quick-card-time {
+      font-weight: 700;
+      color: var(--brand-primary);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .promo-banner {
+      margin: 0 1.5rem 2rem;
+      border-radius: var(--radius-md);
+      background: linear-gradient(45deg, #FF3366, #FF6B33);
+      padding: 2rem 1.5rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(255,51,102,0.3);
+    }
+    .promo-banner h3 {
+      font-size: 1.2rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .promo-banner p {
+      font-size: 2rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+    .promo-banner button {
+      background: white;
+      color: #FF3366;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .store-card {
+      min-width: 260px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .store-img {
+      height: 140px;
+      background: #2a2a35;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+    .store-info {
+      padding: 1rem;
+    }
+    .store-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.3rem;
+    }
+    .store-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .store-rating {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #FFD700;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .store-category {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.8rem;
+    }
+    .store-details {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .store-promo {
+      margin-top: 0.8rem;
+      color: #10B981;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+    .vertical-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 0 1.5rem 2rem;
+    }
+    .vertical-store-card {
+      display: flex;
+      gap: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.8rem;
+    }
+    .vertical-store-img {
+      width: 80px;
+      height: 80px;
+      background: #2a2a35;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .vertical-store-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 0.8rem 0 1.2rem;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .nav-item.active {
+      color: var(--brand-primary);
+    }
+    .nav-icon {
+      font-size: 1.4rem;
+    }
+    .nav-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    /* --- PANTALLA 7: BÚSQUEDA --- */
+    .app-search-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+    }
+    .search-header {
+      padding: 1.5rem 1.5rem 1rem;
+      background: var(--bg-main);
+      z-index: 10;
+    }
+    .search-header-top {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .btn-back-search {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+    }
+    .search-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input-icon {
+      position: absolute;
+      left: 1.2rem;
+      color: var(--brand-primary);
+      font-size: 1.1rem;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 1.1rem 3rem 1.1rem 3rem;
+      color: var(--text-primary);
+      font-size: 1.05rem;
+      font-weight: 500;
+      outline: none;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .search-input:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.15);
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 1.2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text-muted);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .search-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.5rem 90px;
+    }
+    .search-content::-webkit-scrollbar {
+      display: none;
+    }
+    .search-section-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 1.5rem 0 1rem;
+    }
+    .recent-search-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .recent-search-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .popular-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+    .popular-tag {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .popular-tag:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+    }
+    .search-filters {
+      display: flex;
+      gap: 0.8rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding-bottom: 0.5rem;
+      scrollbar-width: none;
+    }
+    .search-filters::-webkit-scrollbar {
+      display: none;
+    }
+    .search-filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .search-filter-btn.active {
+      background: var(--brand-primary);
+      color: white;
+      border-color: var(--brand-primary);
+    }
+    .search-sort {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+    }
+    .search-sort-btn {
+      background: none;
+      border: none;
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    .search-product-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.8rem;
+    }
+    .product-info-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+    .product-info-price {
+      font-weight: 800;
+      color: #10B981;
+    }
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-secondary);
+    }
+    .empty-state-icon {
+      font-size: 3rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .empty-state-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .search-header-compact {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 1.5rem 1rem;
+      background: var(--bg-main);
+      z-index: 10;
+    }
+    .search-header-compact .search-input-wrapper {
+      flex: 1;
+    }
+    .search-input.compact-input {
+      padding: 0.8rem 2.5rem 0.8rem 2.5rem;
+      font-size: 0.95rem;
+    }
+    .best-option-card {
+      background: linear-gradient(135deg, rgba(255,51,102,0.1) 0%, rgba(30,16,53,0) 100%);
+      border: 1px solid var(--brand-primary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .product-info-old-price {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+    }
+    .product-info-promo {
+      color: #FF3366;
+      font-weight: 800;
+      font-size: 0.75rem;
+      margin-top: 0.2rem;
+    }
+    .product-info-store {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.3rem;
+    }
+    .btn-add-product {
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    /* --- PANTALLA 9: DETALLE DEL NEGOCIO --- */
+    .app-store-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+      position: relative;
+    }
+    .store-cover {
+      height: 200px;
+      background: linear-gradient(to bottom, rgba(11,15,25,0.2), var(--bg-main)), url('https://images.unsplash.com/photo-1550547660-d9450f859349?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') center/cover;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .store-cover-actions {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn-circle-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .store-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 1.5rem;
+      scrollbar-width: none;
+    }
+    .store-content-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .store-header-info {
+      margin-top: -15px;
+      padding-top: 10px;
+      position: relative;
+      z-index: 2;
+    }
+    .store-title-main {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .store-meta-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .store-meta-row .store-rating {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    .store-meta-row i {
+      color: #F59E0B;
+    }
+    .store-category-dot {
+      color: var(--border-color);
+    }
+    .store-delivery-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .delivery-card-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(16,185,129,0.1);
+      color: #10B981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .delivery-card-details {
+      flex: 1;
+    }
+    .delivery-time-cost {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+    .delivery-time-cost .dot {
+      color: var(--text-muted);
+      margin: 0 0.4rem;
+    }
+    .delivery-min-order {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .store-promos {
+      margin-bottom: 2rem;
+    }
+    .promo-cards-row {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 0.5rem;
+    }
+    .promo-cards-row::-webkit-scrollbar {
+      display: none;
+    }
+    .promo-card {
+      min-width: 160px;
+      background: linear-gradient(135deg, rgba(255,51,102,0.15) 0%, rgba(30,16,53,0) 100%);
+      border: 1px solid var(--brand-primary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      flex-shrink: 0;
+    }
+    .promo-title {
+      color: var(--brand-primary);
+      font-weight: 800;
+      font-size: 1rem;
+      margin-bottom: 0.3rem;
+    }
+    .promo-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .store-menu-nav {
+      display: flex;
+      gap: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      background: var(--bg-main);
+      z-index: 5;
+      padding-top: 1rem;
+    }
+    .store-menu-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .menu-nav-item {
+      padding-bottom: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      cursor: pointer;
+      white-space: nowrap;
+      position: relative;
+    }
+    .menu-nav-item.active {
+      color: var(--text-primary);
+    }
+    .menu-nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--brand-primary);
+      border-radius: 2px 2px 0 0;
+    }
+    .store-product-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+    .product-card-info {
+      flex: 1;
+      padding-right: 1rem;
+    }
+    .product-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 1.05rem;
+      margin-bottom: 0.4rem;
+    }
+    .product-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.3;
+      margin-bottom: 0.6rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-price {
+      font-weight: 800;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+    .product-tag {
+      display: inline-block;
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      margin-top: 0.5rem;
+    }
+    .product-card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .product-image {
+      width: 90px;
+      height: 90px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .btn-add-product-small {
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .store-info-section {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .info-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .info-icon {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      margin-top: 0.2rem;
+    }
+    .info-label {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+    }
+    .info-value {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    .store-map-mock {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .map-bg {
+      height: 120px;
+      background: #1c2233;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .floating-cart-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(to top, var(--bg-main) 60%, rgba(11,15,25,0));
+      z-index: 20;
+    }
+    .btn-floating-cart {
+      width: 100%;
+      background: var(--brand-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+    }
+    .cart-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .cart-badge {
+      background: white;
+      color: var(--brand-primary);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+    .cart-totals {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .cart-text {
+      font-size: 0.95rem;
+    }
+    .cart-price {
+      font-size: 0.75rem;
+      opacity: 0.9;
+    }
+
+    /* --- PANTALLA 10: DETALLE DEL PRODUCTO --- */
+    .app-product-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+      position: relative;
+    }
+    .product-cover {
+      height: 250px;
+      background: #1c2233;
+      position: relative;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+    }
+    .product-cover-actions {
+      position: absolute;
+      top: 1.5rem;
+      left: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .product-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      scrollbar-width: none;
+    }
+    .product-content-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .product-header {
+      margin-bottom: 1.5rem;
+    }
+    .product-header-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+    .product-header-store {
+      font-size: 0.95rem;
+      color: var(--brand-primary);
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .product-header-desc {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .product-price-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .product-main-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .product-old-price {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+    .product-badge-promo {
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+    .options-section {
+      margin-bottom: 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .options-section-header {
+      padding: 1rem 1.2rem;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .options-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .options-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
+    .option-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+    .option-item:last-child {
+      border-bottom: none;
+    }
+    .option-label {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .option-price {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .radio-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radio-circle.selected {
+      border-color: var(--brand-primary);
+    }
+    .radio-circle.selected::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+    }
+    .checkbox-square {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-main);
+      font-size: 0.8rem;
+    }
+    .checkbox-square.selected {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+    }
+    .checkbox-square.selected::after {
+      content: '✓';
+    }
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 0.5rem;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-qty {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .qty-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      min-width: 30px;
+      text-align: center;
+    }
+    .notes-section {
+      margin-bottom: 2rem;
+    }
+    .notes-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      color: var(--text-primary);
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+      margin-top: 0.5rem;
+    }
+    .notes-input:focus {
+      outline: none;
+      border-color: var(--brand-primary);
+    }
+    .delivery-small-card {
+      background: rgba(16,185,129,0.05);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .delivery-small-icon {
+      font-size: 1.5rem;
+      color: #10B981;
+    }
+    .floating-add-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(to top, var(--bg-main) 70%, rgba(11,15,25,0));
+      z-index: 20;
+    }
+    .btn-add-to-cart {
+      width: 100%;
+      background: var(--brand-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 1rem 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+    }
+    .btn-add-to-cart:disabled {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      box-shadow: none;
+      border: 1px solid var(--border-color);
+      cursor: not-allowed;
+    }
+
+    /* --- PANTALLA 11: CARRITO --- */
+    .app-cart-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow: hidden;
+      position: relative;
+    }
+    .cart-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg-main);
+      z-index: 10;
+    }
+    .cart-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .cart-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      scrollbar-width: none;
+    }
+    .cart-content-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .cart-store-info {
+      margin-bottom: 1.5rem;
+    }
+    .cart-store-info h3 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+    .cart-items-list {
+      margin-bottom: 1.5rem;
+    }
+    .cart-item-card {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .cart-item-img {
+      width: 64px;
+      height: 64px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+    .cart-item-details {
+      flex: 1;
+    }
+    .cart-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.2rem;
+    }
+    .cart-item-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+    .cart-item-remove {
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .cart-item-options {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.8rem;
+      min-height: 14px;
+    }
+    .cart-item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cart-qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 0.2rem 0.5rem;
+    }
+    .cart-qty-btn {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1rem;
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-qty-num {
+      font-weight: 800;
+      font-size: 0.95rem;
+      min-width: 16px;
+      text-align: center;
+    }
+    .cart-item-price {
+      font-weight: 800;
+      color: var(--text-primary);
+      font-size: 1.05rem;
+    }
+    .btn-add-more {
+      width: 100%;
+      padding: 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+    .cart-promo-section {
+      margin-bottom: 2rem;
+    }
+    .promo-input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .promo-code-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 1rem;
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    .promo-code-input:focus {
+      outline: none;
+      border-color: var(--brand-primary);
+    }
+    .btn-apply-promo {
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .cart-summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .summary-row.discount {
+      color: #10B981;
+    }
+    .summary-divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 1rem 0;
+    }
+    .summary-row.total {
+      margin-bottom: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .cart-delivery-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .btn-change-location {
+      background: none;
+      border: none;
+      color: var(--brand-primary);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    .cart-time-card {
+      background: rgba(16,185,129,0.05);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .checkout-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .checkout-item-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .checkout-item-name {
+      color: var(--text-primary);
+    }
+    .checkout-item-price {
+      color: var(--text-secondary);
+    }
+    .payment-method-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+    }
+
+    /* --- PANTALLA 13: PEDIDO CONFIRMADO --- */
+    .app-success-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow-y: auto;
+      scrollbar-width: none;
+      padding: 2rem 1.5rem;
+    }
+    .app-success-screen::-webkit-scrollbar {
+      display: none;
+    }
+    .success-anim-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      margin-top: 1rem;
+    }
+    .success-circle {
+      width: 80px;
+      height: 80px;
+      background: #10B981;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2.5rem;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .success-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    .success-subtitle {
+      color: var(--text-secondary);
+      text-align: center;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+    .success-order-num {
+      text-align: center;
+      font-weight: 700;
+      color: var(--brand-primary);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    .success-info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .tracker-container {
+      margin-bottom: 2rem;
+    }
+    .tracker-step {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+    .tracker-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 24px;
+      bottom: -12px;
+      width: 2px;
+      background: var(--border-color);
+    }
+    .tracker-step.active:not(:last-child)::after {
+      background: #10B981;
+    }
+    .tracker-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      z-index: 2;
+    }
+    .tracker-step.active .tracker-icon {
+      background: #10B981;
+      border-color: #10B981;
+      color: white;
+    }
+    .tracker-text {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .tracker-step.active .tracker-text {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    .notification-card {
+      background: rgba(255,193,7,0.1);
+      border: 1px solid rgba(255,193,7,0.3);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    /* --- PANTALLA 14: SEGUIMIENTO --- */
+    .app-tracking-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow-y: auto;
+      scrollbar-width: none;
+      position: relative;
+    }
+    .app-tracking-screen::-webkit-scrollbar {
+      display: none;
+    }
+    .tracking-header {
+      padding: 1.5rem;
+      background: var(--bg-main);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+    .tracking-map-mock {
+      height: 250px;
+      background: #1E293B; /* Dark map tone */
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .map-route-line {
+      position: absolute;
+      top: 50%;
+      left: 20%;
+      right: 20%;
+      height: 4px;
+      background: var(--brand-primary);
+      border-radius: 2px;
+      transform: translateY(-50%);
+      opacity: 0.6;
+      border: 1px dashed white;
+    }
+    .map-pin {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+    .map-pin.store { top: 50%; left: 20%; }
+    .map-pin.courier { top: 40%; left: 55%; background: var(--brand-primary); color: white; border: 2px solid white; }
+    .map-pin.user { top: 50%; left: 80%; }
+    
+    .tracking-status-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: -20px 1.5rem 1.5rem 1.5rem;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .tracking-content {
+      padding: 0 1.5rem 2rem 1.5rem;
+    }
+    .courier-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+    .courier-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .courier-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--border-color);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .courier-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn-courier-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .tracking-actions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .btn-action-list {
+      width: 100%;
+      padding: 1.2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    /* --- PANTALLA 15: DETALLE DEL PEDIDO --- */
+    .app-order-detail-screen {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      overflow-y: auto;
+      scrollbar-width: none;
+      position: relative;
+    }
+    .app-order-detail-screen::-webkit-scrollbar {
+      display: none;
+    }
+    .order-detail-header {
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+      background: var(--bg-main);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.3rem 0.6rem;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius-sm);
+      color: #10B981;
+      font-weight: 700;
+      font-size: 0.8rem;
+      align-self: flex-start;
+      margin-top: 0.5rem;
+    }
+    .order-item-list {
+      margin-bottom: 1.5rem;
+    }
+    .order-item-list .checkout-item-row {
+      margin-bottom: 0.2rem;
+    }
+    .order-item-extras {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-left: 1rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .rating-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .rating-stars {
+      font-size: 2rem;
+      color: #F59E0B;
+      margin: 1rem 0;
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .rating-stars i {
+      cursor: pointer;
+    }
+    .rating-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.8rem;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      resize: none;
+      height: 80px;
+    }
+
+    /* --- RESPONSIVIDAD PARA TABLETS Y PC --- */
+    @media (min-width: 768px) {
+      .app-main-screen, .app-search-screen, .app-store-screen, .app-product-screen, .app-cart-screen, .app-checkout-screen, .app-success-screen, .app-tracking-screen, .app-order-detail-screen {
+        max-width: 500px;
+        margin: 0 auto;
+        border-left: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      }
+      .bottom-nav {
+        max-width: 500px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .auth-gate-screen {
+        background: radial-gradient(circle at top right, #1E1035, #0B0F19 60%);
+      }
+      .welcome-container, .phone-auth-container {
+        max-width: 440px;
+        height: auto !important;
+        min-height: 680px;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color);
+        margin: auto;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- MODAL LOGIN CLIENTE (OPCIONAL) -->
-  <div id="modal-user-login" class="modal-backdrop">
-    <div class="modal-card" style="width: 100%; max-width: 400px; padding: 2rem; position: relative; border: 1px solid var(--border-color);">
-      <button class="btn-close-modal" onclick="document.getElementById('modal-user-login').classList.remove('active')" style="position: absolute; top: 1rem; right: 1rem; z-index: 10;"><i class="fa-solid fa-xmark"></i></button>
-      <div style="text-align: center; margin-bottom: 2rem;">
-        <img src="../../assets/logo.png" alt="Rapidin Logo" style="width: 80px; margin-bottom: 1rem; border-radius: 20px;">
-        <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Bienvenido a Rapidin</h1>
-        <p style="color: var(--text-secondary);">Inicia sesión para pedir lo que quieras</p>
-      </div>
-      <form id="gate-form-login">
-        <div style="margin-bottom: 1rem;">
-          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Electrónico</label>
-          <input type="email" id="gate-login-email" class="coupon-input" style="width: 100%;" value="cliente@rapidin.com" required>
-        </div>
-        <div style="margin-bottom: 1.25rem;">
-          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
-          <div style="position: relative;">
-            <input type="password" id="gate-login-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" value="123" required>
-            <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('gate-login-password', this)"></i>
+  <!-- PANTALLA DE BLOQUEO (AUTH GATE) - WELCOME SCREEN -->
+  <div id="auth-gate-screen" class="auth-gate-screen">
+    
+    <!-- PANTALLA 1: BIENVENIDA -->
+    <div class="welcome-container" id="step-welcome">
+      
+      <div class="welcome-hero">
+        <h1 class="welcome-title">RAPIDÍN</h1>
+        <p class="welcome-subtitle">Todo lo que necesitas, en un Rapidín.</p>
+        
+        <div class="welcome-graphic">
+          <i class="fa-solid fa-motorcycle welcome-graphic-main"></i>
+          
+          <div class="welcome-floating-icon float-1">
+            <i class="fa-solid fa-burger"></i>
+          </div>
+          <div class="welcome-floating-icon float-2">
+            <i class="fa-solid fa-bag-shopping"></i>
           </div>
         </div>
-        <button type="submit" class="btn-checkout" style="margin-bottom: 1rem; width: 100%;">Ingresar a mi Cuenta 🚀</button>
-      </form>
-      <button type="button" class="btn-checkout" style="background: var(--bg-main); border: 1px solid var(--brand-primary); color: var(--brand-primary); font-size: 0.85rem; width: 100%;" onclick="document.getElementById('modal-user-login').classList.remove('active'); document.getElementById('modal-register-user').classList.add('active');">
-        <i class="fa-solid fa-user-plus"></i> Crear Nueva Cuenta
+      </div>
+
+      <div class="welcome-actions">
+        <button class="btn-auth-social" type="button" onclick="prepareGoogleAuth()">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; height: 20px;">
+          Continuar con Google
+        </button>
+        
+        <button class="btn-auth-social" type="button" onclick="prepareAppleAuth()">
+          <i class="fa-brands fa-apple" style="font-size: 1.3rem;"></i>
+          Continuar con Apple
+        </button>
+
+        <div class="auth-separator">o</div>
+
+        <button class="btn-auth-primary" type="button" onclick="continueWithPhone()">
+          📱 Continuar con mi número
+        </button>
+
+        <p class="welcome-legal">
+          Al continuar aceptas nuestros <a href="#">Términos y condiciones</a> y <a href="#">Política de privacidad</a>.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- PANTALLA 2: AUTENTICACIÓN TELEFÓNICA -->
+    <div class="phone-auth-container" id="step-phone-auth" style="display: none;">
+      <div class="phone-auth-header">
+        <button class="btn-back-auth" type="button" onclick="backToWelcome()">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+      </div>
+
+      <div class="phone-auth-body">
+        <h2 class="auth-title">¿Cuál es tu número?</h2>
+        <p class="auth-subtitle">Te enviaremos un código para verificar tu número.</p>
+
+        <div class="phone-input-group">
+          <button class="btn-country-selector" type="button" onclick="openCountrySelector()">
+            <span id="selected-country-flag">🇪🇨</span>
+            <span id="selected-country-code">+593</span>
+            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-muted);"></i>
+          </button>
+          <input type="tel" id="input-phone-number" class="phone-input" placeholder="98 123 4567" inputmode="numeric" autocomplete="tel-national">
+        </div>
+        <div id="phone-error-msg" class="phone-error-msg"></div>
+      </div>
+
+      <div class="phone-auth-footer">
+        <button class="btn-auth-primary" id="btn-continue-phone" disabled onclick="submitPhoneAuth()">
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <!-- PANTALLA 3: VERIFICACIÓN SMS -->
+    <div class="phone-auth-container" id="step-verify-sms" style="display: none;">
+      <div class="phone-auth-header">
+        <button class="btn-back-auth" type="button" onclick="backToPhoneInput()">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+      </div>
+
+      <div class="phone-auth-body">
+        <h2 class="auth-title">Verifica tu número</h2>
+        <p class="auth-subtitle" style="margin-bottom: 1.5rem;">
+          Enviamos un código de 6 dígitos a:<br>
+          <strong id="display-verify-phone" style="color: var(--text-primary); font-size: 1.1rem; letter-spacing: 0.5px;">+593 981 *** 251</strong>
+        </p>
+        
+        <button type="button" onclick="backToPhoneInput()" style="color: var(--brand-primary); font-weight: 700; font-size: 0.95rem; text-decoration: underline; margin-bottom: 2.5rem; text-align: left; background: none; border: none; padding: 0; cursor: pointer; transition: var(--transition);">
+          Cambiar número
+        </button>
+
+        <div class="sms-code-container" id="sms-code-inputs">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
+          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
+        </div>
+        
+        <div id="sms-error-msg" class="phone-error-msg"></div>
+        
+        <div style="text-align: center; margin-top: 2rem;">
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">¿No recibiste el código?</p>
+          <button type="button" id="btn-resend-sms" disabled onclick="resendSmsCode()" style="color: var(--text-muted); font-weight: 700; font-size: 0.95rem; background: none; border: none; padding: 0.5rem; transition: var(--transition);">
+            Reenviar código en <span id="sms-timer">00:30</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA 4: COMPLETAR PERFIL (NUEVO USUARIO) -->
+    <div class="phone-auth-container" id="step-complete-profile" style="display: none;">
+      <div class="phone-auth-body" style="padding-top: 1rem;">
+        <h2 class="auth-title" style="font-size: 2rem;">¡Bienvenido a Rapidín! 🚀</h2>
+        <p class="auth-subtitle" style="margin-bottom: 2rem;">Completa tus datos para comenzar.</p>
+
+        <form id="form-complete-profile" onsubmit="submitCompleteProfile(event)">
+          <div style="margin-bottom: 1.25rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nombre</label>
+            <input type="text" id="profile-name" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="¿Cómo te llamamos?" required>
+          </div>
+          
+          <div style="margin-bottom: 1.25rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Apellido</label>
+            <input type="text" id="profile-lastname" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Tu apellido" required>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Correo electrónico</label>
+            <input type="email" id="profile-email" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="tu@email.com" required>
+          </div>
+
+          <div style="margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem;">
+            <div id="profile-photo-preview" style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-card); border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text-muted); font-size: 1.5rem;">
+              <i class="fa-solid fa-camera"></i>
+            </div>
+            <div>
+              <button type="button" onclick="document.getElementById('profile-photo-input').click()" style="color: var(--brand-primary); font-weight: 700; font-size: 0.95rem; background: none; border: none; padding: 0; cursor: pointer; transition: var(--transition);">
+                Agregar foto de perfil
+              </button>
+              <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">Opcional</p>
+              <input type="file" id="profile-photo-input" accept="image/*" style="display: none;" onchange="handleProfilePhoto(event)">
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-auth-primary" id="btn-continue-profile" disabled>
+            Continuar
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- PANTALLA 5: CONFIGURAR UBICACIÓN -->
+    <div class="phone-auth-container" id="step-location" style="display: none;">
+      <div class="phone-auth-header">
+        <button class="btn-back-auth" type="button" onclick="backToProfile()">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+      </div>
+
+      <div class="phone-auth-body">
+        <h2 class="auth-title" style="font-size: 1.8rem;">¿Dónde estás?</h2>
+        <p class="auth-subtitle" style="margin-bottom: 1.5rem;">Usaremos tu ubicación para mostrarte opciones disponibles cerca de ti.</p>
+
+        <button type="button" class="location-btn-auto" onclick="selectMockLocation()">
+          <div class="location-btn-icon"><i class="fa-solid fa-location-crosshairs"></i></div>
+          <div>
+            <span class="location-btn-title">Usar mi ubicación actual</span>
+            <span class="location-btn-subtitle">Detectar automáticamente mi ubicación</span>
+          </div>
+        </button>
+
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin: 0.5rem 0 1rem; font-weight: 500;">O ingresar una dirección manualmente</p>
+
+        <div class="location-search-wrapper">
+          <i class="fa-solid fa-magnifying-glass location-search-icon"></i>
+          <input type="text" class="location-search-input" placeholder="Ingresa una dirección" oninput="handleLocationSearch(event)">
+        </div>
+
+        <div class="mock-map-container" id="mock-map" style="opacity: 0.5; transition: var(--transition);">
+          <i class="fa-solid fa-location-dot mock-map-pin" style="display: none;" id="mock-map-pin-icon"></i>
+          <div class="mock-map-card" id="mock-map-info" style="display: none;">
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.2rem;">Ubicación aproximada</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);" id="mock-map-address">Guayaquil, Ecuador</div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-auth-primary" id="btn-confirm-location" disabled onclick="confirmLocation()">
+          Confirmar ubicación
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PANTALLA 6: HOME -->
+  <div class="app-main-screen" id="app-main-screen" style="display: none;">
+    
+    <div class="home-header">
+      <div class="home-location-selector" onclick="alert('Seleccionar ubicación')">
+        <span class="home-location-label">📍 Entregar en</span>
+        <span class="home-location-address" id="home-display-address">Guayaquil, Ecuador <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i></span>
+      </div>
+      <div class="home-avatar" onclick="alert('Pantalla de perfil')">
+        <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Rapidin" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">
+      </div>
+    </div>
+
+    <div class="home-content">
+      
+      <div class="home-search-container">
+        <div class="home-search-bar" onclick="openSearchScreen()">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>¿Qué estás buscando?</span>
+        </div>
+      </div>
+
+      <h2 class="section-title">¿Qué necesitas?</h2>
+      <div class="horizontal-scroll">
+        <div class="category-item" onclick="mockSearch('Comida')">
+          <div class="category-icon">🍔</div>
+          <span class="category-name">Comida</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Súper')">
+          <div class="category-icon">🛒</div>
+          <span class="category-name">Súper</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Farmacia')">
+          <div class="category-icon">💊</div>
+          <span class="category-name">Farmacia</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Bebidas')">
+          <div class="category-icon">🥤</div>
+          <span class="category-name">Bebidas</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Restaurantes')">
+          <div class="category-icon">🍕</div>
+          <span class="category-name">Restaurantes</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Tiendas')">
+          <div class="category-icon">🛍️</div>
+          <span class="category-name">Tiendas</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Mascotas')">
+          <div class="category-icon">🐶</div>
+          <span class="category-name">Mascotas</span>
+        </div>
+        <div class="category-item" onclick="mockSearch('Envíos')">
+          <div class="category-icon">📦</div>
+          <span class="category-name">Envíos</span>
+        </div>
+      </div>
+
+      <div class="rapidin-ahora-section">
+        <h2 class="rapidin-ahora-title"><i class="fa-solid fa-bolt" style="color: var(--brand-primary);"></i> Rapidín Ahora</h2>
+        <p class="rapidin-ahora-subtitle">Lo que puede llegar más rápido a tu ubicación</p>
+        <div class="horizontal-scroll" style="padding-bottom: 0;">
+          <div class="quick-card" onclick="openStoreScreen('Burger House', '4.8')">
+            <span class="quick-card-title">Hamburguesa</span>
+            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 15 min</span>
+          </div>
+          <div class="quick-card" onclick="openStoreScreen('Farmacia Sana', '4.9')">
+            <span class="quick-card-title">Farmacia</span>
+            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 12 min</span>
+          </div>
+          <div class="quick-card" onclick="openStoreScreen('Mercado Sano', '4.9')">
+            <span class="quick-card-title">Supermercado</span>
+            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 18 min</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="promo-banner">
+        <h3>🔥 OFERTAS CERCA DE TI</h3>
+        <p>Hasta 40% OFF</p>
+        <button type="button" onclick="alert('Promociones')">Pedir ahora &rarr;</button>
+      </div>
+
+      <h2 class="section-title">⭐ Para ti</h2>
+      <div class="horizontal-scroll">
+        <div class="store-card" onclick="openStoreScreen('Burger House', '4.8')">
+          <div class="store-img">🍔</div>
+          <div class="store-info">
+            <div class="store-header">
+              <span class="store-name">Burger House</span>
+              <span class="store-rating"><i class="fa-solid fa-star"></i> 4.8</span>
+            </div>
+            <div class="store-category">Hamburguesas</div>
+            <div class="store-details">
+              <span>⚡ 20-30 min</span>
+              <span>🚴 $1.50 envío</span>
+            </div>
+            <div class="store-promo">20% OFF</div>
+          </div>
+        </div>
+        <div class="store-card" onclick="openStoreScreen('Pizza Luigi', '4.6')">
+          <div class="store-img">🍕</div>
+          <div class="store-info">
+            <div class="store-header">
+              <span class="store-name">Pizza Luigi</span>
+              <span class="store-rating"><i class="fa-solid fa-star"></i> 4.6</span>
+            </div>
+            <div class="store-category">Pizzas, Italiana</div>
+            <div class="store-details">
+              <span>⚡ 30-45 min</span>
+              <span>🚴 $1.00 envío</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="margin-top: 1rem;">📍 Cerca de ti</h2>
+      <div class="vertical-list">
+        <div class="vertical-store-card" onclick="openStoreScreen('Mercado Sano', '4.9')">
+          <div class="vertical-store-img">🥑</div>
+          <div class="vertical-store-info">
+            <div class="store-header" style="margin-bottom: 0;">
+              <span class="store-name" style="font-size: 1rem;">Mercado Sano</span>
+              <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.9</span>
+            </div>
+            <div class="store-category" style="margin-bottom: 0.4rem; font-size: 0.8rem;">Supermercado, Frescos</div>
+            <div class="store-details" style="font-size: 0.8rem;">
+              <span>⚡ 10-20 min</span>
+              <span>🚴 Gratis</span>
+            </div>
+          </div>
+        </div>
+        <div class="vertical-store-card" onclick="openStoreScreen('Pollo Loco', '4.5')">
+          <div class="vertical-store-img">🍗</div>
+          <div class="vertical-store-info">
+            <div class="store-header" style="margin-bottom: 0;">
+              <span class="store-name" style="font-size: 1rem;">Pollo Loco</span>
+              <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.5</span>
+            </div>
+            <div class="store-category" style="margin-bottom: 0.4rem; font-size: 0.8rem;">Pollo frito, Comida rápida</div>
+            <div class="store-details" style="font-size: 0.8rem;">
+              <span>⚡ 25-35 min</span>
+              <span>🚴 $1.25 envío</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- End home-content -->
+
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <i class="fa-solid fa-house nav-icon"></i>
+        <span class="nav-label">Inicio</span>
+      </div>
+      <div class="nav-item" onclick="openSearchScreen()">
+        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <span class="nav-label">Buscar</span>
+      </div>
+      <div class="nav-item" onclick="openOrdersScreen()">
+        <i class="fa-solid fa-receipt nav-icon"></i>
+        <span class="nav-label">Pedidos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de favoritos')">
+        <i class="fa-solid fa-heart nav-icon"></i>
+        <span class="nav-label">Favoritos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de perfil')">
+        <i class="fa-solid fa-user nav-icon"></i>
+        <span class="nav-label">Perfil</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PANTALLA 7: BÚSQUEDA -->
+  <div class="app-search-screen" id="app-search-screen" style="display: none;">
+    <div class="search-header-compact">
+      <button type="button" class="btn-back-search" onclick="closeSearchScreen()" style="padding:0;">
+        <i class="fa-solid fa-arrow-left"></i>
       </button>
+      <div class="search-input-wrapper">
+        <i class="fa-solid fa-magnifying-glass search-input-icon" style="top: 50%; transform: translateY(-50%);"></i>
+        <input type="text" class="search-input compact-input" id="main-search-input" placeholder="¿Qué estás buscando?" oninput="handleSearchInput(event)">
+        <button type="button" class="search-clear-btn" id="search-clear-btn" style="display: none; top: 50%; transform: translateY(-50%); right: 0.8rem;" onclick="clearSearchInput()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-content" id="search-content-idle">
+      <h3 class="search-section-title">Búsquedas recientes</h3>
+      <div class="recent-search-item" onclick="mockSearch('Hamburguesa')">
+        <div class="recent-search-left">
+          <i class="fa-regular fa-clock"></i>
+          <span>Hamburguesa</span>
+        </div>
+        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
+      </div>
+      <div class="recent-search-item" onclick="mockSearch('Farmacia')">
+        <div class="recent-search-left">
+          <i class="fa-regular fa-clock"></i>
+          <span>Farmacia</span>
+        </div>
+        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
+      </div>
+      <div class="recent-search-item" onclick="mockSearch('Coca-Cola')">
+        <div class="recent-search-left">
+          <i class="fa-regular fa-clock"></i>
+          <span>Coca-Cola</span>
+        </div>
+        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
+      </div>
+      <div class="recent-search-item" onclick="mockSearch('Pizza')">
+        <div class="recent-search-left">
+          <i class="fa-regular fa-clock"></i>
+          <span>Pizza</span>
+        </div>
+        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
+      </div>
+
+      <h3 class="search-section-title" style="margin-top: 2rem;">🔥 Lo más buscado</h3>
+      <div class="popular-tags">
+        <div class="popular-tag" onclick="mockSearch('Hamburguesas')">Hamburguesas</div>
+        <div class="popular-tag" onclick="mockSearch('Pizza')">Pizza</div>
+        <div class="popular-tag" onclick="mockSearch('Sushi')">Sushi</div>
+        <div class="popular-tag" onclick="mockSearch('Farmacia')">Farmacia</div>
+        <div class="popular-tag" onclick="mockSearch('Supermercado')">Supermercado</div>
+        <div class="popular-tag" onclick="mockSearch('Bebidas')">Bebidas</div>
+      </div>
+    </div>
+
+    <div class="search-content" id="search-content-results" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+        <h3 class="search-section-title" id="search-results-title" style="margin:0;">Resultados para "pizza"</h3>
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;" id="search-results-count">128 resultados</span>
+      </div>
+      
+      <div class="search-filters">
+        <div class="search-filter-btn active">Todos</div>
+        <div class="search-filter-btn">Productos</div>
+        <div class="search-filter-btn">Restaurantes</div>
+        <div class="search-filter-btn">Más rápidos</div>
+        <div class="search-filter-btn">Mejor calificados</div>
+        <div class="search-filter-btn">Ofertas</div>
+      </div>
+
+      <div class="search-sort">
+        <button type="button" class="search-sort-btn">
+          Ordenar ▾
+        </button>
+      </div>
+
+      <div id="search-best-option-container" style="display: none;">
+        <h4 class="search-section-title" style="font-size: 1.1rem; color: #10B981; margin-top: 0.5rem;"><i class="fa-solid fa-star"></i> Mejor opción para ti</h4>
+        <div class="best-option-card">
+          <div class="store-header" style="margin-bottom: 0.5rem;">
+            <span class="store-name" style="font-size: 1.1rem;" id="mock-best-title">Pizza House</span>
+            <span class="store-rating" style="font-size: 0.9rem;"><i class="fa-solid fa-star"></i> 4.9</span>
+          </div>
+          <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.85rem;">
+            <span>🍕 Pizza italiana</span>
+            <span>⚡ 18-25 min</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.8rem;">
+            <span style="font-size: 0.85rem;">🚴 $0.99 envío</span>
+            <span style="color: #FF3366; font-weight: 800; font-size: 0.9rem;">🔥 20% OFF</span>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 0.5rem;">🍕 Productos</h4>
+      <div class="search-product-item">
+        <div style="flex: 1;">
+          <div class="product-info-title" id="mock-prod-title-1">Pizza Pepperoni</div>
+          <div class="product-info-store" id="mock-prod-store-1">Pizza House</div>
+          <div class="product-info-price">
+            <span class="product-info-old-price">~~$12.99~~</span> $9.99
+          </div>
+          <div class="product-info-promo">🔥 23% OFF</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
+          <button class="btn-add-product"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+      <div class="search-product-item">
+        <div style="flex: 1;">
+          <div class="product-info-title" id="mock-prod-title-2">Pizza Familiar</div>
+          <div class="product-info-store" id="mock-prod-store-2">Pizza Luigi</div>
+          <div class="product-info-price">$14.50</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
+          <button class="btn-add-product"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+
+      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 1.5rem;">🏪 Negocios relacionados</h4>
+      <div class="vertical-store-card" style="margin-bottom: 0.8rem;">
+        <div class="vertical-store-img">🍕</div>
+        <div class="vertical-store-info">
+          <div class="store-header" style="margin-bottom: 0;">
+            <span class="store-name" style="font-size: 1rem;" id="mock-store-title-1">Pizza House</span>
+            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.8</span>
+          </div>
+          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">Italiana</div>
+          <div class="store-details" style="font-size: 0.8rem; justify-content: space-between;">
+            <span>⚡ 20-30 min</span>
+            <span>📍 1.2 km</span>
+            <span>🚴 $0.99</span>
+          </div>
+        </div>
+      </div>
+      <div class="vertical-store-card" style="margin-bottom: 0.8rem;">
+        <div class="vertical-store-img">🍕</div>
+        <div class="vertical-store-info">
+          <div class="store-header" style="margin-bottom: 0;">
+            <span class="store-name" style="font-size: 1rem;" id="mock-store-title-2">Pizzería XYZ</span>
+            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.6</span>
+          </div>
+          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">Pizzas, Comida rápida</div>
+          <div class="store-details" style="font-size: 0.8rem; justify-content: space-between;">
+            <span>⚡ 30-45 min</span>
+            <span>📍 2.5 km</span>
+            <span>🚴 $1.50</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-content empty-state" id="search-content-empty" style="display: none;">
+      <div class="empty-state-icon">🔎</div>
+      <div class="empty-state-title" id="empty-state-msg">No encontramos lo que buscas</div>
+      <p style="margin-bottom: 1.5rem;">Prueba con otra búsqueda o explora nuestras categorías.</p>
+      <button type="button" class="popular-tag" style="background: rgba(255,51,102,0.1); color: var(--brand-primary); border-color: var(--brand-primary);" onclick="closeSearchScreen()">Explorar categorías</button>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="closeSearchScreen()">
+        <i class="fa-solid fa-house nav-icon"></i>
+        <span class="nav-label">Inicio</span>
+      </div>
+      <div class="nav-item active">
+        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <span class="nav-label">Buscar</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de pedidos en desarrollo')">
+        <i class="fa-solid fa-receipt nav-icon"></i>
+        <span class="nav-label">Pedidos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de favoritos en desarrollo')">
+        <i class="fa-solid fa-heart nav-icon"></i>
+        <span class="nav-label">Favoritos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de perfil en desarrollo')">
+        <i class="fa-solid fa-user nav-icon"></i>
+        <span class="nav-label">Perfil</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 9: DETALLE DEL NEGOCIO -->
+  <div class="app-store-screen" id="app-store-screen" style="display: none;">
+    <div class="store-cover">
+      <div class="store-cover-actions">
+        <button type="button" class="btn-circle-action" onclick="closeStoreScreen()">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button type="button" class="btn-circle-action" onclick="alert('Añadido a favoritos')">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="store-content-scroll">
+      <!-- Business Info -->
+      <div class="store-header-info">
+        <h2 class="store-title-main">Burger House</h2>
+        <div class="store-meta-row">
+          <span class="store-rating"><i class="fa-solid fa-star"></i> 4.8</span>
+          <span class="store-reviews">1,240 reseñas</span>
+          <span class="store-category-dot">•</span>
+          <span>🍔 Hamburguesas</span>
+          <span class="store-category-dot">•</span>
+          <span>📍 1.2 km</span>
+        </div>
+      </div>
+
+      <!-- Delivery Info -->
+      <div class="store-delivery-card">
+        <div class="delivery-card-icon">⚡</div>
+        <div class="delivery-card-details">
+          <div class="delivery-time-cost">
+            <span class="time">20-30 min</span>
+            <span class="dot">•</span>
+            <span class="cost">$1.50 envío</span>
+          </div>
+          <div class="delivery-min-order">Pedido mínimo: $5.00</div>
+        </div>
+      </div>
+
+      <!-- Promotions -->
+      <div class="store-promos">
+        <h3 class="section-title" style="margin-bottom: 1rem;">🔥 Promociones</h3>
+        <div class="promo-cards-row">
+          <div class="promo-card">
+            <div class="promo-title">20% OFF</div>
+            <div class="promo-desc">En pedidos superiores a $15</div>
+          </div>
+          <div class="promo-card">
+            <div class="promo-title">🚴 Envío gratis</div>
+            <div class="promo-desc">En productos seleccionados</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Navigation -->
+      <div class="store-menu-nav">
+        <div class="menu-nav-item active">Más vendidos</div>
+        <div class="menu-nav-item">Hamburguesas</div>
+        <div class="menu-nav-item">Combos</div>
+        <div class="menu-nav-item">Bebidas</div>
+        <div class="menu-nav-item">Postres</div>
+      </div>
+
+      <!-- Products -->
+      <div class="store-menu-section">
+        <h3 class="section-title" style="margin-bottom: 0.5rem; font-size: 1.2rem;">Más vendidos</h3>
+        
+        <div class="store-product-card" onclick="openProductScreen()">
+          <div class="product-card-info">
+            <div class="product-title">Hamburguesa Clásica</div>
+            <div class="product-desc">Carne, queso, vegetales y salsa especial.</div>
+            <div class="product-price">$7.99</div>
+          </div>
+          <div class="product-card-right">
+            <div class="product-image">🍔</div>
+            <button class="btn-add-product-small" onclick="event.stopPropagation(); alert('Añadido al carrito')"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+
+        <div class="store-product-card" onclick="openProductScreen()">
+          <div class="product-card-info">
+            <div class="product-title">Doble Bacon</div>
+            <div class="product-desc">Doble carne, doble queso, tocino crujiente.</div>
+            <div class="product-price">$10.99</div>
+            <div class="product-tag">🔥 Más vendido</div>
+          </div>
+          <div class="product-card-right">
+            <div class="product-image">🍔</div>
+            <button class="btn-add-product-small" onclick="event.stopPropagation(); alert('Añadido al carrito')"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info & Map -->
+      <div class="store-info-section">
+        <h3 class="section-title" style="margin-bottom: 1.5rem; font-size: 1.2rem;">Información</h3>
+        
+        <div class="info-row">
+          <i class="fa-regular fa-clock info-icon"></i>
+          <div>
+            <div class="info-label">Horario</div>
+            <div class="info-value">Lunes - Domingo<br>11:00 AM - 10:00 PM</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <i class="fa-solid fa-location-dot info-icon"></i>
+          <div>
+            <div class="info-label">Dirección</div>
+            <div class="info-value">Av. Ejemplo, Guayaquil</div>
+          </div>
+        </div>
+
+        <div class="store-map-mock">
+          <div class="map-bg">📍</div>
+          <button class="btn-outline" style="margin-top: 1rem; width: 100%;">Ver ubicación</button>
+        </div>
+      </div>
+      
+      <!-- Padding bottom for cart -->
+      <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Floating Cart Button (Hidden initially, display flex to show) -->
+    <div class="floating-cart-container" id="floating-cart" style="display: flex;">
+      <button class="btn-floating-cart" onclick="openCartScreen()">
+        <div class="cart-left">
+          <div class="cart-badge">2</div>
+          <div class="cart-totals">
+            <span class="cart-text">Ver pedido</span>
+            <span class="cart-price">$15.98</span>
+          </div>
+        </div>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 10: DETALLE DEL PRODUCTO -->
+  <div class="app-product-screen" id="app-product-screen" style="display: none;">
+    <div class="product-cover">
+      🍔
+      <div class="product-cover-actions">
+        <button type="button" class="btn-circle-action" onclick="closeProductScreen()">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button type="button" class="btn-circle-action" onclick="toggleFavorite(this)">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="product-content-scroll">
+      <!-- Info -->
+      <div class="product-header">
+        <h2 class="product-header-title">Hamburguesa Clásica</h2>
+        <div class="product-header-store">
+          Burger House <span style="color: var(--text-primary); font-size: 0.85rem; font-weight: normal;">| ⭐ 4.8</span>
+        </div>
+        <p class="product-header-desc">
+          Pan artesanal, carne de res, queso cheddar, vegetales frescos y salsa especial.
+        </p>
+      </div>
+
+      <!-- Price -->
+      <div class="product-price-section">
+        <span class="product-main-price">$7.99</span>
+        <span class="product-old-price">~~$9.99~~</span>
+        <span class="product-badge-promo">20% OFF</span>
+      </div>
+
+      <!-- Options: Radio -->
+      <div class="options-section">
+        <div class="options-section-header">
+          <div class="options-title">Elige tu tamaño</div>
+          <div class="options-subtitle">Obligatorio (Selecciona 1)</div>
+        </div>
+        <div class="option-item" onclick="selectRadioOption(this, 'size')">
+          <div class="option-label">
+            <div class="radio-circle"></div>
+            Pequeña
+          </div>
+          <div class="option-price"></div>
+        </div>
+        <div class="option-item" onclick="selectRadioOption(this, 'size')">
+          <div class="option-label">
+            <div class="radio-circle"></div>
+            Mediana
+          </div>
+          <div class="option-price">+$1.50</div>
+        </div>
+        <div class="option-item" onclick="selectRadioOption(this, 'size')">
+          <div class="option-label">
+            <div class="radio-circle selected"></div>
+            Grande
+          </div>
+          <div class="option-price">+$2.50</div>
+        </div>
+      </div>
+
+      <!-- Options: Checkbox -->
+      <div class="options-section">
+        <div class="options-section-header">
+          <div class="options-title">Extras</div>
+          <div class="options-subtitle">Opcional</div>
+        </div>
+        <div class="option-item" onclick="toggleCheckboxOption(this)">
+          <div class="option-label">
+            <div class="checkbox-square selected"></div>
+            Queso extra
+          </div>
+          <div class="option-price">+$1.00</div>
+        </div>
+        <div class="option-item" onclick="toggleCheckboxOption(this)">
+          <div class="option-label">
+            <div class="checkbox-square"></div>
+            Bacon
+          </div>
+          <div class="option-price">+$1.50</div>
+        </div>
+        <div class="option-item" onclick="toggleCheckboxOption(this)">
+          <div class="option-label">
+            <div class="checkbox-square"></div>
+            Aguacate
+          </div>
+          <div class="option-price">+$1.50</div>
+        </div>
+      </div>
+
+      <!-- Quantity -->
+      <div class="quantity-selector">
+        <button type="button" class="btn-qty" onclick="changeQty(-1)">−</button>
+        <span class="qty-value" id="product-qty">1</span>
+        <button type="button" class="btn-qty" onclick="changeQty(1)">＋</button>
+      </div>
+
+      <!-- Notes -->
+      <div class="notes-section">
+        <h3 class="options-title">¿Alguna indicación?</h3>
+        <textarea class="notes-input" placeholder="Ej: Sin cebolla, poca salsa..."></textarea>
+      </div>
+
+      <!-- Delivery info -->
+      <div class="delivery-small-card">
+        <i class="fa-solid fa-bolt delivery-small-icon"></i>
+        <div>
+          <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Entrega estimada: 20-30 min</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">📍 Av. León Febres Cordero, Guayaquil</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">Envío: $1.50</div>
+        </div>
+      </div>
+
+      <!-- Padding bottom for button -->
+      <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <div class="floating-add-container">
+      <button class="btn-add-to-cart" id="btn-main-add" onclick="addProductToCartMock()">
+        <span>Agregar al pedido</span>
+        <span id="btn-main-add-price">$7.99</span>
+      </button>
+      
+      <!-- Hidden states for demonstration -->
+      <button class="btn-add-to-cart" id="btn-main-soldout" style="display: none;" disabled>
+        <span style="margin: 0 auto;">Agotado temporalmente</span>
+      </button>
+      <button class="btn-add-to-cart" id="btn-main-required" style="display: none; background: var(--bg-card); color: #F59E0B; border: 1px solid #F59E0B; box-shadow: none;">
+        <span style="margin: 0 auto; font-size: 0.9rem;"><i class="fa-solid fa-circle-exclamation"></i> Selecciona una opción para continuar.</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 11: CARRITO / TU PEDIDO -->
+  <div class="app-cart-screen" id="app-cart-screen" style="display: none;">
+    <div class="cart-header">
+      <button type="button" class="btn-back-auth" onclick="closeCartScreen()" style="margin:0;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 class="cart-title">Tu pedido</h2>
+    </div>
+    
+    <div class="cart-content-scroll" id="cart-filled-state">
+      <!-- Store Info -->
+      <div class="cart-store-info">
+        <h3>🍔 Burger House</h3>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.3rem;">
+          <span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> 4.8</span> • ⚡ 20-30 min
+        </div>
+      </div>
+
+      <!-- Products List -->
+      <div class="cart-items-list">
+        <!-- Item 1 -->
+        <div class="cart-item-card">
+          <div class="cart-item-img">🍔</div>
+          <div class="cart-item-details">
+            <div class="cart-item-header">
+              <div class="cart-item-title">Hamburguesa Clásica</div>
+              <button class="cart-item-remove" onclick="removeMockItem(this)"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <div class="cart-item-options">
+              Extras: Queso extra (+$1.00)
+            </div>
+            <div class="cart-item-footer">
+              <div class="cart-qty-controls">
+                <button class="cart-qty-btn">−</button>
+                <span class="cart-qty-num">1</span>
+                <button class="cart-qty-btn">＋</button>
+              </div>
+              <div class="cart-item-price">$7.99</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="cart-item-card">
+          <div class="cart-item-img">🍟</div>
+          <div class="cart-item-details">
+            <div class="cart-item-header">
+              <div class="cart-item-title">Papas fritas</div>
+              <button class="cart-item-remove" onclick="removeMockItem(this)"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <div class="cart-item-options"></div>
+            <div class="cart-item-footer">
+              <div class="cart-qty-controls">
+                <button class="cart-qty-btn">−</button>
+                <span class="cart-qty-num">2</span>
+                <button class="cart-qty-btn">＋</button>
+              </div>
+              <div class="cart-item-price">$3.99 c/u</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-add-more" onclick="closeCartScreen()">
+        <i class="fa-solid fa-plus"></i> Agregar más productos
+      </button>
+
+      <!-- Promo Code -->
+      <div class="cart-promo-section">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🎁 ¿Tienes un código promocional?</h3>
+        <div class="promo-input-group">
+          <input type="text" class="promo-code-input" placeholder="Ingresa tu código">
+          <button class="btn-apply-promo" onclick="alert('Código aplicado')">Aplicar</button>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="cart-summary-card">
+        <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Resumen</h3>
+        <div class="summary-row">
+          <span>Productos</span>
+          <span>$15.98</span>
+        </div>
+        <div class="summary-row discount">
+          <span>Descuento</span>
+          <span>-$3.00</span>
+        </div>
+        <div class="summary-row">
+          <span>Envío</span>
+          <span>$1.50</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>$12.98</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span>$14.48</span>
+        </div>
+      </div>
+
+      <!-- Delivery Location -->
+      <div class="cart-delivery-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h3 class="section-title" style="font-size: 1.1rem; margin: 0;">📍 Entregar en</h3>
+          <button class="btn-change-location" onclick="alert('Pantalla de ubicaciones en desarrollo')">Cambiar</button>
+        </div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">Guayaquil, Ecuador</div>
+      </div>
+
+      <!-- Estimated Time -->
+      <div class="cart-time-card">
+        <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-bolt" style="color: #10B981;"></i> Llegará aproximadamente en</h3>
+        <div style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary);">20-30 min</div>
+      </div>
+
+      <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="cart-content-scroll empty-state" id="cart-empty-state" style="display: none;">
+      <div class="empty-state-icon" style="font-size: 4rem; margin-bottom: 1rem;">🛒</div>
+      <div class="empty-state-title">Tu carrito está vacío</div>
+      <p style="margin-bottom: 2rem;">Agrega algo delicioso y volveremos a llenarlo.</p>
+      <button class="btn-auth-primary" onclick="window.closeCartScreenToHome()">Explorar Rapidín</button>
+    </div>
+
+    <!-- Floating Checkout Button -->
+    <div class="floating-add-container" id="cart-floating-btn">
+      <button class="btn-add-to-cart" onclick="openCheckoutScreen()">
+        <span style="margin: 0 auto;">Continuar con el pedido · $14.48</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 12: CHECKOUT -->
+  <div class="app-cart-screen" id="app-checkout-screen" style="display: none;">
+    <div class="cart-header">
+      <button type="button" class="btn-back-auth" onclick="closeCheckoutScreen()" style="margin:0;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 class="cart-title">Confirmar pedido</h2>
+    </div>
+    
+    <div class="cart-content-scroll">
+      
+      <!-- Delivery Location -->
+      <div class="cart-delivery-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h3 class="section-title" style="font-size: 1.1rem; margin: 0;">📍 Entregar en</h3>
+          <button class="btn-change-location" onclick="alert('Pantalla de ubicación en desarrollo')">Cambiar</button>
+        </div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Guayaquil, Ecuador</div>
+        <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); font-weight: 700;">Casa</div>
+      </div>
+
+      <!-- Estimated Time -->
+      <div class="cart-time-card">
+        <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-bolt" style="color: #10B981;"></i> Entrega estimada</h3>
+        <div style="font-weight: 800; font-size: 1.4rem; color: var(--text-primary); margin-bottom: 0.3rem;">20-30 min</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">Llegará aproximadamente entre 7:20 PM y 7:30 PM</div>
+      </div>
+
+      <!-- Order Items Summary -->
+      <div class="checkout-section">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🛍️ Tu pedido</h3>
+        <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 1rem;">Burger House</div>
+        
+        <div class="checkout-item-row">
+          <div class="checkout-item-name">Hamburguesa Clásica ×1</div>
+          <div class="checkout-item-price">$7.99</div>
+        </div>
+        <div class="checkout-item-row">
+          <div class="checkout-item-name">Papas fritas ×2</div>
+          <div class="checkout-item-price">$7.98</div>
+        </div>
+        
+        <button class="btn-change-location" style="margin-top: 1rem; text-decoration: underline;" onclick="closeCheckoutScreen()">Ver pedido</button>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="checkout-section">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">💳 Método de pago</h3>
+        
+        <div class="payment-method-card">
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <div style="font-size: 1.5rem; color: var(--brand-primary);"><i class="fa-brands fa-cc-visa"></i></div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Visa •••• 4242</div>
+          </div>
+          <button class="btn-change-location" onclick="alert('Pantalla de métodos de pago en desarrollo')">Cambiar</button>
+        </div>
+        
+        <button class="btn-add-more" style="padding: 0.8rem; margin-bottom: 0; margin-top: 1rem;" onclick="alert('Pantalla de agregar tarjeta en desarrollo')">
+          <i class="fa-solid fa-plus"></i> Agregar método de pago
+        </button>
+      </div>
+
+      <!-- Promo -->
+      <div class="checkout-section">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🎁 Promoción</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); padding: 1rem; border-radius: var(--radius-md);">
+          <div>
+            <div style="color: #10B981; font-weight: 800; font-size: 1.05rem;">- $3.00</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">Cupón aplicado</div>
+          </div>
+          <button class="btn-change-location" onclick="alert('Pantalla de promociones en desarrollo')">Cambiar</button>
+        </div>
+      </div>
+
+      <!-- Cost Summary -->
+      <div class="cart-summary-card" style="margin-bottom: 1rem;">
+        <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Resumen de pago</h3>
+        <div class="summary-row">
+          <span>Productos</span>
+          <span>$15.97</span>
+        </div>
+        <div class="summary-row">
+          <span>Envío</span>
+          <span>$1.50</span>
+        </div>
+        <div class="summary-row discount">
+          <span>Descuento</span>
+          <span>-$3.00</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span style="font-size: 1.4rem;">$14.47</span>
+        </div>
+      </div>
+      
+      <!-- Security Note -->
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="color: var(--text-primary); font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem;"><i class="fa-solid fa-lock" style="color: #10B981;"></i> Pago seguro</div>
+        <div style="color: var(--text-secondary); font-size: 0.75rem;">Al confirmar aceptas los términos de compra de Rapidín.</div>
+      </div>
+
+      <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Floating Checkout Button -->
+    <div class="floating-add-container">
+      <button class="btn-add-to-cart" onclick="openSuccessScreen()">
+        <span style="margin: 0 auto; font-size: 1.15rem;">Confirmar pedido · $14.47</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 13: PEDIDO CONFIRMADO -->
+  <div class="app-success-screen" id="app-success-screen" style="display: none;">
+    <div class="success-anim-container">
+      <div class="success-circle"><i class="fa-solid fa-check"></i></div>
+    </div>
+    
+    <h2 class="success-title">¡Pedido confirmado! 🎉</h2>
+    <div class="success-subtitle">Tu pedido fue recibido correctamente.</div>
+    
+    <div class="success-order-num">Pedido #RPD-1048</div>
+    
+    <!-- Info Card -->
+    <div class="success-info-card">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span style="font-weight: 800; color: var(--text-primary);">🍔 Burger House</span>
+        <span style="font-weight: 700; color: var(--text-primary);">$14.47</span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">2 productos</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);">📍 Av. León Febres Cordero, Guayaquil</div>
+    </div>
+    
+    <!-- Estimated Time -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-bolt" style="color: #10B981;"></i> Llegará aproximadamente en</h3>
+      <div style="font-weight: 800; font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5rem;">20-30 min</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);">Te avisaremos cuando tu pedido esté en camino.</div>
+    </div>
+    
+    <!-- Tracker -->
+    <div class="tracker-container">
+      <div class="tracker-step active">
+        <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+        <div class="tracker-text">Pedido recibido</div>
+      </div>
+      <div class="tracker-step">
+        <div class="tracker-icon"></div>
+        <div class="tracker-text">Preparando pedido</div>
+      </div>
+      <div class="tracker-step">
+        <div class="tracker-icon"></div>
+        <div class="tracker-text">En camino</div>
+      </div>
+      <div class="tracker-step">
+        <div class="tracker-icon"></div>
+        <div class="tracker-text">Entregado</div>
+      </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification-card">
+      <div style="font-size: 1.2rem;">🔔</div>
+      <div style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.4;">Te avisaremos cuando haya novedades sobre tu pedido.</div>
+    </div>
+    
+    <!-- Actions -->
+    <button class="btn-auth-primary" style="margin-bottom: 1rem; width: 100%;" onclick="openTrackingScreen()">Ver seguimiento</button>
+    <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem;" onclick="closeSuccessScreenToHome()">Volver al inicio</button>
+  </div>
+
+  </div>
+
+  <!-- PANTALLA 14: SEGUIMIENTO DEL PEDIDO -->
+  <div class="app-tracking-screen" id="app-tracking-screen" style="display: none;">
+    <div class="tracking-header">
+      <button type="button" class="btn-back-auth" onclick="closeTrackingScreen()" style="margin:0; align-self: flex-start; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 style="font-size: 1.3rem; margin-bottom: 0.2rem;">Seguimiento del pedido</h2>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedido #RPD-1048</div>
+    </div>
+    
+    <!-- Mock Map -->
+    <div class="tracking-map-mock">
+      <div class="map-route-line"></div>
+      <div class="map-pin store">🏪</div>
+      <div class="map-pin courier">🚴</div>
+      <div class="map-pin user">📍</div>
+    </div>
+    
+    <!-- Current Status Card -->
+    <div class="tracking-status-card" id="tracking-status-card">
+      <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-person-biking" style="color: var(--brand-primary);"></i> Tu pedido está en camino</h3>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">El repartidor está llevando tu pedido.</div>
+      
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.2rem;">Llegará aproximadamente en</div>
+      <div style="font-weight: 800; font-size: 1.6rem; color: var(--text-primary);">12 min</div>
+    </div>
+    
+    <div class="tracking-content">
+      
+      <!-- Tracker -->
+      <div class="tracker-container" id="tracking-tracker-list">
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+          <div class="tracker-text">Pedido recibido</div>
+        </div>
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+          <div class="tracker-text">Preparando</div>
+        </div>
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-person-biking"></i></div>
+          <div class="tracker-text" style="color: var(--brand-primary);">Repartidor en camino</div>
+        </div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
+          <div class="tracker-text">Entregado</div>
+        </div>
+      </div>
+      
+      <!-- Courier Info -->
+      <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Tu repartidor</h3>
+      <div class="courier-card">
+        <div class="courier-info">
+          <div class="courier-avatar">👤</div>
+          <div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">Carlos M.</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);"><span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> 4.9</span> • 🚴 Moto</div>
+          </div>
+        </div>
+        <div class="courier-actions">
+          <button class="btn-courier-action" onclick="alert('Pantalla de chat en desarrollo')"><i class="fa-regular fa-comment-dots"></i></button>
+          <button class="btn-courier-action" onclick="alert('Llamada en desarrollo')"><i class="fa-solid fa-phone"></i></button>
+        </div>
+      </div>
+      
+      <!-- Order Detail -->
+      <div class="checkout-section" style="margin-bottom: 2rem;">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Tu pedido</h3>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span style="font-weight: 800; color: var(--text-primary);">Burger House</span>
+          <span style="font-weight: 700; color: var(--text-primary);">$14.47</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">2 productos</div>
+        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="alert('Detalle del pedido en desarrollo')">Ver detalles</button>
+      </div>
+      
+      <!-- Delivery Location -->
+      <div class="cart-delivery-card" style="margin-bottom: 2rem; border-color: rgba(255,255,255,0.1);">
+        <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.5rem; margin-top: 0;">📍 Entrega</h3>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">Guayaquil, Ecuador</div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="tracking-actions-list">
+        <button class="btn-action-list" onclick="alert('Pantalla de contacto al repartidor en desarrollo')">
+          Contactar repartidor <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        </button>
+        <button class="btn-action-list" onclick="openOrderDetailScreen()">
+          Ver pedido <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        </button>
+        <button class="btn-action-list" onclick="alert('Centro de ayuda en desarrollo')">
+          Necesito ayuda <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        </button>
+      </div>
+
+      <div style="height: 50px;"></div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 15: DETALLE DEL PEDIDO -->
+  <div class="app-order-detail-screen" id="app-order-detail-screen" style="display: none;">
+    <div class="order-detail-header">
+      <button type="button" class="btn-back-auth" onclick="closeOrderDetailScreen()" style="margin:0; align-self: flex-start; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 style="font-size: 1.3rem; margin-bottom: 0.2rem;">Detalle del pedido</h2>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedido #RPD-1048</div>
+      <div class="status-badge">🟢 En camino</div>
+    </div>
+    
+    <div style="padding: 1.5rem;">
+      
+      <!-- Negocio -->
+      <div class="checkout-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+          <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.2rem;">🍔 Burger House</h3>
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">⭐ 4.8 • 📍 1.2 km</div>
+        </div>
+        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="alert('Pantalla 9 en desarrollo')">Ver negocio</button>
+      </div>
+
+      <!-- Estado -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Estado del pedido</h2>
+      <div class="tracker-container">
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+          <div class="tracker-text">Pedido recibido</div>
+        </div>
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+          <div class="tracker-text">Preparando pedido</div>
+        </div>
+        <div class="tracker-step active">
+          <div class="tracker-icon"><i class="fa-solid fa-person-biking"></i></div>
+          <div class="tracker-text" style="color: var(--brand-primary);">En camino</div>
+        </div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
+          <div class="tracker-text">Entregado</div>
+        </div>
+      </div>
+      <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-size: 0.95rem;">Llegará aproximadamente en 12 min</div>
+
+      <!-- Productos -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Productos</h2>
+      <div class="order-item-list">
+        <div class="checkout-item-row">
+          <div class="checkout-item-name" style="font-weight: 700;">Hamburguesa Clásica</div>
+          <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">1 × $7.99</div>
+        </div>
+        <div class="order-item-extras">
+          <span>Queso extra</span>
+          <span>+$1.00</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="checkout-item-row">
+          <div class="checkout-item-name" style="font-weight: 700;">Papas fritas</div>
+          <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">2 × $3.99</div>
+        </div>
+      </div>
+
+      <!-- Resumen de pago -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem; margin-top: 2rem;">Resumen de pago</h2>
+      <div class="cart-summary-card" style="margin-bottom: 2rem;">
+        <div class="summary-row">
+          <span>Productos</span>
+          <span>$15.97</span>
+        </div>
+        <div class="summary-row">
+          <span>Envío</span>
+          <span>$1.50</span>
+        </div>
+        <div class="summary-row discount">
+          <span>Descuento</span>
+          <span>-$3.00</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span style="font-size: 1.4rem;">$14.47</span>
+        </div>
+      </div>
+
+      <!-- Método de pago -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Método de pago</h2>
+      <div class="checkout-section" style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+          <div style="font-size: 1.5rem; color: var(--brand-primary);"><i class="fa-brands fa-cc-visa"></i></div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Visa •••• 4242</div>
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">📍 Dirección de entrega</h2>
+      <div class="cart-delivery-card" style="margin-bottom: 2rem; border-color: rgba(255,255,255,0.1);">
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Guayaquil, Ecuador</div>
+        <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); font-weight: 700;">Casa</div>
+      </div>
+
+      <!-- Información del pedido -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Información del pedido</h2>
+      <div class="checkout-section" style="margin-bottom: 2rem; font-size: 0.9rem;">
+        <div style="margin-bottom: 0.5rem;"><span style="color: var(--text-secondary);">Realizado:</span> <span style="color: var(--text-primary); font-weight: 700; float: right;">17 de agosto de 2026 · 7:02 PM</span></div>
+        <div><span style="color: var(--text-secondary);">Entrega estimada:</span> <span style="color: var(--text-primary); font-weight: 700; float: right;">7:20 PM - 7:30 PM</span></div>
+      </div>
+
+      <!-- Repartidor -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">🚴 Repartidor</h2>
+      <div class="courier-card" style="margin-bottom: 2rem;">
+        <div class="courier-info">
+          <div class="courier-avatar">👤</div>
+          <div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">Carlos M.</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);"><span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> 4.9</span> • Moto</div>
+          </div>
+        </div>
+        <div class="courier-actions">
+          <button class="btn-courier-action" onclick="alert('Pantalla de chat en desarrollo')"><i class="fa-regular fa-comment-dots"></i></button>
+          <button class="btn-courier-action" onclick="alert('Llamada en desarrollo')"><i class="fa-solid fa-phone"></i></button>
+        </div>
+      </div>
+
+      <!-- Calificación (Visual) -->
+      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">¿Qué tal estuvo tu pedido?</h2>
+      <div class="rating-section">
+        <div class="rating-stars">
+          <i class="fa-regular fa-star"></i>
+          <i class="fa-regular fa-star"></i>
+          <i class="fa-regular fa-star"></i>
+          <i class="fa-regular fa-star"></i>
+          <i class="fa-regular fa-star"></i>
+        </div>
+        <textarea class="rating-input" placeholder="Cuéntanos tu experiencia..."></textarea>
+      </div>
+
+      <!-- Acciones -->
+      <div class="tracking-actions-list">
+        <button class="btn-auth-primary" style="margin-bottom: 0.5rem; width: 100%;" onclick="closeOrderDetailScreen()">Ver seguimiento</button>
+        <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" onclick="alert('Pantalla de ayuda en desarrollo')">Necesito ayuda</button>
+      </div>
+      
+      <div style="height: 50px;"></div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 16: MIS PEDIDOS -->
+  <div class="app-main-screen" id="app-orders-screen" style="display: none; padding-bottom: 80px;">
+    
+    <div style="padding: 1.5rem 1.5rem 0.5rem 1.5rem;">
+      <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 1rem;">Mis pedidos</h2>
+      
+      <div class="search-input-wrapper" style="margin-bottom: 1rem;">
+        <i class="fa-solid fa-magnifying-glass search-input-icon" style="top: 50%; transform: translateY(-50%);"></i>
+        <input type="text" class="search-input compact-input" placeholder="Buscar en mis pedidos" style="width: 100%; border-radius: var(--radius-md);">
+      </div>
+    </div>
+    
+    <div class="horizontal-scroll" style="padding-top: 0; padding-bottom: 0.5rem;">
+      <div class="search-filter-btn active" style="margin-left: 1.5rem;">Todos</div>
+      <div class="search-filter-btn">En curso</div>
+      <div class="search-filter-btn">Entregados</div>
+      <div class="search-filter-btn" style="margin-right: 1.5rem;">Cancelados</div>
+    </div>
+
+    <div style="padding: 1rem 1.5rem 2rem 1.5rem; overflow-y: auto;">
+      
+      <!-- Pedido Activo -->
+      <h2 class="section-title" style="font-size: 1.1rem; color: #F59E0B; margin-bottom: 0.8rem;"><i class="fa-solid fa-bolt"></i> Pedido en curso</h2>
+      
+      <div class="checkout-section" style="margin-bottom: 2rem; border-left: 4px solid #10B981; cursor: pointer;" onclick="openOrderDetailScreen()">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span style="font-weight: 800; color: var(--text-primary); font-size: 1.1rem;">🍔 Burger House</span>
+          <span style="font-weight: 700; color: var(--text-primary);">$14.47</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">Pedido #RPD-1048</div>
+        
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <span class="status-badge" style="margin: 0;">🟢 En camino</span>
+          <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">Llegará en aprox. 12 min</span>
+        </div>
+        
+        <button class="btn-auth-primary" style="margin-top: 1rem; width: 100%; padding: 0.8rem; font-size: 0.95rem;" onclick="event.stopPropagation(); openTrackingScreen()">Ver seguimiento &rarr;</button>
+      </div>
+
+      <!-- Historial -->
+      <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 1rem;">Historial</h2>
+      
+      <div class="checkout-section" style="margin-bottom: 1rem; cursor: pointer;" onclick="openOrderDetailScreen()">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+          <span style="font-weight: 700; color: var(--text-primary);">🍕 Pizza House</span>
+          <span style="font-weight: 700; color: var(--text-primary);">$18.50</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">15 de agosto • 2 productos</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: #10B981;">✓ Entregado</span>
+          <button class="btn-change-location" style="text-decoration: underline;" onclick="event.stopPropagation(); alert('Reconstruir carrito en desarrollo')">↻ Volver a pedir</button>
+        </div>
+      </div>
+
+      <div class="checkout-section" style="margin-bottom: 1rem; cursor: pointer;" onclick="openOrderDetailScreen()">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+          <span style="font-weight: 700; color: var(--text-primary);">💊 Farmacia Central</span>
+          <span style="font-weight: 700; color: var(--text-primary);">$24.90</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">12 de agosto • 3 productos</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: #10B981;">✓ Entregado</span>
+          <button class="btn-change-location" style="text-decoration: underline;" onclick="event.stopPropagation(); alert('Reconstruir carrito en desarrollo')">↻ Volver a pedir</button>
+        </div>
+      </div>
+
+      <div class="checkout-section" style="margin-bottom: 1rem; cursor: pointer;" onclick="openOrderDetailScreen()">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+          <span style="font-weight: 700; color: var(--text-primary);">🛒 Supermercado Express</span>
+          <span style="font-weight: 700; color: var(--text-primary);">$43.20</span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">9 de agosto • 8 productos</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: #10B981;">✓ Entregado</span>
+          <button class="btn-change-location" style="text-decoration: underline;" onclick="event.stopPropagation(); alert('Reconstruir carrito en desarrollo')">↻ Volver a pedir</button>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Empty State Template (Hidden) -->
+    <div style="display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 2rem; text-align: center;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">🛍️</div>
+      <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">Todavía no tienes pedidos</h2>
+      <div style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem;">Cuando hagas tu primer pedido, aparecerá aquí.</div>
+      <button class="btn-auth-primary" onclick="closeOrdersScreenToHome()">Explorar Rapidín</button>
+    </div>
+
+    <!-- Bottom Nav Copied for Orders Screen -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="closeOrdersScreenToHome()">
+        <i class="fa-solid fa-house nav-icon"></i>
+        <span class="nav-label">Inicio</span>
+      </div>
+      <div class="nav-item" onclick="openSearchScreenFromOrders()">
+        <i class="fa-solid fa-magnifying-glass nav-icon"></i>
+        <span class="nav-label">Buscar</span>
+      </div>
+      <div class="nav-item active">
+        <i class="fa-solid fa-receipt nav-icon"></i>
+        <span class="nav-label">Pedidos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de favoritos')">
+        <i class="fa-solid fa-heart nav-icon"></i>
+        <span class="nav-label">Favoritos</span>
+      </div>
+      <div class="nav-item" onclick="alert('Pantalla de perfil')">
+        <i class="fa-solid fa-user nav-icon"></i>
+        <span class="nav-label">Perfil</span>
+      </div>
     </div>
   </div>
 
@@ -404,22 +4119,25 @@
       if (modalVip) modalVip.classList.remove('active');
     });
 
-    // --- AUTH LOGIC (LOGIN OPCIONAL) ---
+    // --- AUTH LOGIC (LOGIN OBLIGATORIO) ---
     function checkAuthGate() {
       const user = window.rapidinDB.getCurrentUser('user');
-      
-      // Siempre mostramos el main-app-content porque es opcional
       const mainApp = document.getElementById('main-app-content');
-      if (mainApp) mainApp.style.display = 'block';
+      const authGate = document.getElementById('auth-gate-screen');
 
       if (user) {
-        document.getElementById('modal-user-login').classList.remove('active');
+        if (authGate) authGate.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        
         const btnLogout = document.getElementById('btn-user-logout');
         if (btnLogout) btnLogout.style.display = 'inline-flex';
         
         const btnAuth = document.getElementById('btn-user-auth');
         if (btnAuth) btnAuth.style.display = 'none';
       } else {
+        if (authGate) authGate.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'none';
+        
         const btnLogout = document.getElementById('btn-user-logout');
         if (btnLogout) btnLogout.style.display = 'none';
         
@@ -549,6 +4267,615 @@
         iconElement.classList.add('fa-eye-slash');
         iconElement.style.color = 'var(--text-muted)';
       }
+    };
+
+    window.prepareGoogleAuth = function() {
+      if (window.rapidinAlert) {
+        window.rapidinAlert('Integración de Google Auth en desarrollo.');
+      } else {
+        alert('Integración de Google Auth en desarrollo.');
+      }
+    };
+
+    window.prepareAppleAuth = function() {
+      if (window.rapidinAlert) {
+        window.rapidinAlert('Integración de Apple Auth en desarrollo.');
+      } else {
+        alert('Integración de Apple Auth en desarrollo.');
+      }
+    };
+
+    window.continueWithPhone = function() {
+      document.getElementById('step-welcome').style.display = 'none';
+      document.getElementById('step-phone-auth').style.display = 'flex';
+    };
+
+    window.backToWelcome = function() {
+      document.getElementById('step-phone-auth').style.display = 'none';
+      document.getElementById('step-welcome').style.display = 'flex';
+      
+      // Limpiar input
+      const phoneInput = document.getElementById('input-phone-number');
+      if(phoneInput) {
+        phoneInput.value = '';
+        document.getElementById('phone-error-msg').textContent = '';
+        document.getElementById('btn-continue-phone').disabled = true;
+      }
+    };
+
+    window.openCountrySelector = function() {
+      if (window.rapidinAlert) {
+        window.rapidinAlert('Selector de países en desarrollo (Arquitectura preparada).');
+      } else {
+        alert('Selector de países en desarrollo (Arquitectura preparada).');
+      }
+    };
+
+    let smsTimerInterval;
+    
+    window.backToPhoneInput = function() {
+      document.getElementById('step-verify-sms').style.display = 'none';
+      document.getElementById('step-phone-auth').style.display = 'flex';
+      clearInterval(smsTimerInterval);
+    };
+
+    window.startSmsTimer = function() {
+      clearInterval(smsTimerInterval);
+      const btn = document.getElementById('btn-resend-sms');
+      let timeLeft = 30;
+      
+      btn.disabled = true;
+      btn.style.color = 'var(--text-muted)';
+      btn.innerHTML = `Reenviar código en <span id="sms-timer">00:${timeLeft}</span>`;
+      
+      smsTimerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+          clearInterval(smsTimerInterval);
+          btn.disabled = false;
+          btn.innerHTML = 'Reenviar código';
+        } else {
+          let sec = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+          btn.innerHTML = `Reenviar código en <span id="sms-timer">00:${sec}</span>`;
+        }
+      }, 1000);
+    };
+
+    window.resendSmsCode = function() {
+      if (window.rapidinAlert) window.rapidinAlert('Te enviamos un nuevo código.');
+      else alert('Te enviamos un nuevo código.');
+      
+      const boxes = document.querySelectorAll('.sms-box');
+      boxes.forEach(b => b.value = '');
+      document.getElementById('sms-error-msg').textContent = '';
+      boxes[0].focus();
+      
+      startSmsTimer();
+    };
+
+    window.verifySmsCode = function() {
+      const boxes = document.querySelectorAll('.sms-box');
+      let code = '';
+      boxes.forEach(b => code += b.value);
+      
+      if (code.length === 6) {
+        // Mock validation: accept '123456' as success
+        if (code === '123456') {
+           console.log('Validación exitosa. Simulando usuario nuevo...');
+           document.getElementById('step-verify-sms').style.display = 'none';
+           document.getElementById('step-complete-profile').style.display = 'flex';
+        } else {
+           document.getElementById('sms-error-msg').textContent = 'El código no es correcto. Inténtalo nuevamente.';
+           boxes[5].focus();
+           boxes[5].select();
+        }
+      }
+    };
+
+    window.handleProfilePhoto = function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          document.getElementById('profile-photo-preview').innerHTML = `<img src="${ev.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    window.submitCompleteProfile = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('profile-name').value.trim();
+      const lastName = document.getElementById('profile-lastname').value.trim();
+      const email = document.getElementById('profile-email').value.trim();
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!name || !lastName || !emailRegex.test(email)) return;
+
+      const phone = document.getElementById('input-phone-number').value.replace(/\D/g, '');
+      const fullPhone = '+593' + phone;
+
+      const newUser = {
+         id: 'usr_' + Date.now(),
+         phone: fullPhone,
+         name: name,
+         lastName: lastName,
+         email: email
+      };
+
+      console.log('Nuevo usuario creado:', newUser);
+      
+      document.getElementById('step-complete-profile').style.display = 'none';
+      document.getElementById('step-location').style.display = 'flex';
+    };
+
+    window.backToProfile = function() {
+      document.getElementById('step-location').style.display = 'none';
+      document.getElementById('step-complete-profile').style.display = 'flex';
+    };
+
+    window.selectMockLocation = function() {
+      document.getElementById('mock-map').style.opacity = '1';
+      document.getElementById('mock-map-pin-icon').style.display = 'block';
+      document.getElementById('mock-map-info').style.display = 'block';
+      document.getElementById('mock-map-address').textContent = 'Av. León Febres Cordero, Guayaquil';
+      document.getElementById('btn-confirm-location').disabled = false;
+    };
+
+    window.handleLocationSearch = function(e) {
+      if(e.target.value.length > 3) {
+        document.getElementById('mock-map').style.opacity = '1';
+        document.getElementById('mock-map-pin-icon').style.display = 'block';
+        document.getElementById('mock-map-info').style.display = 'block';
+        document.getElementById('mock-map-address').textContent = e.target.value;
+        document.getElementById('btn-confirm-location').disabled = false;
+      } else {
+        document.getElementById('mock-map').style.opacity = '0.5';
+        document.getElementById('mock-map-pin-icon').style.display = 'none';
+        document.getElementById('mock-map-info').style.display = 'none';
+        document.getElementById('btn-confirm-location').disabled = true;
+      }
+    };
+
+    window.confirmLocation = function() {
+      console.log('Ubicación confirmada. Flujo de registro inicial completo.');
+      document.getElementById('auth-gate-screen').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+      
+      const address = document.getElementById('mock-map-address').textContent;
+      let displayAddress = address.length > 25 ? address.substring(0, 22) + '...' : address;
+      document.getElementById('home-display-address').innerHTML = `${displayAddress} <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i>`;
+    };
+
+    window.submitPhoneAuth = function() {
+      const phoneInput = document.getElementById('input-phone-number').value.replace(/\D/g, '');
+      if (phoneInput.length !== 9) {
+        document.getElementById('phone-error-msg').textContent = 'Ingresa un número de celular válido.';
+        return;
+      }
+      
+      const masked = '+593 ' + phoneInput.substring(0,3) + ' *** ' + phoneInput.substring(6);
+      document.getElementById('display-verify-phone').textContent = masked;
+      
+      const boxes = document.querySelectorAll('.sms-box');
+      boxes.forEach(b => b.value = '');
+      document.getElementById('sms-error-msg').textContent = '';
+      
+      document.getElementById('step-phone-auth').style.display = 'none';
+      document.getElementById('step-verify-sms').style.display = 'flex';
+      
+      startSmsTimer();
+      setTimeout(() => boxes[0].focus(), 300);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const phoneInput = document.getElementById('input-phone-number');
+      const phoneBtn = document.getElementById('btn-continue-phone');
+      const errorMsg = document.getElementById('phone-error-msg');
+
+      if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+          let val = this.value.replace(/\D/g, '');
+          if (val.startsWith('0')) val = val.substring(1);
+          
+          let formatted = val;
+          if (val.length > 2 && val.length <= 5) {
+            formatted = val.replace(/(\d{2})(\d+)/, '$1 $2');
+          } else if (val.length > 5) {
+            formatted = val.replace(/(\d{2})(\d{3})(\d+)/, '$1 $2 $3');
+          }
+          this.value = formatted;
+
+          if (val.length === 0) {
+            errorMsg.textContent = '';
+            phoneBtn.disabled = true;
+          } else if (val.length < 9) {
+            errorMsg.textContent = 'El número es muy corto.';
+            phoneBtn.disabled = true;
+          } else if (val.length > 9) {
+            errorMsg.textContent = 'El número es muy largo.';
+            phoneBtn.disabled = true;
+          } else {
+            errorMsg.textContent = '';
+            phoneBtn.disabled = false;
+          }
+        });
+      }
+
+      const smsBoxes = document.querySelectorAll('.sms-box');
+      smsBoxes.forEach((box, index) => {
+        box.addEventListener('input', function(e) {
+          this.value = this.value.replace(/\D/g, '');
+          if (this.value.length === 1) {
+            document.getElementById('sms-error-msg').textContent = ''; 
+            if (index < smsBoxes.length - 1) smsBoxes[index + 1].focus();
+            else {
+              this.blur();
+              verifySmsCode();
+            }
+          }
+        });
+
+        box.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && this.value === '') {
+            if (index > 0) {
+              smsBoxes[index - 1].focus();
+              smsBoxes[index - 1].value = '';
+            }
+          }
+        });
+
+        box.addEventListener('paste', function(e) {
+          e.preventDefault();
+          let pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+          if (pasted.length > 0) {
+            document.getElementById('sms-error-msg').textContent = '';
+            let chars = pasted.split('');
+            smsBoxes.forEach((b, i) => {
+               if (chars[i]) b.value = chars[i];
+            });
+            if (chars.length >= 6) {
+               smsBoxes[5].focus();
+               verifySmsCode();
+            } else {
+               smsBoxes[chars.length].focus();
+            }
+          }
+        });
+      });
+      
+      const profName = document.getElementById('profile-name');
+      const profLastName = document.getElementById('profile-lastname');
+      const profEmail = document.getElementById('profile-email');
+      const btnProfile = document.getElementById('btn-continue-profile');
+
+      const validateProfileForm = () => {
+         const nameVal = profName.value.trim();
+         const lastVal = profLastName.value.trim();
+         const emailVal = profEmail.value.trim();
+         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+         if (nameVal.length >= 2 && lastVal.length >= 2 && emailRegex.test(emailVal)) {
+            btnProfile.disabled = false;
+         } else {
+            btnProfile.disabled = true;
+         }
+      };
+
+      if(profName && profLastName && profEmail) {
+         profName.addEventListener('input', validateProfileForm);
+         profLastName.addEventListener('input', validateProfileForm);
+         profEmail.addEventListener('input', validateProfileForm);
+      }
+    });
+
+    window.openSearchScreen = function() {
+      document.getElementById('app-main-screen').style.display = 'none';
+      document.getElementById('app-search-screen').style.display = 'flex';
+      setTimeout(() => document.getElementById('main-search-input').focus(), 100);
+    };
+
+    window.closeSearchScreen = function() {
+      document.getElementById('app-search-screen').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+    };
+
+    window.handleSearchInput = function(e) {
+      const val = e.target.value.trim();
+      const clearBtn = document.getElementById('search-clear-btn');
+      const idle = document.getElementById('search-content-idle');
+      const results = document.getElementById('search-content-results');
+      const empty = document.getElementById('search-content-empty');
+      const title = document.getElementById('search-results-title');
+
+      if (val.length > 0) {
+        clearBtn.style.display = 'flex';
+        idle.style.display = 'none';
+        
+        if (val.toLowerCase() === 'xxx' || val.toLowerCase() === 'no') {
+           results.style.display = 'none';
+           empty.style.display = 'flex';
+           document.getElementById('empty-state-msg').textContent = `No encontramos resultados para "${val}".`;
+        } else {
+           results.style.display = 'block';
+           empty.style.display = 'none';
+           title.textContent = `Resultados para "${val}"`;
+           document.getElementById('search-results-count').textContent = Math.floor(Math.random() * 200 + 10) + ' resultados';
+           
+           // Simulación rápida de nombres
+           const pval = val.charAt(0).toUpperCase() + val.slice(1);
+           document.getElementById('mock-prod-title-1').textContent = pval + ' Clásica';
+           document.getElementById('mock-prod-title-2').textContent = pval + ' Familiar';
+           document.getElementById('mock-prod-store-1').textContent = pval + ' House';
+           document.getElementById('mock-prod-store-2').textContent = pval + ' Factory';
+           document.getElementById('mock-store-title-1').textContent = pval + ' House';
+           document.getElementById('mock-store-title-2').textContent = 'Pizzería ' + pval;
+           
+           const bestOption = document.getElementById('search-best-option-container');
+           if (val.toLowerCase().includes('pizza')) {
+               bestOption.style.display = 'block';
+               document.getElementById('mock-best-title').textContent = pval + ' House';
+           } else {
+               bestOption.style.display = 'none';
+           }
+        }
+      } else {
+        clearBtn.style.display = 'none';
+        idle.style.display = 'block';
+        results.style.display = 'none';
+        empty.style.display = 'none';
+      }
+    };
+
+    window.clearSearchInput = function() {
+      const input = document.getElementById('main-search-input');
+      input.value = '';
+      input.focus();
+      handleSearchInput({target: input});
+    };
+
+    window.mockSearch = function(term) {
+      openSearchScreen();
+      const input = document.getElementById('main-search-input');
+      input.value = term;
+      handleSearchInput({target: input});
+    };
+    window.openStoreScreen = function(storeName = 'Burger House', rating = '4.8') {
+      const activeScreen = document.querySelector('.app-main-screen[style*="display: flex"], .app-search-screen[style*="display: flex"]');
+      if (activeScreen) {
+        window.previousScreenForStore = activeScreen.id;
+        activeScreen.style.display = 'none';
+      } else {
+        window.previousScreenForStore = 'app-main-screen';
+        document.getElementById('app-main-screen').style.display = 'none';
+        document.getElementById('app-search-screen').style.display = 'none';
+      }
+      
+      document.querySelector('.store-title-main').textContent = storeName;
+      document.querySelector('.store-rating').innerHTML = `<i class="fa-solid fa-star"></i> ${rating}`;
+      
+      document.getElementById('app-store-screen').style.display = 'flex';
+      
+      // Simulate checking if we have cart items to show floating cart
+      // We will just show it after a tiny delay for visual effect
+      setTimeout(() => {
+        document.getElementById('floating-cart').style.display = 'flex';
+      }, 500);
+    };
+
+    window.closeStoreScreen = function() {
+      document.getElementById('app-store-screen').style.display = 'none';
+      if (window.previousScreenForStore) {
+        document.getElementById(window.previousScreenForStore).style.display = 'flex';
+      } else {
+        document.getElementById('app-main-screen').style.display = 'flex';
+      }
+    };
+
+    window.toggleFavorite = function(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('fa-regular')) {
+        icon.classList.remove('fa-regular');
+        icon.classList.add('fa-solid');
+        icon.style.color = '#FF3366';
+        alert('Añadido a favoritos ❤️');
+      } else {
+        icon.classList.remove('fa-solid');
+        icon.classList.add('fa-regular');
+        icon.style.color = 'white';
+      }
+    };
+    window.openProductScreen = function() {
+      const activeScreen = document.querySelector('.app-store-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], .app-main-screen[style*="display: flex"]');
+      if (activeScreen) {
+        window.previousScreenForProduct = activeScreen.id;
+        activeScreen.style.display = 'none';
+      } else {
+        window.previousScreenForProduct = 'app-main-screen';
+        document.getElementById('app-main-screen').style.display = 'none';
+        document.getElementById('app-search-screen').style.display = 'none';
+        document.getElementById('app-store-screen').style.display = 'none';
+      }
+      
+      document.getElementById('app-product-screen').style.display = 'flex';
+      
+      // Setup default price and qty
+      window.currentProductBasePrice = 7.99;
+      window.currentProductQty = 1;
+      document.getElementById('product-qty').textContent = '1';
+      updateProductTotal();
+    };
+
+    window.closeProductScreen = function() {
+      document.getElementById('app-product-screen').style.display = 'none';
+      if (window.previousScreenForProduct) {
+        document.getElementById(window.previousScreenForProduct).style.display = 'flex';
+      } else {
+        document.getElementById('app-main-screen').style.display = 'flex';
+      }
+    };
+
+    window.selectRadioOption = function(element, group) {
+      // Very basic visual toggle
+      const container = element.parentElement;
+      const allRadios = container.querySelectorAll('.radio-circle');
+      allRadios.forEach(r => r.classList.remove('selected'));
+      element.querySelector('.radio-circle').classList.add('selected');
+      updateProductTotal();
+    };
+
+    window.toggleCheckboxOption = function(element) {
+      const checkbox = element.querySelector('.checkbox-square');
+      checkbox.classList.toggle('selected');
+      updateProductTotal();
+    };
+
+    window.changeQty = function(delta) {
+      if (window.currentProductQty + delta >= 1) {
+        window.currentProductQty += delta;
+        document.getElementById('product-qty').textContent = window.currentProductQty;
+        updateProductTotal();
+      }
+    };
+
+    window.updateProductTotal = function() {
+      // Mock calculation based on visual selected items
+      let extraPrice = 0;
+      
+      const sizeSelected = document.querySelector('.radio-circle.selected');
+      if (sizeSelected && sizeSelected.parentElement.textContent.includes('Mediana')) extraPrice += 1.50;
+      if (sizeSelected && sizeSelected.parentElement.textContent.includes('Grande')) extraPrice += 2.50;
+      
+      const checks = document.querySelectorAll('.checkbox-square.selected');
+      checks.forEach(c => {
+        if (c.parentElement.textContent.includes('Queso')) extraPrice += 1.00;
+        if (c.parentElement.textContent.includes('Bacon')) extraPrice += 1.50;
+        if (c.parentElement.textContent.includes('Aguacate')) extraPrice += 1.50;
+      });
+
+      const total = (window.currentProductBasePrice + extraPrice) * window.currentProductQty;
+      document.getElementById('btn-main-add-price').textContent = '$' + total.toFixed(2);
+    };
+
+    window.openCartScreen = function() {
+      const activeScreen = document.querySelector('.app-store-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], .app-main-screen[style*="display: flex"], .app-product-screen[style*="display: flex"]');
+      if (activeScreen) {
+        window.previousScreenForCart = activeScreen.id;
+        activeScreen.style.display = 'none';
+      }
+      
+      document.getElementById('app-cart-screen').style.display = 'flex';
+      
+      // Reset to filled state for mockup demonstration
+      document.getElementById('cart-filled-state').style.display = 'block';
+      document.getElementById('cart-floating-btn').style.display = 'flex';
+      document.getElementById('cart-empty-state').style.display = 'none';
+      
+      // Reshow elements just in case they were removed in empty state test
+      const items = document.querySelectorAll('.cart-item-card');
+      items.forEach(i => i.style.display = 'flex');
+    };
+
+    window.closeCartScreen = function() {
+      document.getElementById('app-cart-screen').style.display = 'none';
+      if (window.previousScreenForCart) {
+        document.getElementById(window.previousScreenForCart).style.display = 'flex';
+      } else {
+        document.getElementById('app-main-screen').style.display = 'flex';
+      }
+    };
+
+    window.closeCartScreenToHome = function() {
+      document.getElementById('app-cart-screen').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+    };
+
+    window.removeMockItem = function(btn) {
+      const card = btn.closest('.cart-item-card');
+      card.style.display = 'none';
+      
+      // Check if both are hidden to show empty state
+      const items = document.querySelectorAll('.cart-item-card');
+      let allHidden = true;
+      items.forEach(i => {
+        if (i.style.display !== 'none') allHidden = false;
+      });
+      
+      if (allHidden) {
+        document.getElementById('cart-filled-state').style.display = 'none';
+        document.getElementById('cart-floating-btn').style.display = 'none';
+        document.getElementById('cart-empty-state').style.display = 'flex';
+      }
+    };
+
+    window.addProductToCartMock = function() {
+      // Simulate adding to cart, then open cart
+      const cartBtn = document.getElementById('floating-cart');
+      if (cartBtn) {
+        cartBtn.style.display = 'flex';
+      }
+      openCartScreen();
+    };
+
+    window.openCheckoutScreen = function() {
+      document.getElementById('app-cart-screen').style.display = 'none';
+      document.getElementById('app-checkout-screen').style.display = 'flex';
+    };
+
+    window.closeCheckoutScreen = function() {
+      document.getElementById('app-checkout-screen').style.display = 'none';
+      document.getElementById('app-cart-screen').style.display = 'flex';
+    };
+
+    window.openSuccessScreen = function() {
+      document.getElementById('app-checkout-screen').style.display = 'none';
+      document.getElementById('app-success-screen').style.display = 'flex';
+    };
+
+    window.closeSuccessScreenToHome = function() {
+      document.getElementById('app-success-screen').style.display = 'none';
+      // Hide any previous floating cart to simulate starting fresh
+      document.getElementById('floating-cart').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+    };
+
+    window.openTrackingScreen = function() {
+      document.getElementById('app-success-screen').style.display = 'none';
+      document.getElementById('app-tracking-screen').style.display = 'flex';
+    };
+
+    window.closeTrackingScreen = function() {
+      document.getElementById('app-tracking-screen').style.display = 'none';
+      document.getElementById('app-success-screen').style.display = 'flex';
+    };
+
+    window.openOrderDetailScreen = function() {
+      // Hide either tracking or orders screen depending on where we came from
+      document.getElementById('app-tracking-screen').style.display = 'none';
+      document.getElementById('app-orders-screen').style.display = 'none';
+      document.getElementById('app-order-detail-screen').style.display = 'flex';
+    };
+
+    window.closeOrderDetailScreen = function() {
+      document.getElementById('app-order-detail-screen').style.display = 'none';
+      // For the mock, just return to orders screen (or map if you want). Returning to orders is safer overall.
+      document.getElementById('app-orders-screen').style.display = 'flex';
+    };
+
+    window.openOrdersScreen = function() {
+      document.querySelectorAll('.app-main-screen, .app-search-screen, .app-store-screen, .app-product-screen, .app-cart-screen, .app-checkout-screen, .app-success-screen, .app-tracking-screen, .app-order-detail-screen').forEach(el => el.style.display = 'none');
+      document.getElementById('app-orders-screen').style.display = 'flex';
+    };
+
+    window.closeOrdersScreenToHome = function() {
+      document.getElementById('app-orders-screen').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+    };
+
+    window.openSearchScreenFromOrders = function() {
+      document.getElementById('app-orders-screen').style.display = 'none';
+      document.getElementById('app-search-screen').style.display = 'flex';
+      setTimeout(() => document.getElementById('main-search-input').focus(), 100);
     };
 
   </script>
