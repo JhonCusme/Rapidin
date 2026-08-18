@@ -3476,8 +3476,6 @@
     <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem;" onclick="closeSuccessScreenToHome()">Volver al inicio</button>
   </div>
 
-  </div>
-
   <!-- PANTALLA 14: SEGUIMIENTO DEL PEDIDO -->
   <div class="app-tracking-screen" id="app-tracking-screen" style="display: none;">
     <div class="tracking-header">
@@ -3918,7 +3916,7 @@
 
     <!-- TAB: PRODUCTOS FAVORITOS -->
     <div id="fav-content-products" style="display: none; padding: 0 1.5rem 2rem 1.5rem;">
-      <div class="search-product-item" id="fav-product-1">
+      <div class="search-product-item" id="fav-product-1" style="cursor: pointer;" onclick="openProductScreen()">
         <div style="flex: 1;">
           <div class="product-info-title">Hamburguesa Clásica</div>
           <div class="product-info-store">Burger House</div>
@@ -3926,11 +3924,11 @@
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end;">
           <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍔</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="toggleFavoriteCard(this, 'fav-product-1')"><i class="fa-solid fa-heart"></i></button>
+          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-1')"><i class="fa-solid fa-heart"></i></button>
         </div>
       </div>
 
-      <div class="search-product-item" id="fav-product-2">
+      <div class="search-product-item" id="fav-product-2" style="cursor: pointer;" onclick="openProductScreen()">
         <div style="flex: 1;">
           <div class="product-info-title">Pizza Pepperoni</div>
           <div class="product-info-store">Pizza House</div>
@@ -3939,11 +3937,11 @@
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end;">
           <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="toggleFavoriteCard(this, 'fav-product-2')"><i class="fa-solid fa-heart"></i></button>
+          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-2')"><i class="fa-solid fa-heart"></i></button>
         </div>
       </div>
 
-      <div class="search-product-item" id="fav-product-3">
+      <div class="search-product-item" id="fav-product-3" style="cursor: pointer;" onclick="openProductScreen()">
         <div style="flex: 1;">
           <div class="product-info-title">Coca-Cola 1.5L</div>
           <div class="product-info-store">Supermercado Express</div>
@@ -3951,7 +3949,7 @@
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end;">
           <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🥤</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="toggleFavoriteCard(this, 'fav-product-3')"><i class="fa-solid fa-heart"></i></button>
+          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-3')"><i class="fa-solid fa-heart"></i></button>
         </div>
       </div>
     </div>
@@ -4313,17 +4311,20 @@
       <form id="form-login">
         <div style="margin-bottom: 1rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Correo Electrónico</label>
-          <input type="email" id="login-email" class="coupon-input" style="width: 100%;" value="cliente@rapidin.com" required>
+          <input type="email" id="login-email" class="coupon-input" style="width: 100%;" placeholder="tu@email.com" required>
         </div>
         <div style="margin-bottom: 1.25rem;">
           <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.4rem;">Contraseña</label>
           <div style="position: relative;">
-            <input type="password" id="login-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" value="123" required>
+            <input type="password" id="login-password" class="coupon-input" style="width: 100%; padding-right: 2.5rem;" required>
             <i class="fa-solid fa-eye-slash" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted);" onclick="togglePasswordVisibility('login-password', this)"></i>
           </div>
         </div>
         <button type="submit" class="btn-checkout" style="margin-bottom: 1rem;">Ingresar a mi Cuenta 🚀</button>
       </form>
+      <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+        ¿No tienes cuenta? <a href="#" onclick="event.preventDefault(); document.getElementById('modal-auth').classList.remove('active'); document.getElementById('modal-register-user').classList.add('active');" style="color: var(--brand-primary); font-weight: 700; text-decoration: none;">Regístrate aquí</a>
+      </p>
     </div>
   </div>
 
@@ -4535,21 +4536,26 @@
       }
     });
 
-    document.getElementById('gate-form-login')?.addEventListener('submit', async (e) => {
+    document.getElementById('form-login')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('gate-login-email').value;
-      const pass = document.getElementById('gate-login-password').value;
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
       const res = await window.rapidinDB.login(email, pass, 'user');
       if (res.success) {
         window.rapidinAlert('🎉 ¡Has iniciado sesión con éxito!');
+        document.getElementById('modal-auth')?.classList.remove('active');
         checkAuthGate();
       } else {
         window.rapidinAlert(res.message);
       }
     });
 
+    document.getElementById('btn-close-auth')?.addEventListener('click', () => {
+      document.getElementById('modal-auth')?.classList.remove('active');
+    });
+
     document.getElementById('btn-user-auth')?.addEventListener('click', () => {
-      document.getElementById('modal-user-login').classList.add('active');
+      document.getElementById('modal-auth')?.classList.add('active');
     });
 
     document.getElementById('form-register-user')?.addEventListener('submit', async (e) => {
@@ -5023,7 +5029,7 @@
       handleSearchInput({target: input});
     };
     window.openStoreScreen = function(storeName = 'Burger House', rating = '4.8') {
-      const activeScreen = document.querySelector('.app-main-screen[style*="display: flex"], .app-search-screen[style*="display: flex"]');
+      const activeScreen = document.querySelector('.app-main-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], #app-favorites-screen[style*="display: flex"], #app-orders-screen[style*="display: flex"], #app-profile-screen[style*="display: flex"]');
       if (activeScreen) {
         window.previousScreenForStore = activeScreen.id;
         activeScreen.style.display = 'none';
@@ -5068,7 +5074,7 @@
       }
     };
     window.openProductScreen = function() {
-      const activeScreen = document.querySelector('.app-store-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], .app-main-screen[style*="display: flex"]');
+      const activeScreen = document.querySelector('.app-store-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], .app-main-screen[style*="display: flex"], #app-favorites-screen[style*="display: flex"]');
       if (activeScreen) {
         window.previousScreenForProduct = activeScreen.id;
         activeScreen.style.display = 'none';
@@ -5222,13 +5228,15 @@
     };
 
     window.openTrackingScreen = function() {
-      document.getElementById('app-success-screen').style.display = 'none';
+      const activeScreen = document.querySelector('#app-success-screen[style*="display: flex"], #app-orders-screen[style*="display: flex"]');
+      window.previousScreenForTracking = activeScreen ? activeScreen.id : 'app-success-screen';
+      if (activeScreen) activeScreen.style.display = 'none';
       document.getElementById('app-tracking-screen').style.display = 'flex';
     };
 
     window.closeTrackingScreen = function() {
       document.getElementById('app-tracking-screen').style.display = 'none';
-      document.getElementById('app-success-screen').style.display = 'flex';
+      document.getElementById(window.previousScreenForTracking || 'app-success-screen').style.display = 'flex';
     };
 
     window.openOrderDetailScreen = function() {
