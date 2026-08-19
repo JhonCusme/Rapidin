@@ -2799,21 +2799,12 @@
         </div>
       </div>
 
-      <div class="rapidin-ahora-section">
+      <div class="rapidin-ahora-section" onclick="openRapidinAhoraScreen()" style="cursor: pointer;">
         <h2 class="rapidin-ahora-title"><i class="fa-solid fa-bolt" style="color: var(--brand-primary);"></i> Rapidín Ahora</h2>
         <p class="rapidin-ahora-subtitle">Lo que puede llegar más rápido a tu ubicación</p>
-        <div class="horizontal-scroll" style="padding-bottom: 0;">
-          <div class="quick-card" onclick="openStoreScreen('Burger House', '4.8')">
-            <span class="quick-card-title">Hamburguesa</span>
-            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 15 min</span>
-          </div>
-          <div class="quick-card" onclick="openStoreScreen('Farmacia Sana', '4.9')">
-            <span class="quick-card-title">Farmacia</span>
-            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 12 min</span>
-          </div>
-          <div class="quick-card" onclick="openStoreScreen('Mercado Sano', '4.9')">
-            <span class="quick-card-title">Supermercado</span>
-            <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> 18 min</span>
+        <div class="horizontal-scroll" style="padding-bottom: 0;" id="home-rapidin-ahora-list">
+          <div class="quick-card">
+            <span class="quick-card-title">Cargando...</span>
           </div>
         </div>
       </div>
@@ -3162,6 +3153,27 @@
         <div style="font-size: 0.85rem; color: var(--text-secondary);" id="promo-detail-expiry"></div>
       </div>
       <button class="btn-auth-primary" style="width: 100%; margin-top: 1.5rem;" onclick="copyPromoCode()">Copiar código</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 83: RAPIDÍN AHORA -->
+  <div class="app-search-screen" id="app-rapidin-ahora-screen" style="display: none;">
+    <div class="search-header-compact">
+      <button type="button" class="btn-back-search" onclick="closeRapidinAhoraScreen()" style="padding:0;">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <h2 style="font-size: 1.2rem; margin: 0;"><i class="fa-solid fa-bolt" style="color: var(--brand-primary);"></i> Rapidín Ahora</h2>
+    </div>
+    <div class="search-content" style="display: block;">
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Todo lo que puede llegar más rápido a tu ubicación, ordenado por tiempo estimado de llegada.</p>
+      <div class="search-filters" id="rapidin-ahora-filters-row">
+        <div class="search-filter-btn active" data-ahora-filter="all" onclick="loadRapidinAhora('all')">Todos</div>
+        <div class="search-filter-btn" data-ahora-filter="restaurants" onclick="loadRapidinAhora('restaurants')">🍔 Restaurantes</div>
+        <div class="search-filter-btn" data-ahora-filter="pharmacy" onclick="loadRapidinAhora('pharmacy')">💊 Farmacias</div>
+        <div class="search-filter-btn" data-ahora-filter="supermarket" onclick="loadRapidinAhora('supermarket')">🛒 Supermercados</div>
+        <div class="search-filter-btn" data-ahora-filter="drinks" onclick="loadRapidinAhora('drinks')">🥤 Tiendas</div>
+      </div>
+      <div id="rapidin-ahora-list" style="margin-top: 1rem;"></div>
     </div>
   </div>
 
@@ -5150,6 +5162,7 @@
         if (btnLogout) btnLogout.style.display = 'inline-flex';
         if (btnAuth) btnAuth.style.display = 'none';
         if (window.loadHomeStores) window.loadHomeStores();
+        if (window.loadHomeRapidinAhora) window.loadHomeRapidinAhora();
       } else {
         if (authGate) authGate.style.display = 'flex';
         if (homeScreen) homeScreen.style.display = 'none';
@@ -5986,6 +5999,54 @@
       navigator.clipboard.writeText(code).then(() => {
         if (window.rapidinAlert) window.rapidinAlert('Código copiado: ' + code);
       });
+    };
+
+    function categoryIcon(category) {
+      return { restaurants: '🍔', pharmacy: '💊', supermarket: '🛒', drinks: '🥤', turbo: '⚡', express: '📦' }[category] || '🏪';
+    }
+
+    window.loadHomeRapidinAhora = async function() {
+      const stores = await window.rapidinDB.getStores(null, null, { sortBy: 'fastest' });
+      cacheStores(stores);
+      const container = document.getElementById('home-rapidin-ahora-list');
+      if (!container) return;
+      if (!stores.length) {
+        container.innerHTML = '<div class="quick-card"><span class="quick-card-title">Sin negocios disponibles</span></div>';
+        return;
+      }
+      container.innerHTML = stores.slice(0, 5).map(s => `
+        <div class="quick-card" onclick="event.stopPropagation(); openStoreScreen('${s.id}')">
+          <span class="quick-card-title">${categoryIcon(s.category)} ${escapeHtml(s.name)}</span>
+          <span class="quick-card-time"><i class="fa-solid fa-bolt"></i> ${escapeHtml(s.deliveryTime || '')}</span>
+        </div>
+      `).join('');
+    };
+
+    window.openRapidinAhoraScreen = function() {
+      const activeScreen = document.querySelector('.app-main-screen[style*="display: flex"], .app-search-screen[style*="display: flex"]');
+      window.previousScreenForRapidinAhora = activeScreen ? activeScreen.id : 'app-main-screen';
+      if (activeScreen) activeScreen.style.display = 'none';
+      else document.getElementById('app-main-screen').style.display = 'none';
+      document.getElementById('app-rapidin-ahora-screen').style.display = 'flex';
+      loadRapidinAhora('all');
+    };
+
+    window.closeRapidinAhoraScreen = function() {
+      document.getElementById('app-rapidin-ahora-screen').style.display = 'none';
+      document.getElementById(window.previousScreenForRapidinAhora || 'app-main-screen').style.display = 'flex';
+    };
+
+    window.loadRapidinAhora = async function(filter) {
+      document.querySelectorAll('#rapidin-ahora-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.ahoraFilter === filter));
+      const list = document.getElementById('rapidin-ahora-list');
+      list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Buscando lo más rápido cerca de ti...</div>';
+      const stores = await window.rapidinDB.getStores(null, null, { category: filter === 'all' ? null : filter, sortBy: 'fastest' });
+      cacheStores(stores);
+      if (!stores.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay negocios disponibles en esta categoría.</div>';
+        return;
+      }
+      list.innerHTML = stores.map(verticalStoreCardHtml).join('');
     };
 
     window.openPromotionsScreen = function() {
