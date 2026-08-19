@@ -194,6 +194,158 @@ class RapidinDatabase {
   }
 
   // ==========================================
+  // CUENTA: PERFIL, DIRECCIONES, PAGOS, CUPONES, NOTIFICACIONES
+  // ==========================================
+
+  async updateProfile(profileData) {
+    try {
+      const res = await fetch(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify(profileData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem(RAPIDIN_KEY_AUTH_USER, JSON.stringify({ token: data.token, ...data.user }));
+      }
+      return data;
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async changePhone(phone) {
+    try {
+      const res = await fetch(`${API_URL}/auth/change-phone`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const user = this.getCurrentUser('user');
+        if (user) { user.phone = phone; localStorage.setItem(RAPIDIN_KEY_AUTH_USER, JSON.stringify(user)); }
+      }
+      return data;
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async deleteAccount() {
+    try {
+      const res = await fetch(`${API_URL}/auth/account`, { method: 'DELETE', headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      if (data.success) this.logout('user');
+      return data;
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async getAddresses() {
+    try {
+      const res = await fetch(`${API_URL}/addresses`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data.addresses : [];
+    } catch (e) { return []; }
+  }
+
+  async createAddress(addressData) {
+    try {
+      const res = await fetch(`${API_URL}/addresses`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify(addressData) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async updateAddress(id, addressData) {
+    try {
+      const res = await fetch(`${API_URL}/addresses/${id}`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify(addressData) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async deleteAddress(id) {
+    try {
+      const res = await fetch(`${API_URL}/addresses/${id}`, { method: 'DELETE', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async setDefaultAddress(id) {
+    try {
+      const res = await fetch(`${API_URL}/addresses/${id}/default`, { method: 'PUT', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async getPaymentMethods() {
+    try {
+      const res = await fetch(`${API_URL}/payment-methods`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data.paymentMethods : [];
+    } catch (e) { return []; }
+  }
+
+  async createPaymentMethodSetupIntent() {
+    try {
+      const res = await fetch(`${API_URL}/payment-methods/setup-intent`, { method: 'POST', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async savePaymentMethod(stripePaymentMethodId, isDefault) {
+    try {
+      const res = await fetch(`${API_URL}/payment-methods`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify({ stripePaymentMethodId, isDefault }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async deletePaymentMethod(id) {
+    try {
+      const res = await fetch(`${API_URL}/payment-methods/${id}`, { method: 'DELETE', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async setDefaultPaymentMethod(id) {
+    try {
+      const res = await fetch(`${API_URL}/payment-methods/${id}/default`, { method: 'PUT', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async getCoupons() {
+    try {
+      const res = await fetch(`${API_URL}/coupons`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data : { available: [], used: [] };
+    } catch (e) { return { available: [], used: [] }; }
+  }
+
+  async redeemCoupon(code) {
+    try {
+      const res = await fetch(`${API_URL}/coupons/redeem`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify({ code }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async getNotificationPreferences() {
+    try {
+      const res = await fetch(`${API_URL}/notifications/preferences`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data.preferences : null;
+    } catch (e) { return null; }
+  }
+
+  async updateNotificationPreferences(prefs) {
+    try {
+      const res = await fetch(`${API_URL}/notifications/preferences`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify(prefs) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  // ==========================================
   // ADMIN API (Fase 4)
   // ==========================================
 

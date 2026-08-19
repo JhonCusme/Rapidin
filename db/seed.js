@@ -71,6 +71,19 @@ db.serialize(() => {
     }
   });
 
+  const coupons = [
+    { id: 'cpn-turbo40', code: 'TURBO40', title: '⚡ 40% OFF Turbo', description: 'En frutas, verduras y snacks', discountType: 'percent', discountValue: 0.40, minOrder: 0 },
+    { id: 'cpn-2x1burger', code: '2X1BURGER', title: '🍔 2x1 en Hamburguesas', description: 'Lleva la segunda gratis', discountType: 'fixed', discountValue: 5, minOrder: 10 },
+    { id: 'cpn-envio-gratis', code: 'ENVIOGRATIS', title: '🚴 Envío gratis', description: 'En tu próximo pedido', discountType: 'shipping', discountValue: 0, minOrder: 8 },
+    { id: 'cpn-bienvenida', code: 'BIENVENIDA5', title: '🎁 $5 de bienvenida', description: 'Para nuevos usuarios de Rapidín', discountType: 'fixed', discountValue: 5, minOrder: 12 }
+  ];
+  coupons.forEach(c => {
+    db.run(
+      `INSERT OR IGNORE INTO coupons (id, code, title, description, discount_type, discount_value, min_order_usd, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+      [c.id, c.code, c.title, c.description, c.discountType, c.discountValue, c.minOrder]
+    );
+  });
+
   db.run('COMMIT', (err) => {
     if (err) {
       console.error('❌ Error guardando los datos (COMMIT)', err.message);

@@ -1091,6 +1091,102 @@
       letter-spacing: 0.02em;
     }
 
+    /* --- PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) --- */
+    .account-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    }
+    .account-header h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border-color);
+      border-radius: 999px;
+      transition: var(--transition);
+    }
+    .toggle-switch-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+    .toggle-switch input:checked + .toggle-switch-slider {
+      background: var(--brand-primary);
+    }
+    .toggle-switch input:checked + .toggle-switch-slider::before {
+      transform: translateX(20px);
+    }
+    .address-card, .payment-card {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      margin-bottom: 0.8rem;
+    }
+    .address-card.is-default, .payment-card.is-default {
+      border-color: var(--brand-primary);
+    }
+    .address-card-icon, .payment-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,51,102,0.1);
+      color: var(--brand-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .account-map-container {
+      width: 100%;
+      height: 220px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+    }
+    .coupon-card {
+      background: var(--bg-card);
+      border: 1px dashed var(--brand-primary);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .coupon-card.used { opacity: 0.5; border-style: solid; border-color: var(--border-color); }
+    #card-element {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
     /* --- PANTALLA 9: DETALLE DEL NEGOCIO --- */
     .app-store-screen {
       width: 100%;
@@ -3188,10 +3284,9 @@
       <div class="cart-delivery-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
           <h3 class="section-title" style="font-size: 1.1rem; margin: 0;">📍 Entregar en</h3>
-          <button class="btn-change-location" onclick="alert('Pantalla de ubicaciones en desarrollo')">Cambiar</button>
+          <button class="btn-change-location" onclick="openAddressesScreenForCheckout()">Cambiar</button>
         </div>
-        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="cart-delivery-address">Av. León Febres Cordero</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary);">Guayaquil, Ecuador</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="cart-delivery-address">Selecciona una dirección</div>
       </div>
 
       <!-- Estimated Time -->
@@ -3234,11 +3329,10 @@
       <div class="cart-delivery-card" style="margin-bottom: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
           <h3 class="section-title" style="font-size: 1.1rem; margin: 0;">📍 Entregar en</h3>
-          <button class="btn-change-location" onclick="alert('Pantalla de ubicación en desarrollo')">Cambiar</button>
+          <button class="btn-change-location" onclick="openAddressesScreenForCheckout()">Cambiar</button>
         </div>
-        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="checkout-delivery-address">Av. León Febres Cordero</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Guayaquil, Ecuador</div>
-        <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); font-weight: 700;">Casa</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="checkout-delivery-address">Selecciona una dirección</div>
+        <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); font-weight: 700;" id="checkout-delivery-label"></div>
       </div>
 
       <!-- Estimated Time -->
@@ -3266,16 +3360,16 @@
       <!-- Payment Method -->
       <div class="checkout-section">
         <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">💳 Método de pago</h3>
-        
+
         <div class="payment-method-card">
           <div style="display: flex; align-items: center; gap: 0.8rem;">
-            <div style="font-size: 1.5rem; color: var(--brand-primary);"><i class="fa-brands fa-cc-visa"></i></div>
-            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Visa •••• 4242</div>
+            <div style="font-size: 1.5rem; color: var(--brand-primary);" id="checkout-payment-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);" id="checkout-payment-text">Efectivo al repartidor</div>
           </div>
-          <button class="btn-change-location" onclick="alert('Pantalla de métodos de pago en desarrollo')">Cambiar</button>
+          <button class="btn-change-location" onclick="openPaymentMethodsScreenForCheckout()">Cambiar</button>
         </div>
-        
-        <button class="btn-add-more" style="padding: 0.8rem; margin-bottom: 0; margin-top: 1rem;" onclick="alert('Pantalla de agregar tarjeta en desarrollo')">
+
+        <button class="btn-add-more" style="padding: 0.8rem; margin-bottom: 0; margin-top: 1rem;" onclick="openAddCardScreen()">
           <i class="fa-solid fa-plus"></i> Agregar método de pago
         </button>
       </div>
@@ -3283,10 +3377,11 @@
       <!-- Promo -->
       <div class="checkout-section">
         <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🎁 Promoción</h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md);">
+        <div id="checkout-coupon-summary" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md);">
           <div style="color: var(--text-secondary); font-size: 0.85rem;">Sin cupón aplicado</div>
-          <button class="btn-change-location" onclick="alert('Pantalla de promociones en desarrollo')">Agregar</button>
+          <button class="btn-change-location" onclick="toggleCheckoutCouponPicker()">Agregar</button>
         </div>
+        <div id="checkout-coupon-picker" style="display: none; margin-top: 0.8rem;"></div>
       </div>
 
       <!-- Cost Summary -->
@@ -3863,7 +3958,7 @@
       <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.2rem;" id="profile-name-text">Invitado</h3>
       <div style="color: var(--text-secondary); font-size: 0.9rem;" id="profile-email-text">—</div>
       <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.1rem;" id="profile-phone-text"></div>
-      <button type="button" class="btn-change-location" style="border: 1px solid var(--brand-primary); padding: 0.55rem 1.4rem; border-radius: var(--radius-full);" onclick="alert('Editar perfil: pantalla en desarrollo')">Editar perfil</button>
+      <button type="button" class="btn-change-location" style="border: 1px solid var(--brand-primary); padding: 0.55rem 1.4rem; border-radius: var(--radius-full);" onclick="openEditProfileScreen()">Editar perfil</button>
     </div>
 
     <!-- Nivel / Fidelización -->
@@ -3883,7 +3978,7 @@
     <!-- Mi cuenta -->
     <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Mi cuenta</h2>
     <div class="tracking-actions-list" style="padding: 0 1.5rem; margin-bottom: 1.75rem;">
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Mis direcciones: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openAddressesScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">📍</span>
           <div style="text-align: left; min-width: 0;">
@@ -3893,7 +3988,7 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Métodos de pago: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openPaymentMethodsScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">💳</span>
           <div style="text-align: left; min-width: 0;">
@@ -3903,7 +3998,7 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Promociones y cupones: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openCouponsScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">🎁</span>
           <div style="text-align: left; min-width: 0;">
@@ -3918,7 +4013,7 @@
     <!-- Preferencias -->
     <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Preferencias</h2>
     <div class="tracking-actions-list" style="padding: 0 1.5rem; margin-bottom: 1.75rem;">
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Notificaciones: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openNotificationsScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">🔔</span>
           <div style="text-align: left; min-width: 0;">
@@ -3928,7 +4023,7 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Idioma: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openSettingsLanguageModal()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">🌐</span>
           <div style="text-align: left; min-width: 0;">
@@ -3938,7 +4033,7 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Configuración: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openSettingsScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">⚙️</span>
           <div style="text-align: left; min-width: 0;">
@@ -3978,7 +4073,7 @@
     <!-- Seguridad -->
     <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Seguridad</h2>
     <div class="tracking-actions-list" style="padding: 0 1.5rem; margin-bottom: 0.5rem;">
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Privacidad y seguridad: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openPrivacyScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">🔐</span>
           <div style="text-align: left; min-width: 0;">
@@ -4018,6 +4113,319 @@
         <i class="fa-solid fa-user nav-icon"></i>
         <span class="nav-label">Perfil</span>
       </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 19: EDITAR PERFIL -->
+  <div class="app-main-screen" id="app-edit-profile-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEditProfileScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Editar perfil</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 1.75rem;">
+        <div class="profile-avatar-lg" style="margin-bottom: 0.75rem;">
+          <img id="edit-profile-avatar-img" src="https://api.dicebear.com/7.x/notionists/svg?seed=Rapidin" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">
+        </div>
+        <button type="button" onclick="document.getElementById('edit-profile-photo-input').click()" style="color: var(--brand-primary); font-weight: 700; background: none; border: none; cursor: pointer; font-size: 0.9rem;">Cambiar foto</button>
+        <input type="file" id="edit-profile-photo-input" accept="image/*" style="display: none;" onchange="handleEditProfilePhoto(event)">
+      </div>
+      <form id="form-edit-profile" onsubmit="submitEditProfile(event)">
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nombre completo</label>
+          <input type="text" id="edit-profile-name" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Correo electrónico</label>
+          <input type="email" id="edit-profile-email" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" required>
+        </div>
+        <div style="margin-bottom: 1.75rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Teléfono</label>
+          <input type="tel" id="edit-profile-phone" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); opacity: 0.6;" disabled>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">Para cambiar tu número, ve a Privacidad y seguridad.</p>
+        </div>
+        <button type="submit" class="btn-auth-primary" id="btn-save-edit-profile" style="width: 100%;">Guardar cambios</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANTALLA 20: MIS DIRECCIONES -->
+  <div class="app-main-screen" id="app-addresses-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeAddressesScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Mis direcciones</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <div id="addresses-list"></div>
+      <div class="empty-state" id="addresses-empty" style="display: none;">
+        <div class="empty-state-icon">📍</div>
+        <div class="empty-state-title">Todavía no tienes direcciones</div>
+        <p style="margin-bottom: 1.5rem;">Agrega una dirección para pedir más rápido.</p>
+      </div>
+      <button type="button" class="btn-auth-primary" style="width: 100%; margin-top: 1rem;" onclick="openAddAddressScreen()"><i class="fa-solid fa-plus"></i> Agregar dirección</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 21: AGREGAR / EDITAR DIRECCIÓN -->
+  <div class="app-main-screen" id="app-address-form-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeAddressFormScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2 id="address-form-title">Agregar dirección</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="account-map-container" id="address-map"></div>
+      <div class="location-search-wrapper" style="margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-magnifying-glass location-search-icon"></i>
+        <input type="text" id="address-search-input" class="location-search-input" placeholder="Busca tu dirección" oninput="handleAddressSearch(event)">
+      </div>
+      <form id="form-address" onsubmit="submitAddressForm(event)">
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.6rem; color: var(--text-secondary);">Tipo de dirección</label>
+          <div style="display: flex; gap: 0.6rem;">
+            <button type="button" class="search-filter-btn active" data-label="Casa" onclick="selectAddressLabel(this)">🏠 Casa</button>
+            <button type="button" class="search-filter-btn" data-label="Trabajo" onclick="selectAddressLabel(this)">💼 Trabajo</button>
+            <button type="button" class="search-filter-btn" data-label="Otra" onclick="selectAddressLabel(this)">📍 Otra</button>
+          </div>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Dirección</label>
+          <input type="text" id="address-text-input" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Toca el mapa o busca tu dirección" required>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Referencia (opcional)</label>
+          <input type="text" id="address-reference-input" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Ej: Casa azul, portón negro">
+        </div>
+        <label style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.75rem; cursor: pointer; font-size: 0.9rem;">
+          <input type="checkbox" id="address-default-input" style="width: 18px; height: 18px;"> Usar como dirección principal
+        </label>
+        <button type="submit" class="btn-auth-primary" style="width: 100%;" id="btn-save-address">Guardar dirección</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANTALLA 22: MÉTODOS DE PAGO -->
+  <div class="app-main-screen" id="app-payment-methods-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closePaymentMethodsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Métodos de pago</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <div id="payment-methods-list"></div>
+      <div class="empty-state" id="payment-methods-empty" style="display: none;">
+        <div class="empty-state-icon">💳</div>
+        <div class="empty-state-title">Todavía no tienes tarjetas guardadas</div>
+        <p style="margin-bottom: 1.5rem;">Agrega una tarjeta para pagar más rápido.</p>
+      </div>
+      <div id="payment-methods-disabled-notice" style="display: none; text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-md); margin-bottom: 1rem;">
+        Los pagos con tarjeta todavía no están configurados en el servidor.
+      </div>
+      <button type="button" class="btn-auth-primary" style="width: 100%; margin-top: 1rem;" id="btn-add-payment-method" onclick="openAddCardScreen()"><i class="fa-solid fa-plus"></i> Agregar tarjeta</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 23: AGREGAR TARJETA -->
+  <div class="app-main-screen" id="app-add-card-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeAddCardScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Agregar tarjeta</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <form id="form-add-card" onsubmit="submitAddCard(event)">
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nombre del titular</label>
+          <input type="text" id="card-cardholder-name" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Como aparece en la tarjeta" required>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Datos de la tarjeta</label>
+          <div id="card-element"></div>
+          <div id="card-element-errors" style="color: var(--brand-primary); font-size: 0.8rem; margin-top: 0.5rem;"></div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1.5rem;"><i class="fa-solid fa-lock" style="color: #10B981;"></i> Tus datos de tarjeta se envían directo a Stripe. Rapidín nunca ve ni guarda tu número completo o CVV.</p>
+        <button type="submit" class="btn-auth-primary" style="width: 100%;" id="btn-save-card">Guardar tarjeta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANTALLA 24: PROMOCIONES Y CUPONES -->
+  <div class="app-main-screen" id="app-coupons-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeCouponsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Promociones y cupones</h2>
+    </div>
+    <div style="padding: 0 1.5rem 1rem;">
+      <form id="form-redeem-coupon" onsubmit="submitRedeemCoupon(event)" style="display: flex; gap: 0.6rem; margin-bottom: 1.25rem;">
+        <input type="text" id="coupon-code-input" class="coupon-input" style="flex: 1; text-transform: uppercase;" placeholder="Ingresa un código">
+        <button type="submit" class="btn-apply-promo">Canjear</button>
+      </form>
+    </div>
+    <div class="favorites-tabs">
+      <div class="menu-nav-item active" id="coupons-tab-available" onclick="switchCouponsTab('available')">🎁 Disponibles</div>
+      <div class="menu-nav-item" id="coupons-tab-used" onclick="switchCouponsTab('used')">✓ Usados</div>
+    </div>
+    <div style="padding: 1.25rem 1.5rem 2rem;">
+      <div id="coupons-available-list"></div>
+      <div id="coupons-used-list" style="display: none;"></div>
+      <div class="empty-state" id="coupons-empty" style="display: none;">
+        <div class="empty-state-icon">🎁</div>
+        <div class="empty-state-title">Nada por aquí todavía</div>
+        <p>Cuando canjees o uses un cupón, aparecerá aquí.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 25: NOTIFICACIONES -->
+  <div class="app-main-screen" id="app-notifications-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeNotificationsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Notificaciones</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <div class="tracking-actions-list">
+        <div class="btn-action-list" style="align-items: center; gap: 0.9rem; cursor: default;">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1;">
+            <span style="font-size: 1.3rem;">📦</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Pedidos</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Estado y seguimiento de tus pedidos</div>
+            </div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="notif-orders" onchange="saveNotificationPrefs()"><span class="toggle-switch-slider"></span></label>
+        </div>
+        <div class="btn-action-list" style="align-items: center; gap: 0.9rem; cursor: default;">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1;">
+            <span style="font-size: 1.3rem;">🎁</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Promociones</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Cupones y descuentos para ti</div>
+            </div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="notif-promotions" onchange="saveNotificationPrefs()"><span class="toggle-switch-slider"></span></label>
+        </div>
+        <div class="btn-action-list" style="align-items: center; gap: 0.9rem; cursor: default;">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1;">
+            <span style="font-size: 1.3rem;">🔥</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Ofertas</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Ofertas flash y por tiempo limitado</div>
+            </div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="notif-offers" onchange="saveNotificationPrefs()"><span class="toggle-switch-slider"></span></label>
+        </div>
+        <div class="btn-action-list" style="align-items: center; gap: 0.9rem; cursor: default;">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1;">
+            <span style="font-size: 1.3rem;">📰</span>
+            <div style="text-align: left;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Noticias</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Novedades de Rapidín</div>
+            </div>
+          </div>
+          <label class="toggle-switch"><input type="checkbox" id="notif-news" onchange="saveNotificationPrefs()"><span class="toggle-switch-slider"></span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 26: CONFIGURACIÓN -->
+  <div class="app-main-screen" id="app-settings-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeSettingsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Configuración</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <div class="tracking-actions-list">
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openSettingsLanguageModal()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">🌐</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">País y moneda</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;" id="settings-current-country">—</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openNotificationsScreen()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">🔔</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Notificaciones</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Gestiona qué quieres recibir</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openPrivacyScreen()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">🔐</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Privacidad y seguridad</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Datos, número y tu cuenta</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 27: PRIVACIDAD Y SEGURIDAD -->
+  <div class="app-main-screen" id="app-privacy-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closePrivacyScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Privacidad y seguridad</h2>
+    </div>
+    <div style="padding: 1rem 1.5rem 2rem;">
+      <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Datos personales</h2>
+      <div class="checkout-section" style="margin-bottom: 1.75rem;">
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0;">
+          <span style="color: var(--text-secondary); font-size: 0.9rem;">Correo</span>
+          <span style="font-weight: 700; font-size: 0.9rem;" id="privacy-email-text">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0;">
+          <span style="color: var(--text-secondary); font-size: 0.9rem;">Teléfono</span>
+          <span style="font-weight: 700; font-size: 0.9rem;" id="privacy-phone-text">—</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0;">
+          <span style="color: var(--text-secondary); font-size: 0.9rem;">Este dispositivo</span>
+          <span style="font-weight: 700; font-size: 0.9rem; color: #10B981;">Sesión activa</span>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Seguridad</h2>
+      <div class="tracking-actions-list" style="margin-bottom: 1.75rem;">
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openChangePhoneForm()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">📱</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Cambiar número</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+      </div>
+
+      <div id="change-phone-form-wrap" style="display: none; margin-bottom: 1.75rem;">
+        <form id="form-change-phone" onsubmit="submitChangePhone(event)" class="checkout-section">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nuevo número (con prefijo)</label>
+          <input type="tel" id="change-phone-input" class="phone-input" style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 1rem;" placeholder="+593 98 123 4567" required>
+          <button type="submit" class="btn-auth-primary" style="width: 100%;">Confirmar nuevo número</button>
+        </form>
+      </div>
+
+      <h2 class="section-title" style="font-size: 1.1rem; color: var(--brand-primary); margin-bottom: 0.8rem;">Zona de riesgo</h2>
+      <button type="button" class="btn-action-list btn-logout" onclick="confirmDeleteAccount()">
+        <i class="fa-solid fa-trash" style="margin-right: 0.6rem;"></i> Eliminar mi cuenta
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL SELECCIONAR PAÍS (Configuración) -->
+  <div class="modal-backdrop" id="modal-settings-language">
+    <div class="modal-card" style="max-width: 420px; padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;">Elige tu país</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-settings-language').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="settings-country-list"></div>
     </div>
   </div>
 
@@ -4327,6 +4735,7 @@
   </div> <!-- Fin de main-app-content -->
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
   <script src="../../shared/config.js"></script>
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
@@ -5325,9 +5734,22 @@
       document.getElementById('cart-sum-total').textContent = fmtMoney(total);
       document.getElementById('cart-floating-total-text').textContent = `Continuar con el pedido · ${fmtMoney(total)}`;
 
-      const address = window.rapidinDeliveryAddress || localStorage.getItem('rapidin_delivery_address') || 'Guayaquil, Ecuador';
       const addrEl = document.getElementById('cart-delivery-address');
-      if (addrEl) addrEl.textContent = address;
+      if (addrEl) addrEl.textContent = window.checkoutAddress ? window.checkoutAddress.address_text : 'Selecciona una dirección';
+    }
+
+    // Carga la dirección y el método de pago por defecto del usuario, si aún no se eligió ninguno.
+    async function loadCheckoutDefaults() {
+      if (!window.checkoutAddress) {
+        const addresses = await window.rapidinDB.getAddresses();
+        addresses.forEach(a => { window.rapidinAddressesCache[a.id] = a; });
+        window.checkoutAddress = addresses.find(a => a.is_default) || addresses[0] || null;
+      }
+      if (!window.checkoutPayment) {
+        const methods = await window.rapidinDB.getPaymentMethods();
+        methods.forEach(m => { window.rapidinPaymentMethodsCache = window.rapidinPaymentMethodsCache || {}; window.rapidinPaymentMethodsCache[m.id] = m; });
+        window.checkoutPayment = methods.find(m => m.is_default) || methods[0] || { cash: true };
+      }
     }
 
     window.removeRealCartItem = function(cartItemId) {
@@ -5349,13 +5771,14 @@
       renderRealCart();
     };
 
-    window.openCartScreen = function() {
+    window.openCartScreen = async function() {
       const activeScreen = document.querySelector('.app-store-screen[style*="display: flex"], .app-search-screen[style*="display: flex"], .app-main-screen[style*="display: flex"], .app-product-screen[style*="display: flex"]');
       if (activeScreen) {
         window.previousScreenForCart = activeScreen.id;
         activeScreen.style.display = 'none';
       }
       document.getElementById('app-cart-screen').style.display = 'flex';
+      await loadCheckoutDefaults();
       renderRealCart();
     };
 
@@ -5373,15 +5796,37 @@
       document.getElementById('app-main-screen').style.display = 'flex';
     };
 
-    window.openCheckoutScreen = function() {
+    window.openCheckoutScreen = async function() {
       if (!window.rapidinRealCart.length) {
         if (window.rapidinAlert) window.rapidinAlert('Tu carrito está vacío.');
         return;
       }
+      if (!window.checkoutAddress) {
+        if (window.rapidinAlert) window.rapidinAlert('Agrega una dirección de entrega antes de continuar.');
+        openAddressesScreenForCheckout();
+        return;
+      }
       document.getElementById('app-cart-screen').style.display = 'none';
       document.getElementById('app-checkout-screen').style.display = 'flex';
+      await loadCheckoutDefaults();
       renderCheckoutScreen();
     };
+
+    function computeOrderTotals() {
+      const cart = window.rapidinRealCart;
+      const productsTotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+      let shipping = 1.99;
+      let discount = 0;
+      const coupon = window.checkoutCoupon;
+      if (coupon) {
+        if (coupon.discount_type === 'percent') discount = productsTotal * Number(coupon.discount_value);
+        else if (coupon.discount_type === 'fixed') discount = Number(coupon.discount_value);
+        else if (coupon.discount_type === 'shipping') shipping = 0;
+      }
+      discount = Math.min(discount, productsTotal);
+      const total = Math.max(0, productsTotal + shipping - discount);
+      return { productsTotal, shipping, discount, total };
+    }
 
     function renderCheckoutScreen() {
       const cart = window.rapidinRealCart;
@@ -5395,18 +5840,77 @@
 
       document.getElementById('checkout-store-name').textContent = cart[0] ? cart[0].storeName : '';
 
-      const productsTotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-      const shipping = 1.99;
-      const total = productsTotal + shipping;
+      const { productsTotal, shipping, discount, total } = computeOrderTotals();
       document.getElementById('checkout-sum-products').textContent = fmtMoney(productsTotal);
-      document.getElementById('checkout-sum-shipping').textContent = fmtMoney(shipping);
+      document.getElementById('checkout-sum-shipping').textContent = shipping === 0 ? 'GRATIS' : fmtMoney(shipping);
       document.getElementById('checkout-sum-total').textContent = fmtMoney(total);
       document.getElementById('checkout-floating-total-text').textContent = `Confirmar pedido · ${fmtMoney(total)}`;
 
-      const address = window.rapidinDeliveryAddress || localStorage.getItem('rapidin_delivery_address') || 'Guayaquil, Ecuador';
       const addrEl = document.getElementById('checkout-delivery-address');
-      if (addrEl) addrEl.textContent = address;
+      const labelEl = document.getElementById('checkout-delivery-label');
+      if (addrEl) addrEl.textContent = window.checkoutAddress ? window.checkoutAddress.address_text : 'Selecciona una dirección';
+      if (labelEl) labelEl.textContent = window.checkoutAddress ? window.checkoutAddress.label : '';
+
+      const payment = window.checkoutPayment;
+      const iconEl = document.getElementById('checkout-payment-icon');
+      const textEl = document.getElementById('checkout-payment-text');
+      if (payment && payment.cash) {
+        iconEl.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i>';
+        textEl.textContent = 'Efectivo al repartidor';
+      } else if (payment) {
+        const brandIcon = { visa: 'fa-cc-visa', mastercard: 'fa-cc-mastercard', amex: 'fa-cc-amex' };
+        iconEl.innerHTML = `<i class="fa-brands ${brandIcon[payment.brand] || 'fa-credit-card'}"></i>`;
+        textEl.textContent = `${payment.brand ? payment.brand.charAt(0).toUpperCase() + payment.brand.slice(1) : 'Tarjeta'} •••• ${payment.last4 || ''}`;
+      }
+
+      const couponSummary = document.getElementById('checkout-coupon-summary');
+      const coupon = window.checkoutCoupon;
+      if (coupon) {
+        couponSummary.innerHTML = `
+          <div>
+            <div style="color: #10B981; font-weight: 800; font-size: 1.05rem;">- ${fmtMoney(discount)}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">${escapeHtml(coupon.code)} aplicado</div>
+          </div>
+          <button class="btn-change-location" onclick="removeCheckoutCoupon()">Quitar</button>
+        `;
+      } else {
+        couponSummary.innerHTML = `
+          <div style="color: var(--text-secondary); font-size: 0.85rem;">Sin cupón aplicado</div>
+          <button class="btn-change-location" onclick="toggleCheckoutCouponPicker()">Agregar</button>
+        `;
+      }
     }
+
+    window.toggleCheckoutCouponPicker = async function() {
+      const picker = document.getElementById('checkout-coupon-picker');
+      if (picker.style.display === 'block') {
+        picker.style.display = 'none';
+        return;
+      }
+      const data = await window.rapidinDB.getCoupons();
+      if (!data.available.length) {
+        picker.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">No tienes cupones disponibles. Ve a Promociones para canjear uno.</p>';
+      } else {
+        picker.innerHTML = data.available.map(c => `
+          <button type="button" class="btn-action-list" style="margin-bottom: 0.6rem;" onclick='applyCheckoutCoupon(${JSON.stringify(c).replace(/'/g, "&#39;")})'>
+            <span>${escapeHtml(c.code)}</span>
+            <span style="color: var(--text-secondary); font-size: 0.8rem;">${escapeHtml(c.title)}</span>
+          </button>
+        `).join('');
+      }
+      picker.style.display = 'block';
+    };
+
+    window.applyCheckoutCoupon = function(coupon) {
+      window.checkoutCoupon = coupon;
+      document.getElementById('checkout-coupon-picker').style.display = 'none';
+      renderCheckoutScreen();
+    };
+
+    window.removeCheckoutCoupon = function() {
+      window.checkoutCoupon = null;
+      renderCheckoutScreen();
+    };
 
     window.closeCheckoutScreen = function() {
       document.getElementById('app-checkout-screen').style.display = 'none';
@@ -5419,17 +5923,19 @@
         if (window.rapidinAlert) window.rapidinAlert('Tu carrito está vacío.');
         return;
       }
+      if (!window.checkoutAddress) {
+        if (window.rapidinAlert) window.rapidinAlert('Selecciona una dirección de entrega.');
+        return;
+      }
 
       const btn = document.getElementById('btn-confirm-order');
       const originalHtml = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span style="margin: 0 auto; font-size: 1.15rem;">Procesando...</span>';
 
-      const subtotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-      const shipping = 1.99;
-      const total = subtotal + shipping;
+      const { productsTotal, shipping, discount, total } = computeOrderTotals();
       const orderId = 'RPD-' + Math.floor(10000 + Math.random() * 90000);
-      const address = window.rapidinDeliveryAddress || localStorage.getItem('rapidin_delivery_address') || 'Guayaquil, Ecuador';
+      const address = window.checkoutAddress.address_text;
 
       const orderPayload = {
         id: orderId,
@@ -5437,9 +5943,11 @@
         storeName: cart[0].storeName,
         customerAddress: address,
         items: cart.map(i => ({ name: i.name, quantity: i.qty, price: i.unitPrice })),
-        subtotal: subtotal,
+        subtotal: productsTotal,
         shippingFee: shipping,
         driverTip: 0,
+        discount: discount,
+        couponCode: window.checkoutCoupon ? window.checkoutCoupon.code : null,
         total: total,
         statusText: 'Pedido confirmado y enviado al comercio 🚀'
       };
@@ -5455,6 +5963,7 @@
       }
 
       window.rapidinRealCart = [];
+      window.checkoutCoupon = null;
       persistCart();
       updateFloatingCartBadge();
 
@@ -5752,6 +6261,567 @@
     window.openProfileScreenFromFavorites = function() {
       document.getElementById('app-favorites-screen').style.display = 'none';
       document.getElementById('app-profile-screen').style.display = 'flex';
+    };
+
+    // === PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) ===
+
+    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen'];
+
+    function openAccountSubScreen(targetId) {
+      const selector = ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', ');
+      const activeScreen = document.querySelector(selector + ', .app-main-screen[style*="display: flex"], #app-cart-screen[style*="display: flex"], #app-checkout-screen[style*="display: flex"]');
+      window.previousAccountScreen = activeScreen ? activeScreen.id : 'app-profile-screen';
+      if (activeScreen) activeScreen.style.display = 'none';
+      document.getElementById(targetId).style.display = 'flex';
+    }
+
+    function closeAccountSubScreen() {
+      const current = document.querySelector(ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', '));
+      if (current) current.style.display = 'none';
+      document.getElementById(window.previousAccountScreen || 'app-profile-screen').style.display = 'flex';
+    }
+
+    // --- Pantalla 19: Editar perfil ---
+    window.openEditProfileScreen = function() {
+      openAccountSubScreen('app-edit-profile-screen');
+      window.pendingProfilePhoto = null;
+      const user = window.rapidinDB.getCurrentUser('user');
+      if (user) {
+        document.getElementById('edit-profile-name').value = user.name || '';
+        document.getElementById('edit-profile-email').value = user.email || '';
+        document.getElementById('edit-profile-phone').value = user.phone || '';
+        document.getElementById('edit-profile-avatar-img').src = user.photoUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user.email || user.id)}`;
+      }
+    };
+
+    window.closeEditProfileScreen = closeAccountSubScreen;
+
+    window.handleEditProfilePhoto = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('edit-profile-avatar-img').src = ev.target.result;
+        window.pendingProfilePhoto = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.submitEditProfile = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-edit-profile');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Guardando...';
+
+      const res = await window.rapidinDB.updateProfile({
+        name: document.getElementById('edit-profile-name').value.trim(),
+        email: document.getElementById('edit-profile-email').value.trim(),
+        photoUrl: window.pendingProfilePhoto || undefined
+      });
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('✅ Perfil actualizado');
+        updateProfileScreenUser();
+        closeAccountSubScreen();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo actualizar el perfil');
+      }
+    };
+
+    // --- Pantallas 20-21: Direcciones ---
+    window.rapidinAddressesCache = {};
+
+    window.openAddressesScreen = async function() {
+      openAccountSubScreen('app-addresses-screen');
+      await loadAddressesList();
+    };
+
+    window.closeAddressesScreen = closeAccountSubScreen;
+
+    async function loadAddressesList() {
+      const addresses = await window.rapidinDB.getAddresses();
+      window.rapidinAddressesCache = {};
+      addresses.forEach(a => { window.rapidinAddressesCache[a.id] = a; });
+
+      const listEl = document.getElementById('addresses-list');
+      const emptyEl = document.getElementById('addresses-empty');
+      if (!addresses.length) {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'flex';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      const picking = window.addressPickerForCheckout;
+      const iconFor = (label) => label === 'Casa' ? '🏠' : label === 'Trabajo' ? '💼' : '📍';
+      listEl.innerHTML = addresses.map(a => `
+        <div class="address-card${a.is_default ? ' is-default' : ''}"${picking ? ` style="cursor: pointer;" onclick="chooseCheckoutAddress('${a.id}')"` : ''}>
+          <div class="address-card-icon">${iconFor(a.label)}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem;">
+              ${escapeHtml(a.label)}
+              ${a.is_default ? '<span class="badge" style="background: rgba(255,51,102,0.15); color: var(--brand-primary); border: 1px solid var(--brand-primary); font-size: 0.65rem; margin-left: 0.4rem;">PRINCIPAL</span>' : ''}
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(a.address_text)}</div>
+          </div>
+          ${picking ? '' : `
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="openAddAddressScreen('${a.id}')"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="deleteAddressRow('${a.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>`}
+        </div>
+      `).join('');
+    }
+
+    // Selección de dirección/pago desde el carrito o checkout
+    window.addressPickerForCheckout = false;
+
+    window.openAddressesScreenForCheckout = function() {
+      window.addressPickerForCheckout = true;
+      window.openAddressesScreen();
+    };
+
+    window.chooseCheckoutAddress = function(addressId) {
+      window.checkoutAddress = window.rapidinAddressesCache[addressId];
+      window.addressPickerForCheckout = false;
+      closeAccountSubScreen();
+      renderRealCart();
+      renderCheckoutScreen();
+    };
+
+    window.deleteAddressRow = async function(id) {
+      if (!confirm('¿Eliminar esta dirección?')) return;
+      const res = await window.rapidinDB.deleteAddress(id);
+      if (res.success) loadAddressesList();
+      else if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo eliminar la dirección');
+    };
+
+    let addressMapInstance = null;
+    let addressMapMarker = null;
+
+    window.openAddAddressScreen = function(addressId) {
+      openAccountSubScreen('app-address-form-screen');
+      window.currentEditingAddressId = addressId || null;
+      const existing = addressId ? window.rapidinAddressesCache[addressId] : null;
+
+      document.getElementById('address-form-title').textContent = existing ? 'Editar dirección' : 'Agregar dirección';
+      document.getElementById('address-text-input').value = existing ? existing.address_text : '';
+      document.getElementById('address-reference-input').value = existing ? (existing.reference || '') : '';
+      document.getElementById('address-default-input').checked = existing ? !!existing.is_default : false;
+      document.getElementById('address-search-input').value = '';
+
+      document.querySelectorAll('#app-address-form-screen .search-filter-btn').forEach(b => b.classList.remove('active'));
+      const targetLabel = existing ? existing.label : 'Casa';
+      const labelBtn = document.querySelector(`#app-address-form-screen .search-filter-btn[data-label="${targetLabel}"]`) || document.querySelector('#app-address-form-screen .search-filter-btn');
+      labelBtn.classList.add('active');
+
+      const startLat = existing && existing.lat ? existing.lat : -2.170998;
+      const startLng = existing && existing.lng ? existing.lng : -79.922359;
+      window.currentAddressLatLng = { lat: startLat, lng: startLng };
+
+      setTimeout(() => initAddressMap(startLat, startLng), 50);
+    };
+
+    function initAddressMap(lat, lng) {
+      if (addressMapInstance) { addressMapInstance.remove(); addressMapInstance = null; }
+      addressMapInstance = L.map('address-map').setView([lat, lng], 15);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(addressMapInstance);
+      addressMapMarker = L.marker([lat, lng], { draggable: true }).addTo(addressMapInstance);
+      addressMapMarker.on('dragend', () => {
+        const pos = addressMapMarker.getLatLng();
+        window.currentAddressLatLng = { lat: pos.lat, lng: pos.lng };
+      });
+      addressMapInstance.on('click', (e) => {
+        addressMapMarker.setLatLng(e.latlng);
+        window.currentAddressLatLng = { lat: e.latlng.lat, lng: e.latlng.lng };
+      });
+    }
+
+    window.selectAddressLabel = function(btn) {
+      document.querySelectorAll('#app-address-form-screen .search-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+
+    let addressSearchTimeout;
+    window.handleAddressSearch = function(e) {
+      clearTimeout(addressSearchTimeout);
+      const q = e.target.value.trim();
+      if (q.length < 4) return;
+      addressSearchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+          const results = await res.json();
+          if (results.length) {
+            const r = results[0];
+            window.currentAddressLatLng = { lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
+            if (addressMapInstance && addressMapMarker) {
+              addressMapInstance.setView([r.lat, r.lon], 16);
+              addressMapMarker.setLatLng([r.lat, r.lon]);
+            }
+            document.getElementById('address-text-input').value = r.display_name;
+          }
+        } catch (err) { console.error('Error buscando dirección:', err); }
+      }, 600);
+    };
+
+    window.closeAddressFormScreen = closeAccountSubScreen;
+
+    window.submitAddressForm = async function(e) {
+      e.preventDefault();
+      const label = document.querySelector('#app-address-form-screen .search-filter-btn.active')?.dataset.label || 'Casa';
+      const addressText = document.getElementById('address-text-input').value.trim();
+      const reference = document.getElementById('address-reference-input').value.trim();
+      const isDefault = document.getElementById('address-default-input').checked;
+      const latLng = window.currentAddressLatLng || {};
+
+      const btn = document.getElementById('btn-save-address');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Guardando...';
+
+      let res;
+      if (window.currentEditingAddressId) {
+        res = await window.rapidinDB.updateAddress(window.currentEditingAddressId, { label, addressText, reference, lat: latLng.lat, lng: latLng.lng });
+        if (res.success && isDefault) await window.rapidinDB.setDefaultAddress(window.currentEditingAddressId);
+      } else {
+        res = await window.rapidinDB.createAddress({ label, addressText, reference, lat: latLng.lat, lng: latLng.lng, isDefault });
+      }
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('✅ Dirección guardada');
+        await loadAddressesList();
+        closeAccountSubScreen();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo guardar la dirección');
+      }
+    };
+
+    // --- Pantallas 22-23: Métodos de pago (Stripe) ---
+    window.openPaymentMethodsScreen = async function() {
+      openAccountSubScreen('app-payment-methods-screen');
+      await loadPaymentMethodsList();
+    };
+
+    window.closePaymentMethodsScreen = closeAccountSubScreen;
+
+    async function loadPaymentMethodsList() {
+      const config = await window.rapidinDB.getConfig();
+      window.rapidinStripePublishableKey = config ? config.stripePublishableKey : null;
+
+      const disabledNotice = document.getElementById('payment-methods-disabled-notice');
+      const addBtn = document.getElementById('btn-add-payment-method');
+
+      if (!window.rapidinStripePublishableKey) {
+        disabledNotice.style.display = 'block';
+        addBtn.disabled = true;
+        addBtn.style.opacity = '0.5';
+      } else {
+        disabledNotice.style.display = 'none';
+        addBtn.disabled = false;
+        addBtn.style.opacity = '1';
+      }
+
+      const listEl = document.getElementById('payment-methods-list');
+      const emptyEl = document.getElementById('payment-methods-empty');
+      const methods = await window.rapidinDB.getPaymentMethods();
+      window.rapidinPaymentMethodsCache = {};
+      methods.forEach(m => { window.rapidinPaymentMethodsCache[m.id] = m; });
+      const brandIcon = { visa: 'fa-cc-visa', mastercard: 'fa-cc-mastercard', amex: 'fa-cc-amex' };
+      const picking = window.paymentPickerForCheckout;
+
+      const cashCard = picking ? `
+        <div class="payment-card" style="cursor: pointer;" onclick="chooseCheckoutPayment('cash')">
+          <div class="payment-card-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem;">Efectivo al repartidor</div>
+          </div>
+        </div>
+      ` : '';
+
+      if (!methods.length) {
+        listEl.innerHTML = cashCard;
+        emptyEl.style.display = picking ? 'none' : 'flex';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      listEl.innerHTML = cashCard + methods.map(m => `
+        <div class="payment-card${m.is_default ? ' is-default' : ''}"${picking ? ` style="cursor: pointer;" onclick="chooseCheckoutPayment('${m.id}')"` : ''}>
+          <div class="payment-card-icon"><i class="fa-brands ${brandIcon[m.brand] || 'fa-credit-card'}"></i></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem; text-transform: capitalize;">
+              ${escapeHtml(m.brand)} •••• ${escapeHtml(m.last4)}
+              ${m.is_default ? '<span class="badge" style="background: rgba(255,51,102,0.15); color: var(--brand-primary); border: 1px solid var(--brand-primary); font-size: 0.65rem; margin-left: 0.4rem;">PRINCIPAL</span>' : ''}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Vence ${escapeHtml(m.exp_month)}/${escapeHtml(m.exp_year)}</div>
+          </div>
+          ${picking ? '' : `<button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="deletePaymentMethodRow('${m.id}')"><i class="fa-solid fa-trash"></i></button>`}
+        </div>
+      `).join('');
+    }
+
+    window.deletePaymentMethodRow = async function(id) {
+      if (!confirm('¿Eliminar esta tarjeta?')) return;
+      const res = await window.rapidinDB.deletePaymentMethod(id);
+      if (res.success) loadPaymentMethodsList();
+      else if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo eliminar la tarjeta');
+    };
+
+    // Selección de método de pago desde el checkout
+    window.paymentPickerForCheckout = false;
+
+    window.openPaymentMethodsScreenForCheckout = function() {
+      window.paymentPickerForCheckout = true;
+      window.openPaymentMethodsScreen();
+    };
+
+    window.chooseCheckoutPayment = function(paymentMethodId) {
+      window.checkoutPayment = paymentMethodId === 'cash' ? { cash: true } : window.rapidinPaymentMethodsCache[paymentMethodId];
+      window.paymentPickerForCheckout = false;
+      closeAccountSubScreen();
+      renderCheckoutScreen();
+    };
+
+    let stripeInstance = null;
+    let stripeElementsInstance = null;
+    let stripeCardElement = null;
+
+    window.openAddCardScreen = function() {
+      if (!window.rapidinStripePublishableKey) {
+        if (window.rapidinAlert) window.rapidinAlert('Los pagos con tarjeta no están configurados todavía.');
+        return;
+      }
+      openAccountSubScreen('app-add-card-screen');
+      document.getElementById('card-cardholder-name').value = '';
+      document.getElementById('card-element-errors').textContent = '';
+
+      if (!stripeInstance) stripeInstance = Stripe(window.rapidinStripePublishableKey);
+      stripeElementsInstance = stripeInstance.elements();
+      stripeCardElement = stripeElementsInstance.create('card', {
+        style: { base: { color: '#fff', fontSize: '16px', '::placeholder': { color: '#8a8a99' } }, invalid: { color: '#FF3366' } }
+      });
+      document.getElementById('card-element').innerHTML = '';
+      stripeCardElement.mount('#card-element');
+      stripeCardElement.on('change', (event) => {
+        document.getElementById('card-element-errors').textContent = event.error ? event.error.message : '';
+      });
+    };
+
+    window.closeAddCardScreen = function() {
+      if (stripeCardElement) { stripeCardElement.unmount(); stripeCardElement = null; }
+      closeAccountSubScreen();
+    };
+
+    window.submitAddCard = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-card');
+      const cardholderName = document.getElementById('card-cardholder-name').value.trim();
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Guardando...';
+
+      const setupRes = await window.rapidinDB.createPaymentMethodSetupIntent();
+      if (!setupRes.success) {
+        btn.disabled = false;
+        btn.textContent = orig;
+        if (window.rapidinAlert) window.rapidinAlert(setupRes.message || 'No se pudo iniciar el guardado de la tarjeta');
+        return;
+      }
+
+      const confirmResult = await stripeInstance.confirmCardSetup(setupRes.clientSecret, {
+        payment_method: { card: stripeCardElement, billing_details: { name: cardholderName } }
+      });
+
+      if (confirmResult.error) {
+        btn.disabled = false;
+        btn.textContent = orig;
+        document.getElementById('card-element-errors').textContent = confirmResult.error.message;
+        return;
+      }
+
+      const saveRes = await window.rapidinDB.savePaymentMethod(confirmResult.setupIntent.payment_method, false);
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (saveRes.success) {
+        if (window.rapidinAlert) window.rapidinAlert('✅ Tarjeta guardada');
+        await loadPaymentMethodsList();
+        window.closeAddCardScreen();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(saveRes.message || 'No se pudo guardar la tarjeta');
+      }
+    };
+
+    // --- Pantalla 24: Promociones y cupones ---
+    window.openCouponsScreen = async function() {
+      openAccountSubScreen('app-coupons-screen');
+      await loadCoupons();
+      switchCouponsTab('available');
+    };
+
+    window.closeCouponsScreen = closeAccountSubScreen;
+
+    async function loadCoupons() {
+      window.rapidinCouponsData = await window.rapidinDB.getCoupons();
+      renderCouponsTab();
+    }
+
+    function renderCouponsTab() {
+      const data = window.rapidinCouponsData || { available: [], used: [] };
+      const availEl = document.getElementById('coupons-available-list');
+      const usedEl = document.getElementById('coupons-used-list');
+      const emptyEl = document.getElementById('coupons-empty');
+
+      const discountLabel = (c) => c.discount_type === 'percent' ? `${Math.round(c.discount_value * 100)}% OFF` : c.discount_type === 'shipping' ? 'Envío gratis' : `${fmtMoney(c.discount_value)} OFF`;
+
+      availEl.innerHTML = data.available.map(c => `
+        <div class="coupon-card">
+          <div>
+            <div style="font-weight: 800; color: var(--brand-primary);">${escapeHtml(c.code)}</div>
+            <div style="font-weight: 700; font-size: 0.9rem; margin-top: 0.2rem;">${escapeHtml(c.title)}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(c.description || '')}</div>
+          </div>
+          <span class="badge" style="background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid #10B981; white-space: nowrap;">${discountLabel(c)}</span>
+        </div>
+      `).join('');
+
+      usedEl.innerHTML = data.used.map(c => `
+        <div class="coupon-card used">
+          <div>
+            <div style="font-weight: 800;">${escapeHtml(c.code)}</div>
+            <div style="font-weight: 700; font-size: 0.9rem; margin-top: 0.2rem;">${escapeHtml(c.title)}</div>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Usado</span>
+        </div>
+      `).join('');
+
+      const activeTab = document.getElementById('coupons-tab-available').classList.contains('active') ? 'available' : 'used';
+      const list = activeTab === 'available' ? data.available : data.used;
+      emptyEl.style.display = list.length ? 'none' : 'flex';
+    }
+
+    window.switchCouponsTab = function(tab) {
+      document.getElementById('coupons-tab-available').classList.toggle('active', tab === 'available');
+      document.getElementById('coupons-tab-used').classList.toggle('active', tab === 'used');
+      document.getElementById('coupons-available-list').style.display = tab === 'available' ? 'block' : 'none';
+      document.getElementById('coupons-used-list').style.display = tab === 'used' ? 'block' : 'none';
+      renderCouponsTab();
+    };
+
+    window.submitRedeemCoupon = async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('coupon-code-input');
+      const code = input.value.trim();
+      if (!code) return;
+      const res = await window.rapidinDB.redeemCoupon(code);
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert(`🎉 ¡Cupón ${res.coupon.code} agregado!`);
+        input.value = '';
+        await loadCoupons();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'Cupón no válido');
+      }
+    };
+
+    // --- Pantalla 25: Notificaciones ---
+    window.openNotificationsScreen = async function() {
+      openAccountSubScreen('app-notifications-screen');
+      const prefs = await window.rapidinDB.getNotificationPreferences();
+      if (prefs) {
+        document.getElementById('notif-orders').checked = !!prefs.orders_enabled;
+        document.getElementById('notif-promotions').checked = !!prefs.promotions_enabled;
+        document.getElementById('notif-offers').checked = !!prefs.offers_enabled;
+        document.getElementById('notif-news').checked = !!prefs.news_enabled;
+      }
+    };
+
+    window.closeNotificationsScreen = closeAccountSubScreen;
+
+    window.saveNotificationPrefs = async function() {
+      await window.rapidinDB.updateNotificationPreferences({
+        orders: document.getElementById('notif-orders').checked,
+        promotions: document.getElementById('notif-promotions').checked,
+        offers: document.getElementById('notif-offers').checked,
+        news: document.getElementById('notif-news').checked
+      });
+    };
+
+    // --- Pantalla 26: Configuración ---
+    window.openSettingsScreen = function() {
+      openAccountSubScreen('app-settings-screen');
+      const country = window.rapidinI18n ? window.rapidinI18n.getCountry() : null;
+      document.getElementById('settings-current-country').textContent = country ? `${country.name} · ${country.currency}` : '—';
+    };
+
+    window.closeSettingsScreen = closeAccountSubScreen;
+
+    window.openSettingsLanguageModal = function() {
+      const listEl = document.getElementById('settings-country-list');
+      const countries = window.rapidinI18n ? window.rapidinI18n.getCountryList() : [];
+      listEl.innerHTML = countries.map(c => `
+        <button type="button" class="btn-action-list" style="margin-bottom: 0.6rem;" onclick="selectSettingsCountry('${c.code}')">
+          <span>${escapeHtml(c.name)}</span>
+          <span style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(c.currency)}</span>
+        </button>
+      `).join('');
+      document.getElementById('modal-settings-language').classList.add('active');
+    };
+
+    window.selectSettingsCountry = function(code) {
+      window.rapidinI18n.setCountry(code);
+    };
+
+    // --- Pantalla 27: Privacidad y seguridad ---
+    window.openPrivacyScreen = function() {
+      openAccountSubScreen('app-privacy-screen');
+      const user = window.rapidinDB.getCurrentUser('user');
+      document.getElementById('privacy-email-text').textContent = user ? user.email : '—';
+      document.getElementById('privacy-phone-text').textContent = user ? (user.phone || '—') : '—';
+      document.getElementById('change-phone-form-wrap').style.display = 'none';
+    };
+
+    window.closePrivacyScreen = closeAccountSubScreen;
+
+    window.openChangePhoneForm = function() {
+      const wrap = document.getElementById('change-phone-form-wrap');
+      wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.submitChangePhone = async function(e) {
+      e.preventDefault();
+      const phone = document.getElementById('change-phone-input').value.trim();
+      if (!phone) return;
+      const res = await window.rapidinDB.changePhone(phone);
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('✅ Número actualizado');
+        document.getElementById('privacy-phone-text').textContent = phone;
+        document.getElementById('change-phone-form-wrap').style.display = 'none';
+        document.getElementById('change-phone-input').value = '';
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo actualizar el número');
+      }
+    };
+
+    window.confirmDeleteAccount = async function() {
+      if (!confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) return;
+      if (!confirm('Última confirmación: se eliminará tu cuenta para siempre. ¿Continuar?')) return;
+      const res = await window.rapidinDB.deleteAccount();
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('Tu cuenta fue eliminada.');
+        window.rapidinRealCart = [];
+        persistCart();
+        document.querySelectorAll('.app-main-screen, .app-search-screen, .app-store-screen, .app-product-screen, .app-cart-screen, .app-checkout-screen, .app-success-screen, .app-tracking-screen, .app-order-detail-screen, #app-orders-screen, #app-favorites-screen, #app-profile-screen').forEach(el => el.style.display = 'none');
+        checkAuthGate();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo eliminar la cuenta');
+      }
     };
 
     // === INICIALIZACIÓN ===

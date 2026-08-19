@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     country_code VARCHAR(5) DEFAULT 'PE',
     default_address TEXT,
+    photo_url TEXT,
+    stripe_customer_id VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -93,5 +95,99 @@ CREATE TABLE IF NOT EXISTS orders (
     driver_tip_usd DECIMAL(10, 2) DEFAULT 0.00,
     total_amount_usd DECIMAL(10, 2) NOT NULL,
     platform_commission_usd DECIMAL(10, 2) NOT NULL, -- 15% para Super Admin
+    coupon_code VARCHAR(50),
+    discount_usd DECIMAL(10, 2) DEFAULT 0.00,
+    rating_order INT,
+    rating_driver INT,
+    rating_store INT,
+    review_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Direcciones guardadas del usuario
+CREATE TABLE IF NOT EXISTS addresses (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    label VARCHAR(50) NOT NULL DEFAULT 'Casa', -- 'Casa', 'Trabajo', 'Otra'
+    address_text TEXT NOT NULL,
+    reference TEXT,
+    lat DECIMAL(10, 6),
+    lng DECIMAL(10, 6),
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Métodos de pago guardados (referencia a Stripe - nunca se guarda el número completo ni el CVV)
+CREATE TABLE IF NOT EXISTS payment_methods (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    stripe_payment_method_id VARCHAR(100) NOT NULL,
+    brand VARCHAR(30),
+    last4 VARCHAR(4),
+    exp_month INT,
+    exp_year INT,
+    cardholder_name VARCHAR(255),
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cupones/promociones disponibles en la plataforma
+CREATE TABLE IF NOT EXISTS coupons (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    discount_type VARCHAR(20) NOT NULL DEFAULT 'fixed', -- 'fixed', 'percent', 'shipping'
+    discount_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    min_order_usd DECIMAL(10, 2) DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    expires_at TIMESTAMP
+);
+
+-- Cupones canjeados/usados por cada usuario
+CREATE TABLE IF NOT EXISTS user_coupons (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    coupon_id VARCHAR(50) NOT NULL REFERENCES coupons(id),
+    redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP,
+    order_id VARCHAR(50) REFERENCES orders(id)
+);
+
+-- Preferencias de notificaciones por usuario
+CREATE TABLE IF NOT EXISTS notification_preferences (
+    user_id VARCHAR(50) PRIMARY KEY REFERENCES users(id),
+    orders_enabled BOOLEAN DEFAULT TRUE,
+    promotions_enabled BOOLEAN DEFAULT TRUE,
+    offers_enabled BOOLEAN DEFAULT TRUE,
+    news_enabled BOOLEAN DEFAULT FALSE
+);
+
+-- Mensajes de chat entre cliente y repartidor, por pedido
+CREATE TABLE IF NOT EXISTS order_messages (
+    id VARCHAR(50) PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL REFERENCES orders(id),
+    sender_role VARCHAR(20) NOT NULL, -- 'user' o 'driver'
+    sender_id VARCHAR(50) NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Casos de soporte / ayuda
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    order_id VARCHAR(50) REFERENCES orders(id),
+    category VARCHAR(50) NOT NULL, -- 'pedido', 'pago', 'cuenta', 'delivery', 'promociones', 'otro'
+    subject VARCHAR(255) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'open', -- 'open', 'closed'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS support_messages (
+    id VARCHAR(50) PRIMARY KEY,
+    ticket_id VARCHAR(50) NOT NULL REFERENCES support_tickets(id),
+    sender_role VARCHAR(20) NOT NULL, -- 'user' o 'support'
+    text TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
