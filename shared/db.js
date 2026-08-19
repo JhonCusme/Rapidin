@@ -346,6 +346,53 @@ class RapidinDatabase {
   }
 
   // ==========================================
+  // DELIVERY EN VIVO (chat, cancelar, instrucciones, calificar, propina)
+  // ==========================================
+
+  async getOrderMessages(orderId) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/messages`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data.messages : [];
+    } catch (e) { return []; }
+  }
+
+  async sendOrderMessage(orderId, text, imageUrl) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/messages`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify({ text, imageUrl }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async cancelOrder(orderId, reason) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/cancel`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify({ reason }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async saveOrderInstructions(orderId, instructions, lat, lng) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/instructions`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify({ instructions, lat, lng }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async rateOrder(orderId, ratingData) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/rate`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify(ratingData) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async setOrderTip(orderId, tip) {
+    try {
+      const res = await fetch(`${API_URL}/orders/${orderId}/tip`, { method: 'PUT', headers: this.getAuthHeaders('user'), body: JSON.stringify({ tip }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  // ==========================================
   // AYUDA Y SOPORTE
   // ==========================================
 

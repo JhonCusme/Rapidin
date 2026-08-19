@@ -101,6 +101,12 @@ CREATE TABLE IF NOT EXISTS orders (
     rating_driver INT,
     rating_store INT,
     review_text TEXT,
+    is_delayed BOOLEAN DEFAULT FALSE,
+    is_cancelled BOOLEAN DEFAULT FALSE,
+    cancel_reason TEXT,
+    delivery_instructions TEXT,
+    customer_lat DECIMAL(10, 6),
+    customer_lng DECIMAL(10, 6),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -169,7 +175,8 @@ CREATE TABLE IF NOT EXISTS order_messages (
     order_id VARCHAR(50) NOT NULL REFERENCES orders(id),
     sender_role VARCHAR(20) NOT NULL, -- 'user' o 'driver'
     sender_id VARCHAR(50) NOT NULL,
-    text TEXT NOT NULL,
+    text TEXT,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

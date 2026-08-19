@@ -78,6 +78,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE orders ADD COLUMN rating_driver INT", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN rating_store INT", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN review_text TEXT", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN is_delayed BOOLEAN DEFAULT 0", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN is_cancelled BOOLEAN DEFAULT 0", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN cancel_reason TEXT", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN delivery_instructions TEXT", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN customer_lat DECIMAL(10,6)", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN customer_lng DECIMAL(10,6)", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS addresses (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, label VARCHAR(50) NOT NULL DEFAULT 'Casa',
       address_text TEXT NOT NULL, reference TEXT, lat DECIMAL(10,6), lng DECIMAL(10,6),
@@ -103,8 +109,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS order_messages (
       id VARCHAR(50) PRIMARY KEY, order_id VARCHAR(50) NOT NULL, sender_role VARCHAR(20) NOT NULL,
-      sender_id VARCHAR(50) NOT NULL, text TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      sender_id VARCHAR(50) NOT NULL, text TEXT, image_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
+    db.run("ALTER TABLE order_messages ADD COLUMN image_url TEXT", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS support_tickets (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, order_id VARCHAR(50),
       category VARCHAR(50) NOT NULL, subject VARCHAR(255) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'open',
@@ -480,7 +487,16 @@ app.get('/api/orders/pending', authenticateToken, requireRole('driver', 'admin')
 // 3.4 Obtener un pedido por ID
 app.get('/api/orders/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
-  const sql = `SELECT orders.*, stores.name as storeName FROM orders LEFT JOIN stores ON orders.store_id = stores.id WHERE orders.id = ?`;
+  const sql = `
+    SELECT orders.*, stores.name as storeName,
+      drivers.name as driverName, drivers.vehicle_info as driverVehicle, drivers.rating as driverRating,
+      driverUser.phone as driverPhone
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.id
+    LEFT JOIN drivers ON orders.driver_id = drivers.id
+    LEFT JOIN users driverUser ON drivers.user_id = driverUser.id
+    WHERE orders.id = ?
+  `;
   db.get(sql, [id], (err, row) => {
     if (err) return res.status(500).json({ success: false, message: 'Error fetching order' });
     if (!row) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -505,15 +521,157 @@ app.get('/api/orders/:id', authenticateToken, (req, res) => {
 app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'driver', 'admin'), (req, res) => {
   const { id } = req.params;
   const { statusStep, statusText, extraData } = req.body;
-  
-  const sql = `UPDATE orders SET status_step = ?, status_text = ? WHERE id = ?`;
-  db.run(sql, [statusStep, statusText, id], function(err) {
-    if (err) return res.status(500).json({ success: false, message: 'Error updating order' });
-    
-    const payload = { orderId: id, statusStep, statusText, ...extraData };
-    io.emit('ORDER_STATUS_CHANGED', payload);
-    
-    res.json({ success: true, payload });
+
+  const applyUpdate = (driverId) => {
+    const sql = driverId
+      ? `UPDATE orders SET status_step = ?, status_text = ?, driver_id = COALESCE(driver_id, ?) WHERE id = ?`
+      : `UPDATE orders SET status_step = ?, status_text = ? WHERE id = ?`;
+    const params = driverId ? [statusStep, statusText, driverId, id] : [statusStep, statusText, id];
+
+    db.run(sql, params, function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error updating order' });
+
+      const payload = { orderId: id, statusStep, statusText, ...extraData };
+      io.emit('ORDER_STATUS_CHANGED', payload);
+
+      res.json({ success: true, payload });
+    });
+  };
+
+  // Cuando un repartidor acepta/actualiza un pedido, lo asignamos como su repartidor
+  // (si todavía no tenía uno asignado).
+  if (req.user.role === 'driver') {
+    db.get('SELECT id FROM drivers WHERE user_id = ?', [req.user.id], (err, driverRow) => {
+      applyUpdate(driverRow ? driverRow.id : null);
+    });
+  } else {
+    applyUpdate(null);
+  }
+});
+
+// Verifica que el usuario autenticado sea el cliente, el repartidor asignado o un admin del pedido.
+function checkOrderAccess(orderId, user, callback) {
+  db.get('SELECT orders.*, drivers.user_id as driverUserId FROM orders LEFT JOIN drivers ON orders.driver_id = drivers.id WHERE orders.id = ?', [orderId], (err, order) => {
+    if (err || !order) return callback(null, false);
+    const allowed = user.role === 'admin' || user.id === order.customer_id || (user.role === 'driver' && user.id === order.driverUserId);
+    callback(order, allowed);
+  });
+}
+
+// 3.5 Chat del pedido (cliente <-> repartidor)
+app.get('/api/orders/:id/messages', authenticateToken, (req, res) => {
+  checkOrderAccess(req.params.id, req.user, (order, allowed) => {
+    if (!order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    if (!allowed) return res.status(403).json({ success: false, message: 'No autorizado' });
+    db.all('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC', [req.params.id], (err2, rows) => {
+      if (err2) return res.status(500).json({ success: false, message: 'Error obteniendo mensajes' });
+      res.json({ success: true, messages: rows });
+    });
+  });
+});
+
+app.post('/api/orders/:id/messages', authenticateToken, (req, res) => {
+  const { text, imageUrl } = req.body;
+  if (!text && !imageUrl) return res.status(400).json({ success: false, message: 'Escribe un mensaje o adjunta una imagen' });
+
+  checkOrderAccess(req.params.id, req.user, (order, allowed) => {
+    if (!order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    if (!allowed) return res.status(403).json({ success: false, message: 'No autorizado' });
+
+    const msgId = 'omsg-' + Date.now();
+    const senderRole = req.user.role === 'driver' ? 'driver' : 'user';
+    db.run(
+      `INSERT INTO order_messages (id, order_id, sender_role, sender_id, text, image_url) VALUES (?, ?, ?, ?, ?, ?)`,
+      [msgId, req.params.id, senderRole, req.user.id, text || null, imageUrl || null],
+      (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: 'Error enviando el mensaje' });
+        const message = { id: msgId, order_id: req.params.id, sender_role: senderRole, sender_id: req.user.id, text: text || null, image_url: imageUrl || null };
+        io.emit('CHAT_MESSAGE_SENT', { orderId: req.params.id, message });
+        res.json({ success: true, message });
+      }
+    );
+  });
+});
+
+// 3.6 Cancelar pedido (solo el cliente, mientras no esté en camino)
+app.put('/api/orders/:id/cancel', authenticateToken, requireRole('user'), (req, res) => {
+  const { reason } = req.body;
+  db.get('SELECT * FROM orders WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id], (err, order) => {
+    if (err || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    if (order.status_step >= 2) {
+      return res.status(400).json({ success: false, message: 'Tu pedido ya está en camino y no se puede cancelar. Contacta a soporte.' });
+    }
+    db.run(
+      `UPDATE orders SET is_cancelled = 1, cancel_reason = ?, status_text = 'Pedido cancelado' WHERE id = ?`,
+      [reason || '', req.params.id],
+      (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: 'Error cancelando el pedido' });
+        io.emit('ORDER_STATUS_CHANGED', { orderId: req.params.id, cancelled: true });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// 3.7 Instrucciones de entrega y ubicación compartida
+app.put('/api/orders/:id/instructions', authenticateToken, requireRole('user'), (req, res) => {
+  const { instructions, lat, lng } = req.body;
+  db.run(
+    `UPDATE orders SET delivery_instructions = COALESCE(?, delivery_instructions), customer_lat = COALESCE(?, customer_lat), customer_lng = COALESCE(?, customer_lng) WHERE id = ? AND customer_id = ?`,
+    [instructions ?? null, lat ?? null, lng ?? null, req.params.id, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error guardando las instrucciones' });
+      if (this.changes === 0) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+      res.json({ success: true });
+    }
+  );
+});
+
+// 3.8 Calificar pedido / repartidor / negocio
+app.put('/api/orders/:id/rate', authenticateToken, requireRole('user'), (req, res) => {
+  const { ratingOrder, ratingDriver, ratingStore, reviewText } = req.body;
+  db.run(
+    `UPDATE orders SET rating_order = ?, rating_driver = ?, rating_store = ?, review_text = ? WHERE id = ? AND customer_id = ?`,
+    [ratingOrder || null, ratingDriver || null, ratingStore || null, reviewText || '', req.params.id, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error guardando tu calificación' });
+      if (this.changes === 0) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+
+      // Actualiza el promedio de calificación del repartidor con la nueva reseña
+      if (ratingDriver) {
+        db.get('SELECT driver_id FROM orders WHERE id = ?', [req.params.id], (e, row) => {
+          if (row && row.driver_id) {
+            db.all('SELECT rating_driver FROM orders WHERE driver_id = ? AND rating_driver IS NOT NULL', [row.driver_id], (e2, ratings) => {
+              if (!e2 && ratings.length) {
+                const avg = ratings.reduce((s, r) => s + r.rating_driver, 0) / ratings.length;
+                db.run('UPDATE drivers SET rating = ? WHERE id = ?', [avg, row.driver_id]);
+              }
+            });
+          }
+        });
+      }
+
+      res.json({ success: true });
+    }
+  );
+});
+
+// 3.9 Agregar/actualizar propina al repartidor (antes o después de la entrega)
+app.put('/api/orders/:id/tip', authenticateToken, requireRole('user'), (req, res) => {
+  const { tip } = req.body;
+  if (tip === undefined || tip < 0) return res.status(400).json({ success: false, message: 'Monto de propina inválido' });
+
+  db.get('SELECT total_amount_usd, driver_tip_usd FROM orders WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id], (err, order) => {
+    if (err || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    const newTotal = Number(order.total_amount_usd) - Number(order.driver_tip_usd) + Number(tip);
+    db.run(
+      'UPDATE orders SET driver_tip_usd = ?, total_amount_usd = ? WHERE id = ?',
+      [tip, newTotal, req.params.id],
+      (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: 'Error guardando la propina' });
+        res.json({ success: true, tip, total: newTotal });
+      }
+    );
   });
 });
 

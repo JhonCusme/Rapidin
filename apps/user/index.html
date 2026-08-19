@@ -3600,9 +3600,9 @@
         <i class="fa-solid fa-arrow-left"></i> Volver
       </button>
       <h2 style="font-size: 1.3rem; margin-bottom: 0.2rem;">Seguimiento del pedido</h2>
-      <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedido #RPD-1048</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);" id="tracking-order-num">Pedido #RPD-1048</div>
     </div>
-    
+
     <!-- Mock Map -->
     <div class="tracking-map-mock">
       <div class="map-route-line"></div>
@@ -3610,82 +3610,96 @@
       <div class="map-pin courier">🚴</div>
       <div class="map-pin user">📍</div>
     </div>
-    
+
+    <!-- Delayed / Cancelled banners -->
+    <div id="tracking-delayed-banner" style="display: none; margin: 0 1.5rem 1rem; background: rgba(245,158,11,0.1); border: 1px solid #F59E0B; border-radius: var(--radius-md); padding: 1rem; color: #F59E0B; font-weight: 700; font-size: 0.9rem;">
+      ⏰ Tu pedido está tardando más de lo esperado. ¡Gracias por tu paciencia!
+    </div>
+    <div id="tracking-cancelled-banner" style="display: none; margin: 0 1.5rem 1rem; background: rgba(255,51,102,0.1); border: 1px solid var(--brand-primary); border-radius: var(--radius-md); padding: 1rem; color: var(--brand-primary); font-weight: 700; font-size: 0.9rem;">
+      🚫 Este pedido fue cancelado.
+    </div>
+    <div id="tracking-rate-banner" style="display: none; margin: 0 1.5rem 1rem; background: rgba(16,185,129,0.1); border: 1px solid #10B981; border-radius: var(--radius-md); padding: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 0.8rem;">
+      <span style="color: #10B981; font-weight: 700; font-size: 0.9rem;">🎉 ¡Pedido entregado! ¿Cómo te fue?</span>
+      <button type="button" class="btn-change-location" onclick="openRateOrderScreen()">Calificar</button>
+    </div>
+
     <!-- Current Status Card -->
     <div class="tracking-status-card" id="tracking-status-card">
-      <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-person-biking" style="color: var(--brand-primary);"></i> Tu pedido está en camino</h3>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">El repartidor está llevando tu pedido.</div>
-      
-      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.2rem;">Llegará aproximadamente en</div>
-      <div style="font-weight: 800; font-size: 1.6rem; color: var(--text-primary);">12 min</div>
+      <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;" id="tracking-status-title"><i class="fa-solid fa-person-biking" style="color: var(--brand-primary);"></i> Tu pedido está en camino</h3>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;" id="tracking-status-subtitle">El repartidor está llevando tu pedido.</div>
     </div>
-    
+
     <div class="tracking-content">
-      
+
       <!-- Tracker -->
       <div class="tracker-container" id="tracking-tracker-list">
         <div class="tracker-step active">
           <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
           <div class="tracker-text">Pedido recibido</div>
         </div>
-        <div class="tracker-step active">
-          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
           <div class="tracker-text">Preparando</div>
         </div>
-        <div class="tracker-step active">
-          <div class="tracker-icon"><i class="fa-solid fa-person-biking"></i></div>
-          <div class="tracker-text" style="color: var(--brand-primary);">Repartidor en camino</div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
+          <div class="tracker-text">Repartidor en camino</div>
         </div>
         <div class="tracker-step">
           <div class="tracker-icon"></div>
           <div class="tracker-text">Entregado</div>
         </div>
       </div>
-      
+
       <!-- Courier Info -->
       <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Tu repartidor</h3>
       <div class="courier-card">
         <div class="courier-info">
           <div class="courier-avatar">👤</div>
           <div>
-            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">Carlos M.</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);"><span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> 4.9</span> • 🚴 Moto</div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;" id="tracking-courier-name">Buscando repartidor...</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="tracking-courier-meta"></div>
           </div>
         </div>
         <div class="courier-actions">
-          <button class="btn-courier-action" onclick="alert('Pantalla de chat en desarrollo')"><i class="fa-regular fa-comment-dots"></i></button>
-          <button class="btn-courier-action" onclick="alert('Llamada en desarrollo')"><i class="fa-solid fa-phone"></i></button>
+          <button class="btn-courier-action" onclick="openOrderChatScreen()"><i class="fa-regular fa-comment-dots"></i></button>
+          <button class="btn-courier-action" onclick="callCourier()"><i class="fa-solid fa-phone"></i></button>
         </div>
       </div>
-      
+
       <!-- Order Detail -->
       <div class="checkout-section" style="margin-bottom: 2rem;">
         <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Tu pedido</h3>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-          <span style="font-weight: 800; color: var(--text-primary);">Burger House</span>
-          <span style="font-weight: 700; color: var(--text-primary);">$14.47</span>
+          <span style="font-weight: 800; color: var(--text-primary);" id="tracking-store-name">Comercio</span>
+          <span style="font-weight: 700; color: var(--text-primary);" id="tracking-total">$0.00</span>
         </div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">2 productos</div>
-        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="alert('Detalle del pedido en desarrollo')">Ver detalles</button>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;" id="tracking-item-count">0 productos</div>
+        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="openOrderDetailScreen()">Ver detalles</button>
       </div>
-      
+
       <!-- Delivery Location -->
       <div class="cart-delivery-card" style="margin-bottom: 2rem; border-color: rgba(255,255,255,0.1);">
         <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.5rem; margin-top: 0;">📍 Entrega</h3>
-        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary);">Guayaquil, Ecuador</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="tracking-address">—</div>
       </div>
-      
+
       <!-- Actions -->
       <div class="tracking-actions-list">
-        <button class="btn-action-list" onclick="alert('Pantalla de contacto al repartidor en desarrollo')">
-          Contactar repartidor <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        <button class="btn-action-list" onclick="openOrderChatScreen()">
+          Chat con repartidor <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        </button>
+        <button class="btn-action-list" onclick="openDeliveryInstructionsScreen()">
+          Instrucciones de entrega <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
         </button>
         <button class="btn-action-list" onclick="openOrderDetailScreen()">
           Ver pedido <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
         </button>
         <button class="btn-action-list" onclick="openOrderIssueScreen()">
           Necesito ayuda <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
+        </button>
+        <button class="btn-action-list" id="tracking-cancel-btn" style="display: none; color: var(--brand-primary);" onclick="cancelCurrentOrder()">
+          Cancelar pedido <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
         </button>
       </div>
 
@@ -3700,105 +3714,83 @@
         <i class="fa-solid fa-arrow-left"></i> Volver
       </button>
       <h2 style="font-size: 1.3rem; margin-bottom: 0.2rem;">Detalle del pedido</h2>
-      <div style="font-size: 0.85rem; color: var(--text-secondary);">Pedido #RPD-1048</div>
-      <div class="status-badge">🟢 En camino</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);" id="orderdetail-order-num">Pedido #RPD-1048</div>
+      <div class="status-badge" id="orderdetail-status-badge">🟢 En camino</div>
     </div>
-    
+
     <div style="padding: 1.5rem;">
-      
+
       <!-- Negocio -->
       <div class="checkout-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-          <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.2rem;">🍔 Burger House</h3>
-          <div style="font-size: 0.8rem; color: var(--text-secondary);">⭐ 4.8 • 📍 1.2 km</div>
+          <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.2rem;" id="orderdetail-store-name">🍔 Comercio</h3>
         </div>
-        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="alert('Pantalla 9 en desarrollo')">Ver negocio</button>
+        <button class="btn-change-location" style="text-decoration: underline; padding:0;" onclick="viewOrderDetailStore()">Ver negocio</button>
       </div>
 
       <!-- Estado -->
       <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Estado del pedido</h2>
-      <div class="tracker-container">
+      <div class="tracker-container" id="orderdetail-tracker-list">
         <div class="tracker-step active">
           <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
           <div class="tracker-text">Pedido recibido</div>
         </div>
-        <div class="tracker-step active">
-          <div class="tracker-icon"><i class="fa-solid fa-check"></i></div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
           <div class="tracker-text">Preparando pedido</div>
         </div>
-        <div class="tracker-step active">
-          <div class="tracker-icon"><i class="fa-solid fa-person-biking"></i></div>
-          <div class="tracker-text" style="color: var(--brand-primary);">En camino</div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
+          <div class="tracker-text">En camino</div>
         </div>
         <div class="tracker-step">
           <div class="tracker-icon"></div>
           <div class="tracker-text">Entregado</div>
         </div>
       </div>
-      <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-size: 0.95rem;">Llegará aproximadamente en 12 min</div>
+      <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-size: 0.95rem;" id="orderdetail-status-text"></div>
 
       <!-- Productos -->
       <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Productos</h2>
-      <div class="order-item-list">
-        <div class="checkout-item-row">
-          <div class="checkout-item-name" style="font-weight: 700;">Hamburguesa Clásica</div>
-          <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">1 × $7.99</div>
-        </div>
-        <div class="order-item-extras">
-          <span>Queso extra</span>
-          <span>+$1.00</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="checkout-item-row">
-          <div class="checkout-item-name" style="font-weight: 700;">Papas fritas</div>
-          <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">2 × $3.99</div>
-        </div>
-      </div>
+      <div class="order-item-list" id="orderdetail-item-list"></div>
 
       <!-- Resumen de pago -->
       <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem; margin-top: 2rem;">Resumen de pago</h2>
       <div class="cart-summary-card" style="margin-bottom: 2rem;">
         <div class="summary-row">
           <span>Productos</span>
-          <span>$15.97</span>
+          <span id="orderdetail-sum-products">$0.00</span>
         </div>
         <div class="summary-row">
           <span>Envío</span>
-          <span>$1.50</span>
+          <span id="orderdetail-sum-shipping">$0.00</span>
         </div>
-        <div class="summary-row discount">
+        <div class="summary-row discount" id="orderdetail-sum-discount-row" style="display: none;">
           <span>Descuento</span>
-          <span>-$3.00</span>
+          <span id="orderdetail-sum-discount">-$0.00</span>
+        </div>
+        <div class="summary-row" id="orderdetail-sum-tip-row" style="display: none;">
+          <span>Propina</span>
+          <span id="orderdetail-sum-tip">$0.00</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-row total">
           <span>Total</span>
-          <span style="font-size: 1.4rem;">$14.47</span>
-        </div>
-      </div>
-
-      <!-- Método de pago -->
-      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Método de pago</h2>
-      <div class="checkout-section" style="margin-bottom: 2rem;">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <div style="font-size: 1.5rem; color: var(--brand-primary);"><i class="fa-brands fa-cc-visa"></i></div>
-          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Visa •••• 4242</div>
+          <span style="font-size: 1.4rem;" id="orderdetail-sum-total">$0.00</span>
         </div>
       </div>
 
       <!-- Dirección -->
       <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">📍 Dirección de entrega</h2>
       <div class="cart-delivery-card" style="margin-bottom: 2rem; border-color: rgba(255,255,255,0.1);">
-        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">Av. León Febres Cordero</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Guayaquil, Ecuador</div>
-        <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); font-weight: 700;">Casa</div>
+        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;" id="orderdetail-address">—</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="orderdetail-instructions"></div>
       </div>
 
       <!-- Información del pedido -->
       <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Información del pedido</h2>
       <div class="checkout-section" style="margin-bottom: 2rem; font-size: 0.9rem;">
-        <div style="margin-bottom: 0.5rem;"><span style="color: var(--text-secondary);">Realizado:</span> <span style="color: var(--text-primary); font-weight: 700; float: right;">17 de agosto de 2026 · 7:02 PM</span></div>
-        <div><span style="color: var(--text-secondary);">Entrega estimada:</span> <span style="color: var(--text-primary); font-weight: 700; float: right;">7:20 PM - 7:30 PM</span></div>
+        <div><span style="color: var(--text-secondary);">Realizado:</span> <span style="color: var(--text-primary); font-weight: 700; float: right;" id="orderdetail-created-at">—</span></div>
       </div>
 
       <!-- Repartidor -->
@@ -3807,27 +3799,24 @@
         <div class="courier-info">
           <div class="courier-avatar">👤</div>
           <div>
-            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">Carlos M.</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);"><span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> 4.9</span> • Moto</div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;" id="orderdetail-courier-name">Buscando repartidor...</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="orderdetail-courier-meta"></div>
           </div>
         </div>
         <div class="courier-actions">
-          <button class="btn-courier-action" onclick="alert('Pantalla de chat en desarrollo')"><i class="fa-regular fa-comment-dots"></i></button>
-          <button class="btn-courier-action" onclick="alert('Llamada en desarrollo')"><i class="fa-solid fa-phone"></i></button>
+          <button class="btn-courier-action" onclick="openOrderChatScreen()"><i class="fa-regular fa-comment-dots"></i></button>
+          <button class="btn-courier-action" onclick="callCourier()"><i class="fa-solid fa-phone"></i></button>
         </div>
       </div>
 
-      <!-- Calificación (Visual) -->
-      <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">¿Qué tal estuvo tu pedido?</h2>
-      <div class="rating-section">
-        <div class="rating-stars">
-          <i class="fa-regular fa-star"></i>
-          <i class="fa-regular fa-star"></i>
-          <i class="fa-regular fa-star"></i>
-          <i class="fa-regular fa-star"></i>
-          <i class="fa-regular fa-star"></i>
-        </div>
-        <textarea class="rating-input" placeholder="Cuéntanos tu experiencia..."></textarea>
+      <!-- Calificación -->
+      <div id="orderdetail-rate-cta" style="display: none; margin-bottom: 1.5rem;">
+        <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">¿Qué tal estuvo tu pedido?</h2>
+        <button type="button" class="btn-auth-primary" style="width: 100%;" onclick="openRateOrderScreen()">Calificar pedido</button>
+      </div>
+      <div id="orderdetail-rate-summary" style="display: none; margin-bottom: 1.5rem;">
+        <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Tu calificación</h2>
+        <div class="checkout-section" id="orderdetail-rate-summary-content"></div>
       </div>
 
       <!-- Acciones -->
@@ -3835,7 +3824,7 @@
         <button class="btn-auth-primary" style="margin-bottom: 0.5rem; width: 100%;" onclick="closeOrderDetailScreen()">Ver seguimiento</button>
         <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" onclick="openOrderIssueScreen()">Necesito ayuda</button>
       </div>
-      
+
       <div style="height: 50px;"></div>
     </div>
   </div>
@@ -4681,6 +4670,93 @@
         <span style="font-size: 1.3rem;">✨</span>
         <span style="font-weight: 700; font-size: 0.95rem;">Otro problema</span>
       </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 35: CHAT CON REPARTIDOR -->
+  <div class="app-main-screen" id="app-order-chat-screen" style="display: none; padding-bottom: 0;">
+    <div class="account-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeOrderChatScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <div style="flex: 1;">
+        <h2 style="font-size: 1.05rem;" id="order-chat-courier-name">Tu repartidor</h2>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Pedido <span id="order-chat-order-num">#RPD-0000</span></span>
+      </div>
+    </div>
+    <div class="chat-messages-scroll" id="order-chat-messages-list"></div>
+    <div class="chat-input-bar">
+      <button type="button" class="chat-attach-btn" onclick="document.getElementById('order-chat-image-input').click()"><i class="fa-solid fa-image"></i></button>
+      <input type="file" id="order-chat-image-input" accept="image/*" style="display: none;" onchange="handleOrderChatImageSelected(event)">
+      <input type="text" id="order-chat-text-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendOrderChatMessage();}">
+      <button type="button" class="chat-send-btn" onclick="sendOrderChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 37: INSTRUCCIONES DE ENTREGA / UBICACIÓN -->
+  <div class="app-main-screen" id="app-delivery-instructions-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeDeliveryInstructionsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Instrucciones de entrega</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="account-map-container" id="delivery-instructions-map" style="height: 180px;"></div>
+      <button type="button" class="btn-change-location" style="margin-bottom: 1.5rem;" onclick="shareCurrentLocation()"><i class="fa-solid fa-location-crosshairs"></i> Usar mi ubicación actual</button>
+
+      <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Indicaciones para el repartidor</label>
+      <textarea id="delivery-instructions-input" class="notes-input" style="width: 100%; min-height: 100px; margin-bottom: 1.5rem;" placeholder="Ej: Timbre no funciona, tocar la puerta. Casa color azul..."></textarea>
+
+      <button type="button" class="btn-auth-primary" style="width: 100%;" id="btn-save-instructions" onclick="submitDeliveryInstructions()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 41-44: CALIFICAR PEDIDO -->
+  <div class="app-main-screen" id="app-rate-order-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeRateOrderScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Calificar pedido</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="checkout-section" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-weight: 700; margin-bottom: 0.8rem;">Tu pedido en general</div>
+        <div class="rating-stars" id="rate-order-stars" data-value="0" style="font-size: 1.6rem; cursor: pointer;">
+          <i class="fa-regular fa-star" data-star="1"></i>
+          <i class="fa-regular fa-star" data-star="2"></i>
+          <i class="fa-regular fa-star" data-star="3"></i>
+          <i class="fa-regular fa-star" data-star="4"></i>
+          <i class="fa-regular fa-star" data-star="5"></i>
+        </div>
+      </div>
+      <div class="checkout-section" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-weight: 700; margin-bottom: 0.8rem;">Tu repartidor</div>
+        <div class="rating-stars" id="rate-driver-stars" data-value="0" style="font-size: 1.6rem; cursor: pointer;">
+          <i class="fa-regular fa-star" data-star="1"></i>
+          <i class="fa-regular fa-star" data-star="2"></i>
+          <i class="fa-regular fa-star" data-star="3"></i>
+          <i class="fa-regular fa-star" data-star="4"></i>
+          <i class="fa-regular fa-star" data-star="5"></i>
+        </div>
+      </div>
+      <div class="checkout-section" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-weight: 700; margin-bottom: 0.8rem;">El negocio</div>
+        <div class="rating-stars" id="rate-store-stars" data-value="0" style="font-size: 1.6rem; cursor: pointer;">
+          <i class="fa-regular fa-star" data-star="1"></i>
+          <i class="fa-regular fa-star" data-star="2"></i>
+          <i class="fa-regular fa-star" data-star="3"></i>
+          <i class="fa-regular fa-star" data-star="4"></i>
+          <i class="fa-regular fa-star" data-star="5"></i>
+        </div>
+      </div>
+
+      <textarea id="rate-review-input" class="notes-input" style="width: 100%; min-height: 90px; margin-bottom: 1.5rem;" placeholder="Cuéntanos tu experiencia (opcional)..."></textarea>
+
+      <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🚴 Propina para tu repartidor</h2>
+      <div style="display: flex; gap: 0.6rem; margin-bottom: 1.5rem;" id="rate-tip-options">
+        <button type="button" class="search-filter-btn" data-tip="0" onclick="selectTipOption(this)">Sin propina</button>
+        <button type="button" class="search-filter-btn active" data-tip="1" onclick="selectTipOption(this)">$1</button>
+        <button type="button" class="search-filter-btn" data-tip="2" onclick="selectTipOption(this)">$2</button>
+        <button type="button" class="search-filter-btn" data-tip="3" onclick="selectTipOption(this)">$3</button>
+      </div>
+
+      <button type="button" class="btn-auth-primary" style="width: 100%;" id="btn-submit-rating" onclick="submitOrderRating()">Enviar calificación</button>
     </div>
   </div>
 
@@ -6221,6 +6297,7 @@
       window.checkoutCoupon = null;
       persistCart();
       updateFloatingCartBadge();
+      window.currentViewedOrderId = orderId;
 
       document.getElementById('success-order-num').textContent = 'Pedido #' + orderId;
       document.getElementById('success-store-name').textContent = '🍽️ ' + (orderPayload.storeName || '');
@@ -6247,6 +6324,7 @@
       window.previousScreenForTracking = activeScreen ? activeScreen.id : 'app-success-screen';
       if (activeScreen) activeScreen.style.display = 'none';
       document.getElementById('app-tracking-screen').style.display = 'flex';
+      loadTrackingOrder();
     };
 
     window.closeTrackingScreen = function() {
@@ -6259,6 +6337,7 @@
       document.getElementById('app-tracking-screen').style.display = 'none';
       document.getElementById('app-orders-screen').style.display = 'none';
       document.getElementById('app-order-detail-screen').style.display = 'flex';
+      loadOrderDetail();
     };
 
     window.closeOrderDetailScreen = function() {
@@ -6520,7 +6599,7 @@
 
     // === PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) ===
 
-    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen'];
+    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen', 'app-order-chat-screen', 'app-delivery-instructions-screen', 'app-rate-order-screen'];
 
     function openAccountSubScreen(targetId) {
       const selector = ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', ');
@@ -7283,6 +7362,372 @@
         openSupportChatScreen(res.ticket.id);
       } else if (window.rapidinAlert) {
         window.rapidinAlert(res.message || 'No se pudo crear tu caso de soporte');
+      }
+    };
+
+    // === PANTALLAS 34-44: DELIVERY EN VIVO ===
+
+    const TRACKER_STEP_LABELS = ['Pedido recibido', 'Preparando', 'Repartidor en camino', 'Entregado'];
+
+    async function fetchCurrentOrder() {
+      if (!window.currentViewedOrderId) return null;
+      const order = await window.rapidinDB.getOrder(window.currentViewedOrderId);
+      window.currentTrackedOrder = order;
+      return order;
+    }
+
+    function renderTrackerSteps(containerEl, statusStep, isCancelled) {
+      const steps = containerEl.querySelectorAll('.tracker-step');
+      steps.forEach((stepEl, i) => {
+        const icon = stepEl.querySelector('.tracker-icon');
+        stepEl.classList.remove('active');
+        icon.innerHTML = '';
+        icon.style.color = '';
+        if (isCancelled) return;
+        if (i < statusStep) {
+          stepEl.classList.add('active');
+          icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else if (i === statusStep) {
+          stepEl.classList.add('active');
+          icon.innerHTML = i === 2 ? '<i class="fa-solid fa-person-biking"></i>' : '<i class="fa-solid fa-check"></i>';
+        }
+      });
+    }
+
+    function courierMetaHtml(order) {
+      if (!order.driverName) return { name: 'Buscando repartidor...', meta: '' };
+      return {
+        name: order.driverName,
+        meta: `<span style="color: var(--text-primary); font-weight: 700;"><i class="fa-solid fa-star" style="color: #F59E0B;"></i> ${Number(order.driverRating || 5).toFixed(1)}</span> • 🚴 ${escapeHtml(order.driverVehicle || 'Moto')}`
+      };
+    }
+
+    async function loadTrackingOrder() {
+      const order = await fetchCurrentOrder();
+      if (!order) return;
+
+      document.getElementById('tracking-order-num').textContent = 'Pedido #' + order.id;
+      document.getElementById('tracking-store-name').textContent = order.storeName || 'Comercio';
+      document.getElementById('tracking-total').textContent = fmtMoney(order.total_amount_usd);
+      document.getElementById('tracking-item-count').textContent = (order.items || []).reduce((s, i) => s + i.quantity, 0) + ' productos';
+      document.getElementById('tracking-address').textContent = order.customer_address || '—';
+
+      const courier = courierMetaHtml(order);
+      document.getElementById('tracking-courier-name').textContent = courier.name;
+      document.getElementById('tracking-courier-meta').innerHTML = courier.meta;
+
+      renderTrackerSteps(document.getElementById('tracking-tracker-list'), order.status_step, order.is_cancelled);
+
+      const titleEl = document.getElementById('tracking-status-title');
+      const subtitleEl = document.getElementById('tracking-status-subtitle');
+      if (order.is_cancelled) {
+        titleEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: var(--brand-primary);"></i> Pedido cancelado';
+        subtitleEl.textContent = order.cancel_reason || 'Este pedido fue cancelado.';
+      } else if (order.status_step >= 3) {
+        titleEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color: #10B981;"></i> ¡Pedido entregado!';
+        subtitleEl.textContent = 'Esperamos que lo hayas disfrutado.';
+      } else {
+        titleEl.innerHTML = '<i class="fa-solid fa-person-biking" style="color: var(--brand-primary);"></i> ' + (order.status_text || 'Tu pedido está en proceso');
+        subtitleEl.textContent = order.status_step === 0 ? 'El comercio todavía no confirma tu pedido.' : order.status_step === 1 ? 'El comercio está preparando tu pedido.' : 'El repartidor está llevando tu pedido.';
+      }
+
+      document.getElementById('tracking-delayed-banner').style.display = (order.is_delayed && !order.is_cancelled) ? 'block' : 'none';
+      document.getElementById('tracking-cancelled-banner').style.display = order.is_cancelled ? 'block' : 'none';
+      document.getElementById('tracking-rate-banner').style.display = (order.status_step >= 3 && !order.rating_order && !order.is_cancelled) ? 'flex' : 'none';
+      document.getElementById('tracking-cancel-btn').style.display = (order.status_step < 2 && !order.is_cancelled) ? 'flex' : 'none';
+    }
+
+    async function loadOrderDetail() {
+      const order = await fetchCurrentOrder();
+      if (!order) return;
+
+      document.getElementById('orderdetail-order-num').textContent = 'Pedido #' + order.id;
+      document.getElementById('orderdetail-store-name').textContent = '🍔 ' + (order.storeName || 'Comercio');
+
+      const statusBadge = document.getElementById('orderdetail-status-badge');
+      if (order.is_cancelled) { statusBadge.textContent = '🚫 Cancelado'; }
+      else if (order.status_step >= 3) { statusBadge.textContent = '✓ Entregado'; }
+      else { statusBadge.textContent = '🟢 ' + (order.status_text || 'En proceso'); }
+
+      renderTrackerSteps(document.getElementById('orderdetail-tracker-list'), order.status_step, order.is_cancelled);
+      document.getElementById('orderdetail-status-text').textContent = order.is_cancelled ? '' : (order.status_text || '');
+
+      document.getElementById('orderdetail-item-list').innerHTML = (order.items || []).map(item => `
+        <div class="checkout-item-row">
+          <div class="checkout-item-name" style="font-weight: 700;">${escapeHtml(item.name)}</div>
+          <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">${item.quantity} × ${fmtMoney(item.price)}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('orderdetail-sum-products').textContent = fmtMoney(order.subtotal_usd);
+      document.getElementById('orderdetail-sum-shipping').textContent = Number(order.shipping_fee_usd) === 0 ? 'GRATIS' : fmtMoney(order.shipping_fee_usd);
+      document.getElementById('orderdetail-sum-total').textContent = fmtMoney(order.total_amount_usd);
+
+      const discountRow = document.getElementById('orderdetail-sum-discount-row');
+      if (order.discount_usd > 0) {
+        discountRow.style.display = 'flex';
+        document.getElementById('orderdetail-sum-discount').textContent = '-' + fmtMoney(order.discount_usd);
+      } else {
+        discountRow.style.display = 'none';
+      }
+
+      const tipRow = document.getElementById('orderdetail-sum-tip-row');
+      if (order.driver_tip_usd > 0) {
+        tipRow.style.display = 'flex';
+        document.getElementById('orderdetail-sum-tip').textContent = fmtMoney(order.driver_tip_usd);
+      } else {
+        tipRow.style.display = 'none';
+      }
+
+      document.getElementById('orderdetail-address').textContent = order.customer_address || '—';
+      document.getElementById('orderdetail-instructions').textContent = order.delivery_instructions ? '📝 ' + order.delivery_instructions : '';
+
+      if (order.created_at) {
+        const d = new Date(order.created_at.replace(' ', 'T') + 'Z');
+        document.getElementById('orderdetail-created-at').textContent = isNaN(d.getTime()) ? order.created_at : d.toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
+      }
+
+      const courier = courierMetaHtml(order);
+      document.getElementById('orderdetail-courier-name').textContent = courier.name;
+      document.getElementById('orderdetail-courier-meta').innerHTML = courier.meta;
+
+      const rateCta = document.getElementById('orderdetail-rate-cta');
+      const rateSummary = document.getElementById('orderdetail-rate-summary');
+      if (order.status_step >= 3 && !order.is_cancelled) {
+        if (order.rating_order) {
+          rateCta.style.display = 'none';
+          rateSummary.style.display = 'block';
+          document.getElementById('orderdetail-rate-summary-content').innerHTML = `
+            <div style="margin-bottom: 0.4rem;">Pedido: ${'⭐'.repeat(order.rating_order)}</div>
+            ${order.rating_driver ? `<div style="margin-bottom: 0.4rem;">Repartidor: ${'⭐'.repeat(order.rating_driver)}</div>` : ''}
+            ${order.rating_store ? `<div style="margin-bottom: 0.4rem;">Negocio: ${'⭐'.repeat(order.rating_store)}</div>` : ''}
+            ${order.review_text ? `<div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">"${escapeHtml(order.review_text)}"</div>` : ''}
+          `;
+        } else {
+          rateCta.style.display = 'block';
+          rateSummary.style.display = 'none';
+        }
+      } else {
+        rateCta.style.display = 'none';
+        rateSummary.style.display = 'none';
+      }
+    }
+
+    window.viewOrderDetailStore = function() {
+      const order = window.currentTrackedOrder;
+      if (order && order.store_id && window.rapidinStoreCache[order.store_id]) {
+        openStoreScreen(order.store_id);
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert('No se pudo abrir el negocio.');
+      }
+    };
+
+    window.callCourier = function() {
+      const order = window.currentTrackedOrder;
+      if (!order || !order.driverPhone) {
+        if (window.rapidinAlert) window.rapidinAlert('Todavía no tienes un repartidor asignado.');
+        return;
+      }
+      if (confirm(`¿Llamar a ${order.driverName} al ${order.driverPhone}?`)) {
+        window.location.href = 'tel:' + order.driverPhone;
+      }
+    };
+
+    window.cancelCurrentOrder = async function() {
+      if (!confirm('¿Seguro que quieres cancelar este pedido?')) return;
+      const res = await window.rapidinDB.cancelOrder(window.currentViewedOrderId, 'Cancelado por el cliente');
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('Tu pedido fue cancelado.');
+        await loadTrackingOrder();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo cancelar el pedido');
+      }
+    };
+
+    // --- Pantalla 35: Chat con repartidor ---
+    window.openOrderChatScreen = function() {
+      if (!window.currentViewedOrderId) {
+        if (window.rapidinAlert) window.rapidinAlert('No hay un pedido activo para chatear.');
+        return;
+      }
+      openAccountSubScreen('app-order-chat-screen');
+      const order = window.currentTrackedOrder;
+      document.getElementById('order-chat-order-num').textContent = '#' + window.currentViewedOrderId;
+      document.getElementById('order-chat-courier-name').textContent = order && order.driverName ? order.driverName : 'Tu repartidor';
+      loadOrderChatMessages();
+    };
+
+    window.closeOrderChatScreen = closeAccountSubScreen;
+
+    async function loadOrderChatMessages() {
+      const messages = await window.rapidinDB.getOrderMessages(window.currentViewedOrderId);
+      const listEl = document.getElementById('order-chat-messages-list');
+      listEl.innerHTML = messages.map(m => `
+        <div class="chat-bubble from-${m.sender_role === 'user' ? 'user' : 'support'}">
+          ${m.text ? escapeHtml(m.text) : ''}
+          ${m.image_url ? `<img src="${escapeHtml(m.image_url)}" alt="Imagen adjunta">` : ''}
+        </div>
+      `).join('');
+      listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    window.sendOrderChatMessage = async function() {
+      const input = document.getElementById('order-chat-text-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      const res = await window.rapidinDB.sendOrderMessage(window.currentViewedOrderId, text, null);
+      if (res.success) await loadOrderChatMessages();
+      else if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo enviar el mensaje');
+    };
+
+    window.handleOrderChatImageSelected = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const res = await window.rapidinDB.sendOrderMessage(window.currentViewedOrderId, null, ev.target.result);
+        if (res.success) await loadOrderChatMessages();
+        else if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo enviar la imagen');
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
+    // --- Pantalla 37: Instrucciones de entrega / ubicación ---
+    let deliveryInstructionsMap = null;
+    window.currentSharedLocation = null;
+
+    window.openDeliveryInstructionsScreen = function() {
+      if (!window.currentViewedOrderId) {
+        if (window.rapidinAlert) window.rapidinAlert('No hay un pedido activo.');
+        return;
+      }
+      openAccountSubScreen('app-delivery-instructions-screen');
+      const order = window.currentTrackedOrder;
+      document.getElementById('delivery-instructions-input').value = order && order.delivery_instructions ? order.delivery_instructions : '';
+      window.currentSharedLocation = order && order.customer_lat ? { lat: order.customer_lat, lng: order.customer_lng } : null;
+
+      const lat = window.currentSharedLocation ? window.currentSharedLocation.lat : -2.170998;
+      const lng = window.currentSharedLocation ? window.currentSharedLocation.lng : -79.922359;
+      setTimeout(() => {
+        if (deliveryInstructionsMap) { deliveryInstructionsMap.remove(); deliveryInstructionsMap = null; }
+        deliveryInstructionsMap = L.map('delivery-instructions-map', { zoomControl: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(deliveryInstructionsMap);
+        L.marker([lat, lng]).addTo(deliveryInstructionsMap);
+      }, 50);
+    };
+
+    window.closeDeliveryInstructionsScreen = closeAccountSubScreen;
+
+    window.shareCurrentLocation = function() {
+      if (!navigator.geolocation) {
+        if (window.rapidinAlert) window.rapidinAlert('Tu navegador no soporta geolocalización.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          window.currentSharedLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (deliveryInstructionsMap) {
+            deliveryInstructionsMap.setView([pos.coords.latitude, pos.coords.longitude], 16);
+            L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(deliveryInstructionsMap);
+          }
+          if (window.rapidinAlert) window.rapidinAlert('📍 Ubicación actual capturada.');
+        },
+        () => { if (window.rapidinAlert) window.rapidinAlert('No pudimos acceder a tu ubicación.'); }
+      );
+    };
+
+    window.submitDeliveryInstructions = async function() {
+      const btn = document.getElementById('btn-save-instructions');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Guardando...';
+
+      const instructions = document.getElementById('delivery-instructions-input').value.trim();
+      const loc = window.currentSharedLocation || {};
+      const res = await window.rapidinDB.saveOrderInstructions(window.currentViewedOrderId, instructions, loc.lat, loc.lng);
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('✅ Instrucciones guardadas');
+        closeAccountSubScreen();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo guardar');
+      }
+    };
+
+    // --- Pantallas 41-44: Calificar pedido / repartidor / negocio + propina ---
+    function wireStarRow(containerId) {
+      const container = document.getElementById(containerId);
+      container.querySelectorAll('i').forEach(star => {
+        star.addEventListener('click', () => {
+          const value = Number(star.dataset.star);
+          container.dataset.value = value;
+          container.querySelectorAll('i').forEach(s => {
+            const active = Number(s.dataset.star) <= value;
+            s.classList.toggle('fa-solid', active);
+            s.classList.toggle('fa-regular', !active);
+            s.style.color = active ? '#F59E0B' : '';
+          });
+        });
+      });
+    }
+    wireStarRow('rate-order-stars');
+    wireStarRow('rate-driver-stars');
+    wireStarRow('rate-store-stars');
+
+    window.selectTipOption = function(btn) {
+      document.querySelectorAll('#rate-tip-options .search-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+
+    window.openRateOrderScreen = function() {
+      openAccountSubScreen('app-rate-order-screen');
+      ['rate-order-stars', 'rate-driver-stars', 'rate-store-stars'].forEach(id => {
+        const container = document.getElementById(id);
+        container.dataset.value = '0';
+        container.querySelectorAll('i').forEach(s => { s.classList.remove('fa-solid'); s.classList.add('fa-regular'); s.style.color = ''; });
+      });
+      document.getElementById('rate-review-input').value = '';
+      document.querySelectorAll('#rate-tip-options .search-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 1));
+    };
+
+    window.closeRateOrderScreen = closeAccountSubScreen;
+
+    window.submitOrderRating = async function() {
+      const btn = document.getElementById('btn-submit-rating');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Enviando...';
+
+      const ratingOrder = Number(document.getElementById('rate-order-stars').dataset.value) || 0;
+      const ratingDriver = Number(document.getElementById('rate-driver-stars').dataset.value) || 0;
+      const ratingStore = Number(document.getElementById('rate-store-stars').dataset.value) || 0;
+      const reviewText = document.getElementById('rate-review-input').value.trim();
+      const tip = Number(document.querySelector('#rate-tip-options .search-filter-btn.active')?.dataset.tip || 0);
+
+      if (!ratingOrder) {
+        btn.disabled = false;
+        btn.textContent = orig;
+        if (window.rapidinAlert) window.rapidinAlert('Califica al menos tu pedido en general.');
+        return;
+      }
+
+      const res = await window.rapidinDB.rateOrder(window.currentViewedOrderId, { ratingOrder, ratingDriver, ratingStore, reviewText });
+      if (tip > 0) await window.rapidinDB.setOrderTip(window.currentViewedOrderId, tip);
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('🙌 ¡Gracias por tu calificación!');
+        closeAccountSubScreen();
+        loadTrackingOrder();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo enviar tu calificación');
       }
     };
 
