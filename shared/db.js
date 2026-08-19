@@ -39,12 +39,12 @@ class RapidinDatabase {
   // Login/registro por teléfono (flujo de verificación SMS). El código SMS ya fue
   // verificado en el cliente; el backend crea la cuenta si el teléfono es nuevo,
   // o inicia sesión si ya existe.
-  async phoneLogin({ phone, name, email }) {
+  async phoneLogin({ phone, name, email, referralCode }) {
     try {
       const response = await fetch(`${API_URL}/auth/phone-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name, email })
+        body: JSON.stringify({ phone, name, email, referralCode })
       });
       const data = await response.json();
 
@@ -155,6 +155,65 @@ class RapidinDatabase {
     } catch (e) {
       console.error('Error en búsqueda:', e);
       return { stores: [], products: [] };
+    }
+  }
+
+  async getLoyaltySummary() {
+    try {
+      const response = await fetch(`${API_URL}/loyalty/summary`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data : null;
+    } catch (e) {
+      console.error('Error fetching loyalty summary:', e);
+      return null;
+    }
+  }
+
+  async getLoyaltyHistory() {
+    try {
+      const response = await fetch(`${API_URL}/loyalty/history`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data.history : [];
+    } catch (e) {
+      console.error('Error fetching loyalty history:', e);
+      return [];
+    }
+  }
+
+  async getRedemptionOptions() {
+    try {
+      const response = await fetch(`${API_URL}/loyalty/redemption-options`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data.options : [];
+    } catch (e) {
+      console.error('Error fetching redemption options:', e);
+      return [];
+    }
+  }
+
+  async redeemPoints(optionId) {
+    try {
+      const response = await fetch(`${API_URL}/loyalty/redeem`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify({ optionId })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error redeeming points:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async getReferrals() {
+    try {
+      const response = await fetch(`${API_URL}/loyalty/referrals`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data : { referralCode: null, referrals: [] };
+    } catch (e) {
+      console.error('Error fetching referrals:', e);
+      return { referralCode: null, referrals: [] };
     }
   }
 

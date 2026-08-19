@@ -125,6 +125,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
       text TEXT, image_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     db.run("ALTER TABLE support_messages ADD COLUMN image_url TEXT", (err) => {});
+    db.run("ALTER TABLE users ADD COLUMN loyalty_points INT DEFAULT 0", (err) => {});
+    db.run("ALTER TABLE users ADD COLUMN referral_code VARCHAR(20)", (err) => {});
+    db.run("ALTER TABLE users ADD COLUMN referred_by VARCHAR(20)", (err) => {});
+    db.run("ALTER TABLE users ADD COLUMN referral_rewarded BOOLEAN DEFAULT 0", (err) => {});
+    db.run(`CREATE TABLE IF NOT EXISTS points_history (
+      id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, type VARCHAR(20) NOT NULL,
+      amount INT NOT NULL, description TEXT, order_id VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
   }
 });
 
@@ -283,8 +291,12 @@ app.post('/api/auth/register-driver', async (req, res) => {
 // 1.2.1 Login/Registro por Teléfono (Auth) - usado por el flujo de verificación SMS
 // La posesión del código SMS (verificado en el cliente) es el factor de autenticación;
 // no se requiere contraseña. Si el teléfono ya existe, inicia sesión; si no, lo crea.
+function generateReferralCode() {
+  return crypto.randomBytes(4).toString('hex').toUpperCase();
+}
+
 app.post('/api/auth/phone-login', async (req, res) => {
-  const { phone, name, email } = req.body;
+  const { phone, name, email, referralCode } = req.body;
   if (!phone) {
     return res.status(400).json({ success: false, message: 'Falta el número de teléfono' });
   }
@@ -304,18 +316,29 @@ app.post('/api/auth/phone-login', async (req, res) => {
     const userId = 'usr-' + Date.now();
     const randomPassword = crypto.randomBytes(24).toString('hex');
     const passwordHash = await bcrypt.hash(randomPassword, 10);
+    const myReferralCode = generateReferralCode();
 
-    const sql = `INSERT INTO users (id, role, email, password_hash, name, phone) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [userId, 'user', email, passwordHash, name, phone], function(insertErr) {
-      if (insertErr) {
-        if (insertErr.message.includes('UNIQUE')) {
-          return res.status(400).json({ success: false, message: 'El correo ya está registrado' });
+    const finishRegistration = (referredBy) => {
+      const sql = `INSERT INTO users (id, role, email, password_hash, name, phone, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      db.run(sql, [userId, 'user', email, passwordHash, name, phone, myReferralCode, referredBy], function(insertErr) {
+        if (insertErr) {
+          if (insertErr.message.includes('UNIQUE')) {
+            return res.status(400).json({ success: false, message: 'El correo ya está registrado' });
+          }
+          return res.status(500).json({ success: false, message: 'Error interno de BD' });
         }
-        return res.status(500).json({ success: false, message: 'Error interno de BD' });
-      }
-      const token = jwt.sign({ id: userId, email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ success: true, token, user: { id: userId, email, name, role: 'user', phone } });
-    });
+        const token = jwt.sign({ id: userId, email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ success: true, token, user: { id: userId, email, name, role: 'user', phone } });
+      });
+    };
+
+    if (referralCode) {
+      db.get(`SELECT id FROM users WHERE referral_code = ?`, [referralCode.toUpperCase()], (refErr, refUser) => {
+        finishRegistration(refUser ? referralCode.toUpperCase() : null);
+      });
+    } else {
+      finishRegistration(null);
+    }
   });
 });
 
@@ -449,7 +472,7 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
         newOrder.statusText || 'Pedido creado',
         newOrder.couponCode || null,
         discount
-      ], (err) => {
+      ], async (err) => {
         if (err) {
           console.error('Error al guardar pedido:', err);
           return res.status(500).json({ success: false, message: 'Error guardando pedido' });
@@ -462,6 +485,8 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
             [orderId, req.user.id, newOrder.couponCode]
           );
         }
+
+        try { await awardOrderPoints(req.user.id, orderId, total); } catch (e) { console.error('Error otorgando puntos:', e); }
 
 // Emitir por Sockets a todos los comercios conectados
         io.emit('ORDER_CREATED', newOrder);
@@ -942,6 +967,134 @@ app.put('/api/payment-methods/:id/default', authenticateToken, requireRole('user
     db.run('UPDATE payment_methods SET is_default = 1 WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], function(err) {
       if (err) return res.status(500).json({ success: false, message: 'Error actualizando el método de pago' });
       res.json({ success: true });
+    });
+  });
+});
+
+// --- Fidelización: Rapidín Club ---
+const LOYALTY_TIERS = [
+  { key: 'explorador', label: 'Explorador', min: 0, max: 499, benefits: ['1 punto por cada $1 gastado', 'Acceso a promociones exclusivas'] },
+  { key: 'plata', label: 'Plata', min: 500, max: 1499, benefits: ['Todo lo del nivel Explorador', 'Soporte prioritario', '5% de puntos extra en cada pedido'] },
+  { key: 'oro', label: 'Oro', min: 1500, max: Infinity, benefits: ['Todo lo del nivel Plata', 'Envío gratis en pedidos +$15', '10% de puntos extra en cada pedido'] }
+];
+function getLoyaltyTier(points) {
+  return LOYALTY_TIERS.find(t => points >= t.min && points <= t.max) || LOYALTY_TIERS[0];
+}
+const REDEMPTION_OPTIONS = [
+  { id: 'redeem-5', points: 100, discountType: 'fixed', discountValue: 5, minOrder: 0, label: '$5 de descuento' },
+  { id: 'redeem-15', points: 250, discountType: 'fixed', discountValue: 15, minOrder: 20, label: '$15 de descuento' },
+  { id: 'redeem-shipping', points: 60, discountType: 'shipping', discountValue: 0, minOrder: 0, label: 'Envío gratis' }
+];
+const REFERRAL_BONUS_REFERRER = 50;
+const REFERRAL_BONUS_REFERRED = 20;
+
+function addPoints(userId, amount, type, description, orderId) {
+  return new Promise((resolve, reject) => {
+    db.run('UPDATE users SET loyalty_points = loyalty_points + ? WHERE id = ?', [amount, userId], (err) => {
+      if (err) return reject(err);
+      db.run(
+        'INSERT INTO points_history (id, user_id, type, amount, description, order_id) VALUES (?, ?, ?, ?, ?, ?)',
+        ['ph-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), userId, type, amount, description, orderId || null],
+        (err2) => err2 ? reject(err2) : resolve()
+      );
+    });
+  });
+}
+
+async function awardOrderPoints(userId, orderId, total) {
+  const points = Math.floor(total);
+  if (points > 0) {
+    await addPoints(userId, points, 'earned', `Pedido #${orderId}`, orderId);
+  }
+
+  const user = await new Promise((resolve, reject) => db.get('SELECT referred_by, referral_rewarded FROM users WHERE id = ?', [userId], (e, r) => e ? reject(e) : resolve(r)));
+  if (!user || !user.referred_by || user.referral_rewarded) return;
+
+  const orderCount = await new Promise((resolve, reject) => db.get('SELECT COUNT(*) as c FROM orders WHERE customer_id = ?', [userId], (e, r) => e ? reject(e) : resolve(r.c)));
+  if (orderCount !== 1) return;
+
+  const referrer = await new Promise((resolve, reject) => db.get('SELECT id FROM users WHERE referral_code = ?', [user.referred_by], (e, r) => e ? reject(e) : resolve(r)));
+  if (!referrer) return;
+
+  await addPoints(referrer.id, REFERRAL_BONUS_REFERRER, 'referral_bonus', 'Bonificación por referido', orderId);
+  await addPoints(userId, REFERRAL_BONUS_REFERRED, 'referral_bonus', 'Bonificación por usar código de referido', orderId);
+  await new Promise((resolve, reject) => db.run('UPDATE users SET referral_rewarded = 1 WHERE id = ?', [userId], (e) => e ? reject(e) : resolve()));
+}
+
+app.get('/api/loyalty/summary', authenticateToken, requireRole('user'), (req, res) => {
+  db.get('SELECT loyalty_points, referral_code FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err || !user) return res.status(500).json({ success: false, message: 'Error obteniendo tu resumen de Rapidín Club' });
+    const points = user.loyalty_points || 0;
+    const tier = getLoyaltyTier(points);
+    const nextTier = LOYALTY_TIERS[LOYALTY_TIERS.indexOf(tier) + 1] || null;
+    db.get('SELECT COUNT(*) as c FROM users WHERE referred_by = ?', [user.referral_code], (refErr, refRow) => {
+      res.json({
+        success: true,
+        points,
+        tier: tier.key,
+        tierLabel: tier.label,
+        benefits: tier.benefits,
+        nextTierLabel: nextTier ? nextTier.label : null,
+        nextTierThreshold: nextTier ? nextTier.min : null,
+        referralCode: user.referral_code,
+        referralCount: refErr ? 0 : refRow.c
+      });
+    });
+  });
+});
+
+app.get('/api/loyalty/history', authenticateToken, requireRole('user'), (req, res) => {
+  db.all('SELECT * FROM points_history WHERE user_id = ? ORDER BY created_at DESC', [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tu historial de puntos' });
+    res.json({ success: true, history: rows });
+  });
+});
+
+app.get('/api/loyalty/redemption-options', authenticateToken, requireRole('user'), (req, res) => {
+  res.json({ success: true, options: REDEMPTION_OPTIONS });
+});
+
+app.post('/api/loyalty/redeem', authenticateToken, requireRole('user'), (req, res) => {
+  const option = REDEMPTION_OPTIONS.find(o => o.id === req.body.optionId);
+  if (!option) return res.status(400).json({ success: false, message: 'Opción de canje inválida' });
+
+  db.get('SELECT loyalty_points FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err || !user) return res.status(500).json({ success: false, message: 'Error de servidor' });
+    if (user.loyalty_points < option.points) {
+      return res.status(400).json({ success: false, message: 'No tienes suficientes puntos para este canje' });
+    }
+
+    const couponId = 'cpn-redeem-' + Date.now();
+    const code = 'CLUB' + Math.random().toString(36).slice(2, 8).toUpperCase();
+    db.run(
+      `INSERT INTO coupons (id, code, title, description, discount_type, discount_value, min_order_usd, is_active, promo_type) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'general')`,
+      [couponId, code, option.label, 'Cupón canjeado con puntos de Rapidín Club', option.discountType, option.discountValue, option.minOrder],
+      (couponErr) => {
+        if (couponErr) return res.status(500).json({ success: false, message: 'Error creando tu cupón' });
+        db.run(
+          `INSERT INTO user_coupons (id, user_id, coupon_id) VALUES (?, ?, ?)`,
+          ['uc-' + Date.now(), req.user.id, couponId],
+          async (ucErr) => {
+            if (ucErr) return res.status(500).json({ success: false, message: 'Error asignando tu cupón' });
+            try {
+              await addPoints(req.user.id, -option.points, 'redeemed', `Canje: ${option.label}`, null);
+            } catch (e) {
+              return res.status(500).json({ success: false, message: 'Error descontando tus puntos' });
+            }
+            res.json({ success: true, code, label: option.label });
+          }
+        );
+      }
+    );
+  });
+});
+
+app.get('/api/loyalty/referrals', authenticateToken, requireRole('user'), (req, res) => {
+  db.get('SELECT referral_code FROM users WHERE id = ?', [req.user.id], (err, me) => {
+    if (err || !me) return res.status(500).json({ success: false, message: 'Error de servidor' });
+    db.all('SELECT name, created_at, referral_rewarded FROM users WHERE referred_by = ? ORDER BY created_at DESC', [me.referral_code], (refErr, rows) => {
+      if (refErr) return res.status(500).json({ success: false, message: 'Error obteniendo tus referidos' });
+      res.json({ success: true, referralCode: me.referral_code, referrals: rows });
     });
   });
 });

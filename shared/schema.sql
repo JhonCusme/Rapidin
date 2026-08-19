@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS users (
     default_address TEXT,
     photo_url TEXT,
     stripe_customer_id VARCHAR(100),
+    loyalty_points INT DEFAULT 0,
+    referral_code VARCHAR(20),
+    referred_by VARCHAR(20),
+    referral_rewarded BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -200,5 +204,16 @@ CREATE TABLE IF NOT EXISTS support_messages (
     sender_role VARCHAR(20) NOT NULL, -- 'user' o 'support'
     text TEXT,
     image_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Historial de puntos de fidelizacion (Rapidin Club)
+CREATE TABLE IF NOT EXISTS points_history (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    type VARCHAR(20) NOT NULL, -- 'earned', 'redeemed', 'referral_bonus'
+    amount INT NOT NULL,
+    description TEXT,
+    order_id VARCHAR(50) REFERENCES orders(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

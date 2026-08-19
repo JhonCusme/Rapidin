@@ -2678,6 +2678,11 @@
             <input type="email" id="profile-email" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="tu@email.com" required>
           </div>
 
+          <div style="margin-bottom: 1.5rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Código de referido (opcional)</label>
+            <input type="text" id="profile-referral-code" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); text-transform: uppercase;" placeholder="Ej: A1B2C3D4">
+          </div>
+
           <div style="margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem;">
             <div id="profile-photo-preview" style="width: 64px; height: 64px; border-radius: 50%; background: var(--bg-card); border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--text-muted); font-size: 1.5rem;">
               <i class="fa-solid fa-camera"></i>
@@ -4102,17 +4107,17 @@
     </div>
 
     <!-- Nivel / Fidelización -->
-    <div class="best-option-card" style="margin: 0 1.5rem 1.75rem;">
+    <div class="best-option-card" style="margin: 0 1.5rem 1.75rem; cursor: pointer;" onclick="openLoyaltyClubScreen()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; gap: 0.6rem;">
         <span style="font-weight: 800; font-size: 1rem;">⭐ Rapidín Club</span>
-        <span class="badge" style="background: rgba(255,51,102,0.15); color: var(--brand-primary); border: 1px solid var(--brand-primary); white-space: nowrap;">Nivel: Explorador</span>
+        <span class="badge" style="background: rgba(255,51,102,0.15); color: var(--brand-primary); border: 1px solid var(--brand-primary); white-space: nowrap;" id="profile-loyalty-tier-badge">Nivel: —</span>
       </div>
-      <div style="font-weight: 700; font-size: 0.9rem;">120 puntos</div>
+      <div style="font-weight: 700; font-size: 0.9rem;" id="profile-loyalty-points-text">— puntos</div>
       <div class="profile-points-bar">
-        <div class="profile-points-bar-fill" style="width: 24%;"></div>
+        <div class="profile-points-bar-fill" id="profile-loyalty-bar-fill" style="width: 0%;"></div>
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.6rem;">120 / 500 puntos</div>
-      <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Sigue usando Rapidín para desbloquear beneficios.</p>
+      <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.6rem;" id="profile-loyalty-progress-text"></div>
+      <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Toca para ver tus beneficios, canjear puntos e invitar amigos.</p>
     </div>
 
     <!-- Mi cuenta -->
@@ -4387,6 +4392,101 @@
   </div>
 
   <!-- PANTALLA 24: PROMOCIONES Y CUPONES -->
+  <!-- PANTALLAS 63-65: RAPIDÍN CLUB (hub, mis puntos, beneficios) -->
+  <div class="app-main-screen" id="app-loyalty-club-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeLoyaltyClubScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>⭐ Rapidín Club</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="best-option-card" style="margin-bottom: 1.5rem; text-align: center;">
+        <div class="badge" id="loyalty-club-tier-badge" style="background: rgba(255,51,102,0.15); color: var(--brand-primary); border: 1px solid var(--brand-primary); display: inline-block; margin-bottom: 0.8rem;">Nivel: —</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);" id="loyalty-club-points">0</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">puntos disponibles</div>
+        <div class="profile-points-bar">
+          <div class="profile-points-bar-fill" id="loyalty-club-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;" id="loyalty-club-progress-text"></div>
+      </div>
+
+      <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 0.8rem;">Beneficios de tu nivel</h3>
+      <div class="success-info-card" style="margin-bottom: 1.5rem;" id="loyalty-club-benefits-list"></div>
+
+      <div class="tracking-actions-list">
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openLoyaltyRedeemScreen()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">🎁</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Canjear puntos</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Convierte tus puntos en descuentos</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openLoyaltyHistoryScreen()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">📜</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Historial de puntos</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Revisa cómo ganaste y usaste tus puntos</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+        <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openLoyaltyReferralsScreen()">
+          <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+            <span style="font-size: 1.3rem;">🤝</span>
+            <div style="text-align: left; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Invitar amigos</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Gana puntos por cada referido</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 66: CANJEAR PUNTOS -->
+  <div class="app-main-screen" id="app-loyalty-redeem-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeLoyaltyRedeemScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Canjear puntos</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div style="text-align: center; margin-bottom: 1.5rem; font-weight: 700; color: var(--text-primary);" id="loyalty-redeem-points-available">Tienes 0 puntos</div>
+      <div id="loyalty-redeem-options-list"></div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 67: HISTORIAL DE PUNTOS -->
+  <div class="app-main-screen" id="app-loyalty-history-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeLoyaltyHistoryScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Historial de puntos</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;" id="loyalty-history-list"></div>
+  </div>
+
+  <!-- PANTALLAS 68-70: REFERIDOS -->
+  <div class="app-main-screen" id="app-loyalty-referrals-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeLoyaltyReferralsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Invitar amigos</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="best-option-card" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🤝</div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Gana puntos invitando amigos</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem;">Tú ganas 50 puntos y tu amigo gana 20 puntos cuando complete su primer pedido en Rapidín.</p>
+        <div style="background: rgba(255,255,255,0.06); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1rem; font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem;" id="loyalty-referral-code">------</div>
+        <button class="btn-auth-primary" style="width: 100%;" onclick="shareReferralCode()">Compartir código</button>
+      </div>
+      <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 0.8rem;" id="loyalty-referrals-count">Tus referidos</h3>
+      <div id="loyalty-referrals-list"></div>
+    </div>
+  </div>
+
   <div class="app-main-screen" id="app-coupons-screen" style="display: none;">
     <div class="account-header">
       <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeCouponsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
@@ -5430,7 +5530,8 @@
       btn.disabled = true;
       btn.textContent = 'Creando cuenta...';
 
-      const res = await window.rapidinDB.phoneLogin({ phone: fullPhone, name: `${name} ${lastName}`, email });
+      const referralCode = document.getElementById('profile-referral-code').value.trim();
+      const res = await window.rapidinDB.phoneLogin({ phone: fullPhone, name: `${name} ${lastName}`, email, referralCode: referralCode || undefined });
 
       btn.disabled = false;
       btn.textContent = originalText;
@@ -6885,6 +6986,24 @@
       if (emailEl) emailEl.textContent = user.email || '';
       if (phoneEl) phoneEl.textContent = user.phone ? `📱 ${user.phone}` : '';
       if (avatarEl) avatarEl.src = `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user.email || user.id || 'Rapidin')}`;
+      loadProfileLoyaltyCard();
+    }
+
+    async function loadProfileLoyaltyCard() {
+      const summary = await window.rapidinDB.getLoyaltySummary();
+      if (!summary) return;
+      window.rapidinLoyaltySummary = summary;
+      document.getElementById('profile-loyalty-tier-badge').textContent = `Nivel: ${summary.tierLabel}`;
+      document.getElementById('profile-loyalty-points-text').textContent = `${summary.points} puntos`;
+      if (summary.nextTierThreshold) {
+        const prevThreshold = summary.nextTierThreshold - (summary.tier === 'explorador' ? 500 : 1000);
+        const progress = Math.min(100, Math.round(((summary.points - prevThreshold) / (summary.nextTierThreshold - prevThreshold)) * 100));
+        document.getElementById('profile-loyalty-bar-fill').style.width = `${Math.max(0, progress)}%`;
+        document.getElementById('profile-loyalty-progress-text').textContent = `${summary.points} / ${summary.nextTierThreshold} puntos para nivel ${summary.nextTierLabel}`;
+      } else {
+        document.getElementById('profile-loyalty-bar-fill').style.width = '100%';
+        document.getElementById('profile-loyalty-progress-text').textContent = '¡Nivel máximo alcanzado!';
+      }
     }
 
     window.realLogout = function() {
@@ -6999,7 +7118,7 @@
 
     // === PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) ===
 
-    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen', 'app-order-chat-screen', 'app-delivery-instructions-screen', 'app-rate-order-screen'];
+    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen', 'app-order-chat-screen', 'app-delivery-instructions-screen', 'app-rate-order-screen', 'app-loyalty-club-screen', 'app-loyalty-redeem-screen', 'app-loyalty-history-screen', 'app-loyalty-referrals-screen'];
 
     function openAccountSubScreen(targetId) {
       const selector = ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', ');
@@ -7394,6 +7513,123 @@
     };
 
     // --- Pantalla 24: Promociones y cupones ---
+    window.openLoyaltyClubScreen = async function() {
+      openAccountSubScreen('app-loyalty-club-screen');
+      const summary = await window.rapidinDB.getLoyaltySummary();
+      if (!summary) return;
+      window.rapidinLoyaltySummary = summary;
+      document.getElementById('loyalty-club-tier-badge').textContent = `Nivel: ${summary.tierLabel}`;
+      document.getElementById('loyalty-club-points').textContent = summary.points;
+      document.getElementById('loyalty-club-benefits-list').innerHTML = summary.benefits.map(b => `<div style="padding: 0.4rem 0; color: var(--text-primary); font-weight: 600;">✓ ${escapeHtml(b)}</div>`).join('');
+      if (summary.nextTierThreshold) {
+        const prevThreshold = summary.nextTierThreshold - (summary.tier === 'explorador' ? 500 : 1000);
+        const progress = Math.min(100, Math.round(((summary.points - prevThreshold) / (summary.nextTierThreshold - prevThreshold)) * 100));
+        document.getElementById('loyalty-club-bar-fill').style.width = `${Math.max(0, progress)}%`;
+        document.getElementById('loyalty-club-progress-text').textContent = `${summary.points} / ${summary.nextTierThreshold} puntos para nivel ${summary.nextTierLabel}`;
+      } else {
+        document.getElementById('loyalty-club-bar-fill').style.width = '100%';
+        document.getElementById('loyalty-club-progress-text').textContent = '¡Nivel máximo alcanzado!';
+      }
+    };
+    window.closeLoyaltyClubScreen = closeAccountSubScreen;
+
+    window.openLoyaltyRedeemScreen = async function() {
+      openAccountSubScreen('app-loyalty-redeem-screen');
+      const summary = await window.rapidinDB.getLoyaltySummary();
+      window.rapidinLoyaltySummary = summary;
+      const points = summary ? summary.points : 0;
+      document.getElementById('loyalty-redeem-points-available').textContent = `Tienes ${points} puntos`;
+      const options = await window.rapidinDB.getRedemptionOptions();
+      const list = document.getElementById('loyalty-redeem-options-list');
+      if (!options.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay opciones de canje disponibles.</div>';
+        return;
+      }
+      list.innerHTML = options.map(o => `
+        <div class="payment-method-card" style="margin-bottom: 0.8rem;">
+          <div>
+            <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(o.label)}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">${o.points} puntos${o.minOrder ? ` · Pedido mínimo $${o.minOrder}` : ''}</div>
+          </div>
+          <button class="btn-change-location" ${points < o.points ? 'disabled style="opacity:0.5;"' : ''} onclick="redeemLoyaltyOption('${o.id}')">Canjear</button>
+        </div>
+      `).join('');
+    };
+    window.closeLoyaltyRedeemScreen = closeAccountSubScreen;
+
+    window.redeemLoyaltyOption = async function(optionId) {
+      const res = await window.rapidinDB.redeemPoints(optionId);
+      if (!res.success) {
+        if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo canjear tus puntos.');
+        return;
+      }
+      if (window.rapidinAlert) window.rapidinAlert(`¡Canje exitoso! Código: ${res.code}`);
+      await openLoyaltyRedeemScreen();
+      loadProfileLoyaltyCard();
+    };
+
+    window.openLoyaltyHistoryScreen = async function() {
+      openAccountSubScreen('app-loyalty-history-screen');
+      const list = document.getElementById('loyalty-history-list');
+      list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando historial...</div>';
+      const history = await window.rapidinDB.getLoyaltyHistory();
+      if (!history.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Todavía no tienes movimientos de puntos.</div>';
+        return;
+      }
+      list.innerHTML = history.map(h => {
+        const date = new Date(h.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        const positive = h.amount > 0;
+        return `
+          <div class="summary-row" style="padding: 0.8rem 0; border-bottom: 1px solid var(--border-color);">
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(h.description || h.type)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${date}</div>
+            </div>
+            <span style="font-weight: 800; color: ${positive ? '#10B981' : '#EF4444'};">${positive ? '+' : ''}${h.amount}</span>
+          </div>
+        `;
+      }).join('');
+    };
+    window.closeLoyaltyHistoryScreen = closeAccountSubScreen;
+
+    window.openLoyaltyReferralsScreen = async function() {
+      openAccountSubScreen('app-loyalty-referrals-screen');
+      const data = await window.rapidinDB.getReferrals();
+      document.getElementById('loyalty-referral-code').textContent = data.referralCode || '------';
+      document.getElementById('loyalty-referrals-count').textContent = `Tus referidos (${data.referrals.length})`;
+      const list = document.getElementById('loyalty-referrals-list');
+      if (!data.referrals.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Todavía no has invitado a nadie. ¡Comparte tu código!</div>';
+        return;
+      }
+      list.innerHTML = data.referrals.map(r => {
+        const date = new Date(r.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `
+          <div class="summary-row" style="padding: 0.8rem 0; border-bottom: 1px solid var(--border-color);">
+            <div>
+              <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(r.name)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">Se unió el ${date}</div>
+            </div>
+            <span style="font-size: 0.8rem; color: ${r.referral_rewarded ? '#10B981' : 'var(--text-secondary)'};">${r.referral_rewarded ? '✓ Recompensado' : 'Pendiente su primer pedido'}</span>
+          </div>
+        `;
+      }).join('');
+    };
+    window.closeLoyaltyReferralsScreen = closeAccountSubScreen;
+
+    window.shareReferralCode = function() {
+      const code = document.getElementById('loyalty-referral-code').textContent;
+      const text = `¡Únete a Rapidín con mi código ${code} y ambos ganamos puntos! 🎉`;
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => {
+          if (window.rapidinAlert) window.rapidinAlert('Mensaje de invitación copiado al portapapeles.');
+        });
+      }
+    };
+
     window.openCouponsScreen = async function() {
       openAccountSubScreen('app-coupons-screen');
       await loadCoupons();
