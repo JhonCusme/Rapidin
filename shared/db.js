@@ -173,10 +173,11 @@ class RapidinDatabase {
         body: JSON.stringify(orderData)
       });
       const data = await response.json();
-      return data.success ? data.order : null;
+      if (data.success) return { success: true, order: data.order };
+      return { success: false, code: data.code || null, message: data.message || 'No se pudo confirmar el pedido.', unavailableItems: data.unavailableItems || [] };
     } catch (e) {
       console.error('Error creando pedido:', e);
-      return null;
+      return { success: false, code: 'NETWORK_ERROR', message: 'Error de conexión con el servidor.' };
     }
   }
 

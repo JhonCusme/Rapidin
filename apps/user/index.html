@@ -3593,6 +3593,47 @@
     <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem;" onclick="closeSuccessScreenToHome()">Volver al inicio</button>
   </div>
 
+  <!-- PANTALLA 49: PAGO PROCESANDO -->
+  <div class="app-success-screen" id="app-payment-processing-screen" style="display: none; justify-content: center;">
+    <div class="success-anim-container">
+      <div class="success-circle" style="background: rgba(255,255,255,0.06);"><i class="fa-solid fa-circle-notch fa-spin" style="color: var(--brand-primary);"></i></div>
+    </div>
+    <h2 class="success-title">Procesando tu pago…</h2>
+    <div class="success-subtitle">No cierres ni recargues la app, esto toma unos segundos.</div>
+  </div>
+
+  <!-- PANTALLA 51: PAGO RECHAZADO -->
+  <div class="app-success-screen" id="app-payment-declined-screen" style="display: none;">
+    <div class="success-anim-container">
+      <div class="success-circle" style="background: rgba(239,68,68,0.15);"><i class="fa-solid fa-xmark" style="color: #EF4444;"></i></div>
+    </div>
+    <h2 class="success-title">Pago rechazado</h2>
+    <div class="success-subtitle" id="payment-declined-reason">Tu banco rechazó el cobro. Intenta con otro método de pago.</div>
+    <button class="btn-auth-primary" style="margin: 2rem 0 1rem; width: 100%;" onclick="openPaymentMethodsScreenForCheckout(); closePaymentDeclinedScreen();">Elegir otro método de pago</button>
+    <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem;" onclick="closePaymentDeclinedScreen()">Volver al pedido</button>
+  </div>
+
+  <!-- PANTALLA 52: NEGOCIO CERRADO -->
+  <div class="app-success-screen" id="app-store-closed-screen" style="display: none;">
+    <div class="success-anim-container">
+      <div class="success-circle" style="background: rgba(245,158,11,0.15);"><i class="fa-solid fa-store-slash" style="color: #F59E0B;"></i></div>
+    </div>
+    <h2 class="success-title">Negocio cerrado</h2>
+    <div class="success-subtitle" id="store-closed-message">Este negocio no está aceptando pedidos en este momento.</div>
+    <button class="btn-change-location" style="margin-top: 2rem; width: 100%; padding: 1rem; font-size: 1rem;" onclick="closeStoreClosedScreen()">Volver al inicio</button>
+  </div>
+
+  <!-- PANTALLA 53: PRODUCTO AGOTADO -->
+  <div class="app-success-screen" id="app-product-unavailable-screen" style="display: none;">
+    <div class="success-anim-container">
+      <div class="success-circle" style="background: rgba(245,158,11,0.15);"><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i></div>
+    </div>
+    <h2 class="success-title">Producto agotado</h2>
+    <div class="success-subtitle">Estos productos ya no están disponibles:</div>
+    <div class="success-info-card" id="product-unavailable-list" style="text-align: left;"></div>
+    <button class="btn-auth-primary" style="margin: 2rem 0 1rem; width: 100%;" onclick="closeProductUnavailableScreen(); closeCheckoutScreen();">Editar carrito</button>
+  </div>
+
   <!-- PANTALLA 14: SEGUIMIENTO DEL PEDIDO -->
   <div class="app-tracking-screen" id="app-tracking-screen" style="display: none;">
     <div class="tracking-header">
@@ -6267,29 +6308,42 @@
       const { productsTotal, shipping, discount, total } = computeOrderTotals();
       const orderId = 'RPD-' + Math.floor(10000 + Math.random() * 90000);
       const address = window.checkoutAddress.address_text;
+      const payment = window.checkoutPayment;
 
       const orderPayload = {
         id: orderId,
         storeId: cart[0].storeId,
         storeName: cart[0].storeName,
         customerAddress: address,
-        items: cart.map(i => ({ name: i.name, quantity: i.qty, price: i.unitPrice })),
+        items: cart.map(i => ({ productId: i.productId, name: i.name, quantity: i.qty, price: i.unitPrice })),
         subtotal: productsTotal,
         shippingFee: shipping,
         driverTip: 0,
         discount: discount,
         couponCode: window.checkoutCoupon ? window.checkoutCoupon.code : null,
         total: total,
+        paymentMethodId: (payment && !payment.cash) ? payment.id : 'cash',
         statusText: 'Pedido confirmado y enviado al comercio 🚀'
       };
 
-      const order = await window.rapidinDB.createOrder(orderPayload);
+      openPaymentProcessingScreen();
+      const result = await window.rapidinDB.createOrder(orderPayload);
 
       btn.disabled = false;
       btn.innerHTML = originalHtml;
+      closePaymentProcessingScreen();
 
-      if (!order) {
-        if (window.rapidinAlert) window.rapidinAlert('No se pudo confirmar el pedido. Intenta de nuevo.');
+      if (!result.success) {
+        if (result.code === 'STORE_CLOSED') {
+          openStoreClosedScreen(result.message);
+        } else if (result.code === 'PRODUCT_UNAVAILABLE') {
+          openProductUnavailableScreen(result.unavailableItems || []);
+        } else if (result.code === 'PAYMENT_DECLINED') {
+          openPaymentDeclinedScreen(result.message);
+        } else {
+          document.getElementById('app-checkout-screen').style.display = 'flex';
+          if (window.rapidinAlert) window.rapidinAlert(result.message || 'No se pudo confirmar el pedido. Intenta de nuevo.');
+        }
         return;
       }
 
@@ -6317,6 +6371,43 @@
       document.getElementById('app-success-screen').style.display = 'none';
       document.getElementById('app-main-screen').style.display = 'flex';
       updateFloatingCartBadge();
+    };
+
+    window.openPaymentProcessingScreen = function() {
+      document.getElementById('app-checkout-screen').style.display = 'none';
+      document.getElementById('app-payment-processing-screen').style.display = 'flex';
+    };
+    window.closePaymentProcessingScreen = function() {
+      document.getElementById('app-payment-processing-screen').style.display = 'none';
+    };
+
+    window.openPaymentDeclinedScreen = function(message) {
+      document.getElementById('payment-declined-reason').textContent = message || 'Tu banco rechazó el cobro. Intenta con otro método de pago.';
+      document.getElementById('app-payment-declined-screen').style.display = 'flex';
+    };
+    window.closePaymentDeclinedScreen = function() {
+      document.getElementById('app-payment-declined-screen').style.display = 'none';
+      document.getElementById('app-checkout-screen').style.display = 'flex';
+    };
+
+    window.openStoreClosedScreen = function(message) {
+      document.getElementById('store-closed-message').textContent = message || 'Este negocio no está aceptando pedidos en este momento.';
+      document.getElementById('app-store-closed-screen').style.display = 'flex';
+    };
+    window.closeStoreClosedScreen = function() {
+      document.getElementById('app-store-closed-screen').style.display = 'none';
+      document.getElementById('app-main-screen').style.display = 'flex';
+    };
+
+    window.openProductUnavailableScreen = function(items) {
+      const list = document.getElementById('product-unavailable-list');
+      list.innerHTML = (items.length ? items : ['Producto no disponible'])
+        .map(name => `<div style="padding: 0.4rem 0; color: var(--text-primary); font-weight: 700;">• ${escapeHtml(name)}</div>`)
+        .join('');
+      document.getElementById('app-product-unavailable-screen').style.display = 'flex';
+    };
+    window.closeProductUnavailableScreen = function() {
+      document.getElementById('app-product-unavailable-screen').style.display = 'none';
     };
 
     window.openTrackingScreen = function() {

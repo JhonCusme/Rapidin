@@ -367,55 +367,104 @@ app.post('/api/auth/login', (req, res) => {
 app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
   const newOrder = req.body;
   const orderId = newOrder.id; // 'RPD-12345'
+  const items = newOrder.items || [];
 
-  const sql = `
-    INSERT INTO orders (
-      id, customer_id, store_id, customer_address, items_json,
-      subtotal_usd, shipping_fee_usd, driver_tip_usd, total_amount_usd, platform_commission_usd,
-      status_step, status_text, coupon_code, discount_usd
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  const itemsJson = JSON.stringify(newOrder.items || []);
-  const subtotal = newOrder.subtotal || 0;
-  const shipping = newOrder.shippingFee || 1.99;
-  const tip = newOrder.driverTip || 0;
-  const discount = newOrder.discount || 0;
-  const total = newOrder.total || (subtotal + shipping + tip - discount);
-  const commission = total * 0.15; // 15% platform commission
-
-  db.run(sql, [
-    orderId,
-    req.user.id,
-    newOrder.storeId,
-    newOrder.customerAddress || '',
-    itemsJson,
-    subtotal,
-    shipping,
-    tip,
-    total,
-    commission,
-    0,
-    newOrder.statusText || 'Pedido creado',
-    newOrder.couponCode || null,
-    discount
-  ], (err) => {
-    if (err) {
-      console.error('Error al guardar pedido:', err);
-      return res.status(500).json({ success: false, message: 'Error guardando pedido' });
+  db.get('SELECT id, name, is_open FROM stores WHERE id = ?', [newOrder.storeId], (storeErr, store) => {
+    if (storeErr) return res.status(500).json({ success: false, message: 'Error de servidor' });
+    if (!store) return res.status(404).json({ success: false, code: 'STORE_NOT_FOUND', message: 'El negocio no existe.' });
+    if (!store.is_open) {
+      return res.status(409).json({ success: false, code: 'STORE_CLOSED', message: `${store.name} está cerrado en este momento.` });
     }
 
-    if (newOrder.couponCode) {
-      db.run(
-        `UPDATE user_coupons SET used_at = CURRENT_TIMESTAMP, order_id = ?
-         WHERE user_id = ? AND used_at IS NULL AND coupon_id = (SELECT id FROM coupons WHERE code = ?)`,
-        [orderId, req.user.id, newOrder.couponCode]
-      );
-    }
+    const productIds = items.map(i => i.productId).filter(Boolean);
+    const checkAvailability = productIds.length
+      ? new Promise((resolve) => {
+          db.all(`SELECT id, name, is_available FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`, productIds, (prodErr, rows) => {
+            resolve(prodErr ? [] : rows);
+          });
+        })
+      : Promise.resolve([]);
+
+    checkAvailability.then(async (productRows) => {
+      const unavailable = productRows.filter(p => !p.is_available).map(p => p.name);
+      if (unavailable.length) {
+        return res.status(409).json({ success: false, code: 'PRODUCT_UNAVAILABLE', message: 'Algunos productos ya no están disponibles.', unavailableItems: unavailable });
+      }
+
+      const itemsJson = JSON.stringify(items);
+      const subtotal = newOrder.subtotal || 0;
+      const shipping = newOrder.shippingFee || 1.99;
+      const tip = newOrder.driverTip || 0;
+      const discount = newOrder.discount || 0;
+      const total = newOrder.total || (subtotal + shipping + tip - discount);
+      const commission = total * 0.15; // 15% platform commission
+
+      // Cobro real con Stripe si el cliente eligió una tarjeta guardada
+      if (newOrder.paymentMethodId && newOrder.paymentMethodId !== 'cash' && stripe) {
+        try {
+          const [user, pm] = await Promise.all([
+            new Promise((resolve, reject) => db.get('SELECT * FROM users WHERE id = ?', [req.user.id], (e, r) => e ? reject(e) : resolve(r))),
+            new Promise((resolve, reject) => db.get('SELECT * FROM payment_methods WHERE id = ? AND user_id = ?', [newOrder.paymentMethodId, req.user.id], (e, r) => e ? reject(e) : resolve(r)))
+          ]);
+          if (!pm) {
+            return res.status(400).json({ success: false, code: 'PAYMENT_METHOD_NOT_FOUND', message: 'El método de pago seleccionado ya no existe.' });
+          }
+          const customerId = await getOrCreateStripeCustomer(user);
+          await stripe.paymentIntents.create({
+            amount: Math.round(total * 100),
+            currency: 'usd',
+            customer: customerId,
+            payment_method: pm.stripe_payment_method_id,
+            off_session: true,
+            confirm: true
+          });
+        } catch (chargeErr) {
+          return res.status(402).json({ success: false, code: 'PAYMENT_DECLINED', message: chargeErr.message || 'El pago fue rechazado por el banco.' });
+        }
+      }
+
+      const sql = `
+        INSERT INTO orders (
+          id, customer_id, store_id, customer_address, items_json,
+          subtotal_usd, shipping_fee_usd, driver_tip_usd, total_amount_usd, platform_commission_usd,
+          status_step, status_text, coupon_code, discount_usd
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.run(sql, [
+        orderId,
+        req.user.id,
+        newOrder.storeId,
+        newOrder.customerAddress || '',
+        itemsJson,
+        subtotal,
+        shipping,
+        tip,
+        total,
+        commission,
+        0,
+        newOrder.statusText || 'Pedido creado',
+        newOrder.couponCode || null,
+        discount
+      ], (err) => {
+        if (err) {
+          console.error('Error al guardar pedido:', err);
+          return res.status(500).json({ success: false, message: 'Error guardando pedido' });
+        }
+
+        if (newOrder.couponCode) {
+          db.run(
+            `UPDATE user_coupons SET used_at = CURRENT_TIMESTAMP, order_id = ?
+             WHERE user_id = ? AND used_at IS NULL AND coupon_id = (SELECT id FROM coupons WHERE code = ?)`,
+            [orderId, req.user.id, newOrder.couponCode]
+          );
+        }
 
 // Emitir por Sockets a todos los comercios conectados
-    io.emit('ORDER_CREATED', newOrder);
-    res.json({ success: true, order: newOrder });
+        io.emit('ORDER_CREATED', newOrder);
+        res.json({ success: true, order: newOrder });
+      });
+    });
   });
 });
 
