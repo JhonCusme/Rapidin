@@ -36,15 +36,46 @@ class RapidinDatabase {
     }
   }
 
-  // Login/registro por teléfono (flujo de verificación SMS). El código SMS ya fue
-  // verificado en el cliente; el backend crea la cuenta si el teléfono es nuevo,
-  // o inicia sesión si ya existe.
-  async phoneLogin({ phone, name, email, referralCode }) {
+  // Envía un código de verificación real por SMS (Twilio Verify) al número indicado.
+  async sendOtp(phone) {
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  // Verifica el código SMS contra Twilio y devuelve un ticket de corta duración
+  // que prueba la propiedad del número, usado luego en phoneLogin().
+  async verifyOtp(phone, code) {
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  // Login/registro por teléfono. Requiere un verificationTicket real emitido por
+  // verifyOtp() tras confirmar el código SMS; el backend crea la cuenta si el
+  // teléfono es nuevo, o inicia sesión si ya existe.
+  async phoneLogin({ phone, name, email, referralCode, verificationTicket }) {
     try {
       const response = await fetch(`${API_URL}/auth/phone-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name, email, referralCode })
+        body: JSON.stringify({ phone, name, email, referralCode, verificationTicket })
       });
       const data = await response.json();
 

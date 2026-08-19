@@ -5621,33 +5621,34 @@
       }, 1000);
     };
 
-    window.resendSmsCode = function() {
-      if (window.rapidinAlert) window.rapidinAlert('Te enviamos un nuevo código.');
-      else alert('Te enviamos un nuevo código.');
-      
+    window.resendSmsCode = async function() {
+      const res = await window.rapidinDB.sendOtp(window.currentAuthPhone);
+      if (window.rapidinAlert) window.rapidinAlert(res.success ? 'Te enviamos un nuevo código.' : (res.message || 'No se pudo reenviar el código.'));
+      else alert(res.success ? 'Te enviamos un nuevo código.' : (res.message || 'No se pudo reenviar el código.'));
+
       const boxes = document.querySelectorAll('.sms-box');
       boxes.forEach(b => b.value = '');
       document.getElementById('sms-error-msg').textContent = '';
       boxes[0].focus();
-      
+
       startSmsTimer();
     };
 
-    window.verifySmsCode = function() {
+    window.verifySmsCode = async function() {
       const boxes = document.querySelectorAll('.sms-box');
       let code = '';
       boxes.forEach(b => code += b.value);
-      
+
       if (code.length === 6) {
-        // Mock validation: accept '123456' as success
-        if (code === '123456') {
-           console.log('Validación exitosa. Simulando usuario nuevo...');
+        const res = await window.rapidinDB.verifyOtp(window.currentAuthPhone, code);
+        if (res.success) {
+           window.currentVerificationTicket = res.verificationTicket;
            document.getElementById('step-verify-sms').style.display = 'none';
            document.getElementById('step-complete-profile').style.display = 'flex';
         } else {
-           document.getElementById('sms-error-msg').textContent = 'El código no es correcto. Inténtalo nuevamente.';
-           boxes[5].focus();
-           boxes[5].select();
+           document.getElementById('sms-error-msg').textContent = res.message || 'El código no es correcto. Inténtalo nuevamente.';
+           boxes.forEach(b => b.value = '');
+           boxes[0].focus();
         }
       }
     };
@@ -5672,8 +5673,7 @@
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!name || !lastName || !emailRegex.test(email)) return;
 
-      const phone = document.getElementById('input-phone-number').value.replace(/\D/g, '');
-      const fullPhone = '+593' + phone;
+      const fullPhone = window.currentAuthPhone || ('+593' + document.getElementById('input-phone-number').value.replace(/\D/g, ''));
 
       const btn = document.getElementById('btn-continue-profile');
       const originalText = btn.textContent;
@@ -5681,7 +5681,7 @@
       btn.textContent = 'Creando cuenta...';
 
       const referralCode = document.getElementById('profile-referral-code').value.trim();
-      const res = await window.rapidinDB.phoneLogin({ phone: fullPhone, name: `${name} ${lastName}`, email, referralCode: referralCode || undefined });
+      const res = await window.rapidinDB.phoneLogin({ phone: fullPhone, name: `${name} ${lastName}`, email, referralCode: referralCode || undefined, verificationTicket: window.currentVerificationTicket });
 
       btn.disabled = false;
       btn.textContent = originalText;
@@ -5733,23 +5733,40 @@
       checkAuthGate();
     };
 
-    window.submitPhoneAuth = function() {
+    window.submitPhoneAuth = async function() {
       const phoneInput = document.getElementById('input-phone-number').value.replace(/\D/g, '');
       if (phoneInput.length !== 9) {
         document.getElementById('phone-error-msg').textContent = 'Ingresa un número de celular válido.';
         return;
       }
-      
+
+      const fullPhone = '+593' + phoneInput;
+      const btn = document.getElementById('btn-continue-phone');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Enviando código...';
+
+      const res = await window.rapidinDB.sendOtp(fullPhone);
+
+      btn.disabled = false;
+      btn.textContent = origText;
+
+      if (!res.success) {
+        document.getElementById('phone-error-msg').textContent = res.message || 'No se pudo enviar el código de verificación.';
+        return;
+      }
+
+      window.currentAuthPhone = fullPhone;
       const masked = '+593 ' + phoneInput.substring(0,3) + ' *** ' + phoneInput.substring(6);
       document.getElementById('display-verify-phone').textContent = masked;
-      
+
       const boxes = document.querySelectorAll('.sms-box');
       boxes.forEach(b => b.value = '');
       document.getElementById('sms-error-msg').textContent = '';
-      
+
       document.getElementById('step-phone-auth').style.display = 'none';
       document.getElementById('step-verify-sms').style.display = 'flex';
-      
+
       startSmsTimer();
       setTimeout(() => boxes[0].focus(), 300);
     };

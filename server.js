@@ -45,6 +45,18 @@ if (!stripe) {
   console.warn('⚠️  STRIPE_SECRET_KEY no configurado: la sección de métodos de pago quedará deshabilitada.');
 }
 
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || null;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || null;
+const TWILIO_VERIFY_SERVICE_SID = process.env.TWILIO_VERIFY_SERVICE_SID || null;
+const twilioClient = (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN) ? require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : null;
+if (!twilioClient || !TWILIO_VERIFY_SERVICE_SID) {
+  if (NODE_ENV === 'production') {
+    console.error('❌ TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN/TWILIO_VERIFY_SERVICE_SID no están definidos. En producción es obligatorio configurarlos.');
+    process.exit(1);
+  }
+  console.warn('⚠️  Twilio no configurado: la verificación por SMS usará el código de prueba 123456 (solo desarrollo).');
+}
+
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,capacitor://localhost,http://localhost')
   .split(',')
   .map(o => o.trim())
@@ -305,10 +317,72 @@ function generateReferralCode() {
   return crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
-app.post('/api/auth/phone-login', async (req, res) => {
-  const { phone, name, email, referralCode } = req.body;
+// Envía un código de verificación por SMS al número indicado (Twilio Verify)
+app.post('/api/auth/send-otp', async (req, res) => {
+  const { phone } = req.body;
   if (!phone) {
     return res.status(400).json({ success: false, message: 'Falta el número de teléfono' });
+  }
+
+  if (!twilioClient || !TWILIO_VERIFY_SERVICE_SID) {
+    console.warn(`⚠️  Twilio no configurado: código de prueba 123456 para ${phone}`);
+    return res.json({ success: true, devMode: true });
+  }
+
+  try {
+    await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID).verifications.create({ to: phone, channel: 'sms' });
+    res.json({ success: true });
+  } catch (twilioErr) {
+    console.error('Error enviando SMS de verificación:', twilioErr.message);
+    res.status(500).json({ success: false, message: 'No se pudo enviar el código de verificación. Revisa el número e intenta de nuevo.' });
+  }
+});
+
+async function verifyOtpCode(phone, code) {
+  if (!twilioClient || !TWILIO_VERIFY_SERVICE_SID) {
+    return code === '123456';
+  }
+  try {
+    const check = await twilioClient.verify.v2.services(TWILIO_VERIFY_SERVICE_SID).verificationChecks.create({ to: phone, code });
+    return check.status === 'approved';
+  } catch (twilioErr) {
+    console.error('Error verificando código SMS:', twilioErr.message);
+    return false;
+  }
+}
+
+// Verifica el código SMS y emite un ticket de corta duración que prueba la propiedad del número
+// (el código de Twilio Verify es de un solo uso, así que no puede volver a chequearse en /phone-login)
+app.post('/api/auth/verify-otp', async (req, res) => {
+  const { phone, code } = req.body;
+  if (!phone || !code) {
+    return res.status(400).json({ success: false, message: 'Falta el número o el código de verificación' });
+  }
+  const otpValid = await verifyOtpCode(phone, code);
+  if (!otpValid) {
+    return res.status(401).json({ success: false, message: 'El código de verificación no es correcto o expiró.' });
+  }
+  const verificationTicket = jwt.sign({ phone, purpose: 'phone_verified' }, JWT_SECRET, { expiresIn: '10m' });
+  res.json({ success: true, verificationTicket });
+});
+
+function checkVerificationTicket(phone, ticket) {
+  if (!ticket) return false;
+  try {
+    const payload = jwt.verify(ticket, JWT_SECRET);
+    return payload.purpose === 'phone_verified' && payload.phone === phone;
+  } catch (e) {
+    return false;
+  }
+}
+
+app.post('/api/auth/phone-login', async (req, res) => {
+  const { phone, name, email, referralCode, verificationTicket } = req.body;
+  if (!phone) {
+    return res.status(400).json({ success: false, message: 'Falta el número de teléfono' });
+  }
+  if (!checkVerificationTicket(phone, verificationTicket)) {
+    return res.status(401).json({ success: false, message: 'Verificación de teléfono inválida o expirada. Verifica tu número de nuevo.' });
   }
 
   db.get(`SELECT * FROM users WHERE phone = ? AND role = 'user'`, [phone], async (err, existing) => {
