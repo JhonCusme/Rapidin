@@ -217,3 +217,26 @@ CREATE TABLE IF NOT EXISTS points_history (
     order_id VARCHAR(50) REFERENCES orders(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Rapidin Envios: envio de paquetes/documentos
+CREATE TABLE IF NOT EXISTS shipments (
+    id VARCHAR(50) PRIMARY KEY,
+    customer_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    driver_id VARCHAR(50) REFERENCES drivers(id),
+    origin_address TEXT NOT NULL,
+    origin_lat DECIMAL(10, 6),
+    origin_lng DECIMAL(10, 6),
+    destination_address TEXT NOT NULL,
+    destination_lat DECIMAL(10, 6),
+    destination_lng DECIMAL(10, 6),
+    package_size VARCHAR(20) NOT NULL DEFAULT 'small', -- 'small', 'medium', 'large'
+    package_description TEXT,
+    recipient_name VARCHAR(255),
+    recipient_phone VARCHAR(20),
+    distance_km DECIMAL(10, 2),
+    price_usd DECIMAL(10, 2) NOT NULL,
+    status_step INT DEFAULT 0, -- 0: Creado, 1: Recogido, 2: En camino, 3: Entregado
+    status_text VARCHAR(255),
+    is_cancelled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

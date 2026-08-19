@@ -158,6 +158,72 @@ class RapidinDatabase {
     }
   }
 
+  async getShipmentQuote({ originLat, originLng, destLat, destLng, packageSize }) {
+    try {
+      const response = await fetch(`${API_URL}/shipments/quote`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify({ originLat, originLng, destLat, destLng, packageSize })
+      });
+      const data = await response.json();
+      return data.success ? data : null;
+    } catch (e) {
+      console.error('Error obteniendo cotización de envío:', e);
+      return null;
+    }
+  }
+
+  async createShipment(payload) {
+    try {
+      const response = await fetch(`${API_URL}/shipments`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      return data.success ? { success: true, shipment: data.shipment } : { success: false, message: data.message };
+    } catch (e) {
+      console.error('Error creando envío:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async getMyShipments() {
+    try {
+      const response = await fetch(`${API_URL}/shipments/mine`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data.shipments : [];
+    } catch (e) {
+      console.error('Error obteniendo tus envíos:', e);
+      return [];
+    }
+  }
+
+  async getShipment(id) {
+    try {
+      const response = await fetch(`${API_URL}/shipments/${id}`, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data.shipment : null;
+    } catch (e) {
+      console.error('Error obteniendo el envío:', e);
+      return null;
+    }
+  }
+
+  async cancelShipment(id) {
+    try {
+      const response = await fetch(`${API_URL}/shipments/${id}/cancel`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('user')
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error cancelando el envío:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   async getLoyaltySummary() {
     try {
       const response = await fetch(`${API_URL}/loyalty/summary`, { headers: this.getAuthHeaders('user') });

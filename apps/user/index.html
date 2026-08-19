@@ -4153,6 +4153,16 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openEnviosHubScreen()">
+        <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+          <span style="font-size: 1.3rem;">📦</span>
+          <div style="text-align: left; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Rapidín Envíos</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Envía paquetes y documentos</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+      </button>
     </div>
 
     <!-- Preferencias -->
@@ -4485,6 +4495,146 @@
       <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 0.8rem;" id="loyalty-referrals-count">Tus referidos</h3>
       <div id="loyalty-referrals-list"></div>
     </div>
+  </div>
+
+  <!-- PANTALLA 76: RAPIDÍN ENVÍOS (hub) -->
+  <div class="app-main-screen" id="app-envios-hub-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosHubScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>📦 Rapidín Envíos</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="best-option-card" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📦</div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Envía lo que sea, a donde sea</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem;">Documentos, paquetes o encargos. Cotiza y envía en minutos.</p>
+        <button class="btn-auth-primary" style="width: 100%;" onclick="openEnviosLocationsScreen()">Nuevo envío</button>
+      </div>
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem; width: 100%;" onclick="openEnviosHistoryScreen()">
+        <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
+          <span style="font-size: 1.3rem;">📜</span>
+          <div style="text-align: left; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Historial de envíos</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">Revisa tus envíos anteriores</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 77: ORIGEN Y DESTINO -->
+  <div class="app-main-screen" id="app-envios-locations-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosLocationsScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Origen y destino</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="account-map-container" id="envios-map"></div>
+      <div style="display: flex; gap: 0.6rem; margin-bottom: 1.25rem;">
+        <button type="button" class="search-filter-btn active" id="envios-mode-origin" onclick="setEnviosMode('origin')">🟢 Definir origen</button>
+        <button type="button" class="search-filter-btn" id="envios-mode-dest" onclick="setEnviosMode('destination')">🔴 Definir destino</button>
+      </div>
+      <div class="location-search-wrapper" style="margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-magnifying-glass location-search-icon"></i>
+        <input type="text" id="envios-search-input" class="location-search-input" placeholder="Busca una dirección" oninput="handleEnviosSearch(event)">
+      </div>
+      <div style="margin-bottom: 1rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">🟢 Origen</label>
+        <div style="padding: 0.8rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.9rem; color: var(--text-primary);" id="envios-origin-text">Toca el mapa para definir el origen</div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">🔴 Destino</label>
+        <div style="padding: 0.8rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.9rem; color: var(--text-primary);" id="envios-dest-text">Toca el mapa para definir el destino</div>
+      </div>
+      <button class="btn-auth-primary" style="width: 100%;" onclick="continueToEnviosPackage()">Continuar</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 78: DETALLES DEL PAQUETE -->
+  <div class="app-main-screen" id="app-envios-package-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosPackageScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Detalles del paquete</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div style="margin-bottom: 1.25rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.6rem; color: var(--text-secondary);">Tamaño del paquete</label>
+        <div style="display: flex; gap: 0.6rem;">
+          <button type="button" class="search-filter-btn active" data-size="small" onclick="selectPackageSize(this)">📄 Pequeño</button>
+          <button type="button" class="search-filter-btn" data-size="medium" onclick="selectPackageSize(this)">📦 Mediano</button>
+          <button type="button" class="search-filter-btn" data-size="large" onclick="selectPackageSize(this)">🗃️ Grande</button>
+        </div>
+      </div>
+      <div style="margin-bottom: 1.25rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">¿Qué vas a enviar?</label>
+        <textarea id="envios-package-description" class="notes-input" style="width: 100%; min-height: 70px;" placeholder="Ej: Documentos, ropa, regalo..."></textarea>
+      </div>
+      <div style="margin-bottom: 1.25rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nombre de quien recibe</label>
+        <input type="text" id="envios-recipient-name" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Nombre completo" required>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Teléfono de quien recibe</label>
+        <input type="tel" id="envios-recipient-phone" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Número de contacto" required>
+      </div>
+      <button class="btn-auth-primary" style="width: 100%;" onclick="continueToEnviosQuote()">Ver cotización</button>
+    </div>
+  </div>
+
+  <!-- PANTALLAS 79-80: COTIZACIÓN Y CONFIRMACIÓN -->
+  <div class="app-main-screen" id="app-envios-quote-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosQuoteScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Cotización del envío</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="cart-summary-card" style="margin-bottom: 1.25rem;">
+        <div class="summary-row"><span>🟢 Origen</span></div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;" id="envios-quote-origin"></div>
+        <div class="summary-row"><span>🔴 Destino</span></div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;" id="envios-quote-dest"></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row"><span>Distancia</span><span id="envios-quote-distance">—</span></div>
+        <div class="summary-row"><span>Tamaño</span><span id="envios-quote-size">—</span></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total"><span>Total</span><span style="font-size: 1.4rem;" id="envios-quote-price">$0.00</span></div>
+      </div>
+      <button class="btn-auth-primary" style="width: 100%;" id="btn-confirm-envio" onclick="confirmEnvio()">Confirmar envío</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 81: SEGUIMIENTO DEL ENVÍO -->
+  <div class="app-main-screen" id="app-envios-tracking-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosTrackingScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2 id="envios-tracking-title">Envío #ENV-00000</h2>
+    </div>
+    <div style="padding: 0 1.5rem 2rem;">
+      <div class="best-option-card" style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary);" id="envios-tracking-status">Buscando repartidor</div>
+      </div>
+      <div class="tracker-container" id="envios-tracking-steps" style="margin-bottom: 1.5rem;"></div>
+      <div class="cart-summary-card" style="margin-bottom: 1.25rem;">
+        <div class="summary-row"><span>🟢 Origen</span></div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;" id="envios-tracking-origin"></div>
+        <div class="summary-row"><span>🔴 Destino</span></div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;" id="envios-tracking-dest"></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row"><span>Destinatario</span><span id="envios-tracking-recipient"></span></div>
+        <div class="summary-row total"><span>Total</span><span id="envios-tracking-price"></span></div>
+      </div>
+      <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem; color: #EF4444; border-color: #EF4444;" id="btn-cancel-envio" onclick="cancelCurrentEnvio()">Cancelar envío</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 82: HISTORIAL DE ENVÍOS -->
+  <div class="app-main-screen" id="app-envios-history-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeEnviosHistoryScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Historial de envíos</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;" id="envios-history-list"></div>
   </div>
 
   <div class="app-main-screen" id="app-coupons-screen" style="display: none;">
@@ -7118,7 +7268,7 @@
 
     // === PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) ===
 
-    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen', 'app-order-chat-screen', 'app-delivery-instructions-screen', 'app-rate-order-screen', 'app-loyalty-club-screen', 'app-loyalty-redeem-screen', 'app-loyalty-history-screen', 'app-loyalty-referrals-screen'];
+    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen', 'app-order-chat-screen', 'app-delivery-instructions-screen', 'app-rate-order-screen', 'app-loyalty-club-screen', 'app-loyalty-redeem-screen', 'app-loyalty-history-screen', 'app-loyalty-referrals-screen', 'app-envios-hub-screen', 'app-envios-locations-screen', 'app-envios-package-screen', 'app-envios-quote-screen', 'app-envios-tracking-screen', 'app-envios-history-screen'];
 
     function openAccountSubScreen(targetId) {
       const selector = ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', ');
@@ -7629,6 +7779,247 @@
         });
       }
     };
+
+    // === PANTALLAS 76-82: RAPIDÍN ENVÍOS ===
+    window.openEnviosHubScreen = function() {
+      openAccountSubScreen('app-envios-hub-screen');
+    };
+    window.closeEnviosHubScreen = closeAccountSubScreen;
+
+    let enviosMapInstance = null;
+    let enviosOriginMarker = null;
+    let enviosDestMarker = null;
+    window.currentEnvioMode = 'origin';
+
+    window.openEnviosLocationsScreen = function() {
+      openAccountSubScreen('app-envios-locations-screen');
+      window.currentEnvioOrigin = null;
+      window.currentEnvioDest = null;
+      window.currentEnvioMode = 'origin';
+      document.getElementById('envios-origin-text').textContent = 'Toca el mapa para definir el origen';
+      document.getElementById('envios-dest-text').textContent = 'Toca el mapa para definir el destino';
+      document.getElementById('envios-search-input').value = '';
+      setEnviosMode('origin');
+      setTimeout(() => initEnviosMap(-2.170998, -79.922359), 50);
+    };
+    window.closeEnviosLocationsScreen = closeAccountSubScreen;
+
+    function initEnviosMap(lat, lng) {
+      if (enviosMapInstance) { enviosMapInstance.remove(); enviosMapInstance = null; enviosOriginMarker = null; enviosDestMarker = null; }
+      enviosMapInstance = L.map('envios-map').setView([lat, lng], 13);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(enviosMapInstance);
+      enviosMapInstance.on('click', (e) => placeEnvioPoint(e.latlng.lat, e.latlng.lng));
+    }
+
+    async function placeEnvioPoint(lat, lng, displayName) {
+      let address = displayName;
+      if (!address) {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const data = await res.json();
+          address = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        } catch (e) { address = `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
+      }
+      const point = { lat, lng, text: address };
+      if (window.currentEnvioMode === 'origin') {
+        window.currentEnvioOrigin = point;
+        if (enviosOriginMarker) enviosOriginMarker.setLatLng([lat, lng]);
+        else enviosOriginMarker = L.marker([lat, lng], { title: 'Origen' }).addTo(enviosMapInstance).bindPopup('🟢 Origen');
+        document.getElementById('envios-origin-text').textContent = address;
+      } else {
+        window.currentEnvioDest = point;
+        if (enviosDestMarker) enviosDestMarker.setLatLng([lat, lng]);
+        else enviosDestMarker = L.marker([lat, lng], { title: 'Destino' }).addTo(enviosMapInstance).bindPopup('🔴 Destino');
+        document.getElementById('envios-dest-text').textContent = address;
+      }
+    }
+
+    window.setEnviosMode = function(mode) {
+      window.currentEnvioMode = mode;
+      document.getElementById('envios-mode-origin').classList.toggle('active', mode === 'origin');
+      document.getElementById('envios-mode-dest').classList.toggle('active', mode === 'destination');
+    };
+
+    let enviosSearchTimeout;
+    window.handleEnviosSearch = function(e) {
+      clearTimeout(enviosSearchTimeout);
+      const q = e.target.value.trim();
+      if (q.length < 4) return;
+      enviosSearchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+          const results = await res.json();
+          if (results.length) {
+            const r = results[0];
+            const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+            if (enviosMapInstance) enviosMapInstance.setView([lat, lng], 15);
+            placeEnvioPoint(lat, lng, r.display_name);
+          }
+        } catch (err) { console.error('Error buscando dirección:', err); }
+      }, 600);
+    };
+
+    window.continueToEnviosPackage = function() {
+      if (!window.currentEnvioOrigin || !window.currentEnvioDest) {
+        if (window.rapidinAlert) window.rapidinAlert('Define el origen y el destino en el mapa.');
+        return;
+      }
+      openAccountSubScreen('app-envios-package-screen');
+      document.querySelectorAll('#app-envios-package-screen .search-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+      document.getElementById('envios-package-description').value = '';
+      document.getElementById('envios-recipient-name').value = '';
+      document.getElementById('envios-recipient-phone').value = '';
+    };
+    window.closeEnviosPackageScreen = closeAccountSubScreen;
+
+    window.selectPackageSize = function(btn) {
+      document.querySelectorAll('#app-envios-package-screen .search-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+
+    window.continueToEnviosQuote = async function() {
+      const recipientName = document.getElementById('envios-recipient-name').value.trim();
+      const recipientPhone = document.getElementById('envios-recipient-phone').value.trim();
+      if (!recipientName || !recipientPhone) {
+        if (window.rapidinAlert) window.rapidinAlert('Completa el nombre y teléfono de quien recibe.');
+        return;
+      }
+      const size = document.querySelector('#app-envios-package-screen .search-filter-btn.active')?.dataset.size || 'small';
+      window.currentEnvioPackage = {
+        size,
+        description: document.getElementById('envios-package-description').value.trim(),
+        recipientName,
+        recipientPhone
+      };
+
+      const quote = await window.rapidinDB.getShipmentQuote({
+        originLat: window.currentEnvioOrigin.lat, originLng: window.currentEnvioOrigin.lng,
+        destLat: window.currentEnvioDest.lat, destLng: window.currentEnvioDest.lng,
+        packageSize: size
+      });
+      if (!quote) {
+        if (window.rapidinAlert) window.rapidinAlert('No se pudo calcular la cotización. Intenta de nuevo.');
+        return;
+      }
+      window.currentEnvioQuote = quote;
+
+      openAccountSubScreen('app-envios-quote-screen');
+      document.getElementById('envios-quote-origin').textContent = window.currentEnvioOrigin.text;
+      document.getElementById('envios-quote-dest').textContent = window.currentEnvioDest.text;
+      document.getElementById('envios-quote-distance').textContent = `${quote.distanceKm} km`;
+      const sizeLabels = { small: '📄 Pequeño', medium: '📦 Mediano', large: '🗃️ Grande' };
+      document.getElementById('envios-quote-size').textContent = sizeLabels[size] || size;
+      document.getElementById('envios-quote-price').textContent = fmtMoney(quote.price);
+    };
+    window.closeEnviosQuoteScreen = closeAccountSubScreen;
+
+    window.confirmEnvio = async function() {
+      const btn = document.getElementById('btn-confirm-envio');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Procesando...';
+
+      const pkg = window.currentEnvioPackage;
+      const res = await window.rapidinDB.createShipment({
+        originAddress: window.currentEnvioOrigin.text,
+        originLat: window.currentEnvioOrigin.lat,
+        originLng: window.currentEnvioOrigin.lng,
+        destinationAddress: window.currentEnvioDest.text,
+        destLat: window.currentEnvioDest.lat,
+        destLng: window.currentEnvioDest.lng,
+        packageSize: pkg.size,
+        packageDescription: pkg.description,
+        recipientName: pkg.recipientName,
+        recipientPhone: pkg.recipientPhone
+      });
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (!res.success) {
+        if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo confirmar el envío.');
+        return;
+      }
+
+      window.currentViewedEnvioId = res.shipment.id;
+      openEnviosTrackingScreen(res.shipment.id);
+    };
+
+    function envioStatusSteps(statusStep, isCancelled) {
+      const steps = [
+        { label: 'Envío creado', icon: 'fa-check' },
+        { label: 'Repartidor asignado', icon: '' },
+        { label: 'En camino', icon: '' },
+        { label: 'Entregado', icon: '' }
+      ];
+      return steps.map((s, i) => `
+        <div class="tracker-step ${!isCancelled && i <= statusStep ? 'active' : ''}">
+          <div class="tracker-icon">${!isCancelled && i <= statusStep ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+          <div class="tracker-text">${escapeHtml(s.label)}</div>
+        </div>
+      `).join('');
+    }
+
+    window.openEnviosTrackingScreen = async function(shipmentId) {
+      const id = shipmentId || window.currentViewedEnvioId;
+      if (!id) return;
+      window.currentViewedEnvioId = id;
+      openAccountSubScreen('app-envios-tracking-screen');
+      document.getElementById('envios-tracking-title').textContent = `Envío #${id}`;
+      document.getElementById('envios-tracking-status').textContent = 'Cargando...';
+
+      const shipment = await window.rapidinDB.getShipment(id);
+      if (!shipment) return;
+      window.currentViewedEnvio = shipment;
+
+      document.getElementById('envios-tracking-status').textContent = shipment.status_text || '';
+      document.getElementById('envios-tracking-steps').innerHTML = envioStatusSteps(shipment.status_step, shipment.is_cancelled);
+      document.getElementById('envios-tracking-origin').textContent = shipment.origin_address;
+      document.getElementById('envios-tracking-dest').textContent = shipment.destination_address;
+      document.getElementById('envios-tracking-recipient').textContent = `${shipment.recipient_name} · ${shipment.recipient_phone}`;
+      document.getElementById('envios-tracking-price').textContent = fmtMoney(shipment.price_usd);
+      const cancelBtn = document.getElementById('btn-cancel-envio');
+      cancelBtn.style.display = (shipment.is_cancelled || shipment.status_step >= 3) ? 'none' : 'block';
+    };
+    window.closeEnviosTrackingScreen = closeAccountSubScreen;
+
+    window.cancelCurrentEnvio = async function() {
+      if (!confirm('¿Seguro que quieres cancelar este envío?')) return;
+      const res = await window.rapidinDB.cancelShipment(window.currentViewedEnvioId);
+      if (res.success) {
+        if (window.rapidinAlert) window.rapidinAlert('Tu envío fue cancelado.');
+        openEnviosTrackingScreen(window.currentViewedEnvioId);
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo cancelar el envío');
+      }
+    };
+
+    window.openEnviosHistoryScreen = async function() {
+      openAccountSubScreen('app-envios-history-screen');
+      const list = document.getElementById('envios-history-list');
+      list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando tus envíos...</div>';
+      const shipments = await window.rapidinDB.getMyShipments();
+      if (!shipments.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Todavía no has hecho ningún envío.</div>';
+        return;
+      }
+      list.innerHTML = shipments.map(s => {
+        const date = new Date(s.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        const statusLabel = s.is_cancelled ? 'Cancelado' : (s.status_step >= 3 ? 'Entregado' : 'En proceso');
+        const statusColor = s.is_cancelled ? '#EF4444' : (s.status_step >= 3 ? '#10B981' : '#F59E0B');
+        return `
+          <div class="support-ticket-row" onclick="openEnviosTrackingScreen('${s.id}')" style="cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: var(--text-primary);">#${escapeHtml(s.id)}</span>
+              <span style="color: ${statusColor}; font-weight: 700; font-size: 0.8rem;">${statusLabel}</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">${escapeHtml(s.destination_address).slice(0, 60)}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">${date} · ${fmtMoney(s.price_usd)}</div>
+          </div>
+        `;
+      }).join('');
+    };
+    window.closeEnviosHistoryScreen = closeAccountSubScreen;
 
     window.openCouponsScreen = async function() {
       openAccountSubScreen('app-coupons-screen');

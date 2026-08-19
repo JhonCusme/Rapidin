@@ -133,6 +133,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, type VARCHAR(20) NOT NULL,
       amount INT NOT NULL, description TEXT, order_id VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
+    db.run(`CREATE TABLE IF NOT EXISTS shipments (
+      id VARCHAR(50) PRIMARY KEY, customer_id VARCHAR(50) NOT NULL, driver_id VARCHAR(50),
+      origin_address TEXT NOT NULL, origin_lat DECIMAL(10,6), origin_lng DECIMAL(10,6),
+      destination_address TEXT NOT NULL, destination_lat DECIMAL(10,6), destination_lng DECIMAL(10,6),
+      package_size VARCHAR(20) NOT NULL DEFAULT 'small', package_description TEXT,
+      recipient_name VARCHAR(255), recipient_phone VARCHAR(20),
+      distance_km DECIMAL(10,2), price_usd DECIMAL(10,2) NOT NULL,
+      status_step INT DEFAULT 0, status_text VARCHAR(255), is_cancelled BOOLEAN DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
   }
 });
 
@@ -1095,6 +1105,73 @@ app.get('/api/loyalty/referrals', authenticateToken, requireRole('user'), (req, 
     db.all('SELECT name, created_at, referral_rewarded FROM users WHERE referred_by = ? ORDER BY created_at DESC', [me.referral_code], (refErr, rows) => {
       if (refErr) return res.status(500).json({ success: false, message: 'Error obteniendo tus referidos' });
       res.json({ success: true, referralCode: me.referral_code, referrals: rows });
+    });
+  });
+});
+
+// --- Rapidín Envíos ---
+const SHIPMENT_BASE_FEE = 2.50;
+const SHIPMENT_PER_KM = 0.80;
+const SHIPMENT_SIZE_MULTIPLIER = { small: 1, medium: 1.5, large: 2.2 };
+
+function computeShipmentQuote(originLat, originLng, destLat, destLng, packageSize) {
+  const distanceKm = getDistanceFromLatLonInKm(originLat, originLng, destLat, destLng);
+  const multiplier = SHIPMENT_SIZE_MULTIPLIER[packageSize] || 1;
+  const price = (SHIPMENT_BASE_FEE + distanceKm * SHIPMENT_PER_KM) * multiplier;
+  return { distanceKm: Math.round(distanceKm * 100) / 100, price: Math.round(price * 100) / 100 };
+}
+
+app.post('/api/shipments/quote', authenticateToken, requireRole('user'), (req, res) => {
+  const { originLat, originLng, destLat, destLng, packageSize } = req.body;
+  if ([originLat, originLng, destLat, destLng].some(v => typeof v !== 'number' || isNaN(v))) {
+    return res.status(400).json({ success: false, message: 'Faltan coordenadas de origen o destino' });
+  }
+  const quote = computeShipmentQuote(originLat, originLng, destLat, destLng, packageSize);
+  res.json({ success: true, ...quote });
+});
+
+app.post('/api/shipments', authenticateToken, requireRole('user'), (req, res) => {
+  const { originAddress, originLat, originLng, destinationAddress, destLat, destLng, packageSize, packageDescription, recipientName, recipientPhone } = req.body;
+  if (!originAddress || !destinationAddress || [originLat, originLng, destLat, destLng].some(v => typeof v !== 'number' || isNaN(v))) {
+    return res.status(400).json({ success: false, message: 'Faltan datos del envío' });
+  }
+  const quote = computeShipmentQuote(originLat, originLng, destLat, destLng, packageSize);
+  const shipmentId = 'ENV-' + Math.floor(10000 + Math.random() * 90000);
+
+  db.run(
+    `INSERT INTO shipments (id, customer_id, origin_address, origin_lat, origin_lng, destination_address, destination_lat, destination_lng, package_size, package_description, recipient_name, recipient_phone, distance_km, price_usd, status_step, status_text)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+    [shipmentId, req.user.id, originAddress, originLat, originLng, destinationAddress, destLat, destLng, packageSize || 'small', packageDescription || '', recipientName || '', recipientPhone || '', quote.distanceKm, quote.price, 'Buscando repartidor 🔎'],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error creando el envío' });
+      io.emit('SHIPMENT_CREATED', { id: shipmentId });
+      res.json({ success: true, shipment: { id: shipmentId, distanceKm: quote.distanceKm, price: quote.price } });
+    }
+  );
+});
+
+app.get('/api/shipments/mine', authenticateToken, requireRole('user'), (req, res) => {
+  db.all('SELECT * FROM shipments WHERE customer_id = ? ORDER BY created_at DESC', [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus envíos' });
+    res.json({ success: true, shipments: rows });
+  });
+});
+
+app.get('/api/shipments/:id', authenticateToken, requireRole('user'), (req, res) => {
+  db.get('SELECT * FROM shipments WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo el envío' });
+    if (!row) return res.status(404).json({ success: false, message: 'Envío no encontrado' });
+    res.json({ success: true, shipment: row });
+  });
+});
+
+app.put('/api/shipments/:id/cancel', authenticateToken, requireRole('user'), (req, res) => {
+  db.get('SELECT * FROM shipments WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id], (err, row) => {
+    if (err || !row) return res.status(404).json({ success: false, message: 'Envío no encontrado' });
+    if (row.status_step >= 3) return res.status(400).json({ success: false, message: 'Este envío ya fue entregado' });
+    db.run(`UPDATE shipments SET is_cancelled = 1, status_text = 'Envío cancelado' WHERE id = ?`, [req.params.id], (updErr) => {
+      if (updErr) return res.status(500).json({ success: false, message: 'Error cancelando el envío' });
+      res.json({ success: true });
     });
   });
 });
