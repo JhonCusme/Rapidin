@@ -112,8 +112,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS support_messages (
       id VARCHAR(50) PRIMARY KEY, ticket_id VARCHAR(50) NOT NULL, sender_role VARCHAR(20) NOT NULL,
-      text TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      text TEXT, image_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
+    db.run("ALTER TABLE support_messages ADD COLUMN image_url TEXT", (err) => {});
   }
 });
 
@@ -800,6 +801,114 @@ app.put('/api/notifications/preferences', authenticateToken, requireRole('user')
       res.json({ success: true });
     }
   );
+});
+
+// ==========================================
+// AYUDA Y SOPORTE
+// ==========================================
+
+const RAPIDIN_FAQS = [
+  { id: 'faq-1', category: 'pedido', question: '¿Cómo sigo mi pedido en tiempo real?', answer: 'Ve a "Mis pedidos" y toca "Ver seguimiento" en tu pedido activo. Ahí verás el estado actualizado y el mapa con la ubicación del repartidor.' },
+  { id: 'faq-2', category: 'pedido', question: '¿Puedo cancelar un pedido después de confirmarlo?', answer: 'Puedes cancelar mientras el comercio no haya empezado a prepararlo. Ve al detalle del pedido y busca la opción de cancelar; si ya está en preparación, contacta a soporte.' },
+  { id: 'faq-3', category: 'pedido', question: '¿Qué hago si mi pedido llegó incompleto?', answer: 'Ve a "Mis pedidos", abre el pedido y selecciona "Necesito ayuda" → "Pedido incompleto". Un caso de soporte se creará automáticamente con los detalles del pedido.' },
+  { id: 'faq-4', category: 'pago', question: '¿Qué métodos de pago aceptan?', answer: 'Aceptamos tarjetas de crédito/débito (procesadas de forma segura con Stripe) y pago en efectivo al repartidor.' },
+  { id: 'faq-5', category: 'pago', question: '¿Es seguro guardar mi tarjeta en Rapidín?', answer: 'Sí. Nunca almacenamos tu número completo ni el CVV — esos datos van directo a Stripe, un procesador de pagos certificado. Nosotros solo guardamos una referencia (marca y últimos 4 dígitos).' },
+  { id: 'faq-6', category: 'pago', question: '¿Cómo uso un cupón de descuento?', answer: 'Ve a Perfil → Promociones y cupones, canjea el código, y en el checkout de tu próximo pedido podrás aplicarlo desde la sección "Promoción".' },
+  { id: 'faq-7', category: 'cuenta', question: '¿Cómo cambio mi número de teléfono?', answer: 'Ve a Perfil → Configuración → Privacidad y seguridad → Cambiar número.' },
+  { id: 'faq-8', category: 'cuenta', question: '¿Puedo eliminar mi cuenta?', answer: 'Sí, desde Perfil → Configuración → Privacidad y seguridad → Eliminar mi cuenta. Esta acción no se puede deshacer.' },
+  { id: 'faq-9', category: 'delivery', question: '¿Cómo contacto a mi repartidor?', answer: 'Durante el seguimiento de tu pedido en curso, verás un botón de chat para escribirle directamente a tu repartidor.' },
+  { id: 'faq-10', category: 'delivery', question: '¿Puedo dejar propina al repartidor?', answer: 'Sí, puedes agregar propina durante el checkout, antes de confirmar tu pedido.' },
+  { id: 'faq-11', category: 'promociones', question: '¿Dónde veo mis cupones disponibles?', answer: 'En Perfil → Promociones y cupones. Ahí verás los cupones que has canjeado y cuáles ya usaste.' },
+  { id: 'faq-12', category: 'promociones', question: '¿Los cupones tienen fecha de vencimiento?', answer: 'Algunos sí. Si un cupón tiene fecha límite, la verás junto a su descripción antes de canjearlo.' }
+];
+
+const SUPPORT_CATEGORY_LABELS = { pedido: 'Pedido', pago: 'Pago', cuenta: 'Cuenta', delivery: 'Delivery', promociones: 'Promociones', otro: 'Otro' };
+
+// 1. Centro de ayuda: preguntas frecuentes (contenido público, no requiere sesión)
+app.get('/api/help/faqs', (req, res) => {
+  res.json({ success: true, faqs: RAPIDIN_FAQS });
+});
+
+// 2. Crear un caso de soporte
+app.post('/api/support/tickets', authenticateToken, requireRole('user'), (req, res) => {
+  const { category, subject, orderId, message } = req.body;
+  if (!category || !subject) {
+    return res.status(400).json({ success: false, message: 'Falta la categoría o el asunto' });
+  }
+  const ticketId = 'tkt-' + Date.now();
+
+  db.run(
+    `INSERT INTO support_tickets (id, user_id, order_id, category, subject) VALUES (?, ?, ?, ?, ?)`,
+    [ticketId, req.user.id, orderId || null, category, subject],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error creando el caso de soporte' });
+
+      const firstMsgId = 'msg-' + Date.now();
+      db.run(
+        `INSERT INTO support_messages (id, ticket_id, sender_role, text) VALUES (?, ?, 'user', ?)`,
+        [firstMsgId, ticketId, message || subject]
+      );
+
+      const welcomeMsgId = 'msg-' + (Date.now() + 1);
+      const welcomeText = `¡Hola! Recibimos tu caso sobre "${SUPPORT_CATEGORY_LABELS[category] || category}". Nuestro equipo lo revisará y te responderá aquí mismo lo antes posible. 🙌`;
+      db.run(
+        `INSERT INTO support_messages (id, ticket_id, sender_role, text) VALUES (?, ?, 'support', ?)`,
+        [welcomeMsgId, ticketId, welcomeText],
+        (err2) => {
+          if (err2) return res.status(500).json({ success: false, message: 'Error creando el caso de soporte' });
+          res.json({ success: true, ticket: { id: ticketId, category, subject, orderId: orderId || null, status: 'open' } });
+        }
+      );
+    }
+  );
+});
+
+// 3. Mis casos de soporte
+app.get('/api/support/tickets', authenticateToken, requireRole('user'), (req, res) => {
+  db.all('SELECT * FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC', [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus casos' });
+    res.json({ success: true, tickets: rows });
+  });
+});
+
+// 4. Mensajes de un caso (verifica que el caso sea del usuario autenticado)
+app.get('/api/support/tickets/:id/messages', authenticateToken, requireRole('user'), (req, res) => {
+  db.get('SELECT * FROM support_tickets WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, ticket) => {
+    if (err || !ticket) return res.status(404).json({ success: false, message: 'Caso no encontrado' });
+    db.all('SELECT * FROM support_messages WHERE ticket_id = ? ORDER BY created_at ASC', [req.params.id], (err2, rows) => {
+      if (err2) return res.status(500).json({ success: false, message: 'Error obteniendo mensajes' });
+      res.json({ success: true, ticket, messages: rows });
+    });
+  });
+});
+
+// 5. Enviar un mensaje en un caso existente
+app.post('/api/support/tickets/:id/messages', authenticateToken, requireRole('user'), (req, res) => {
+  const { text, imageUrl } = req.body;
+  if (!text && !imageUrl) return res.status(400).json({ success: false, message: 'Escribe un mensaje o adjunta una imagen' });
+
+  db.get('SELECT * FROM support_tickets WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, ticket) => {
+    if (err || !ticket) return res.status(404).json({ success: false, message: 'Caso no encontrado' });
+
+    const msgId = 'msg-' + Date.now();
+    db.run(
+      `INSERT INTO support_messages (id, ticket_id, sender_role, text, image_url) VALUES (?, ?, 'user', ?, ?)`,
+      [msgId, req.params.id, text || null, imageUrl || null],
+      (err2) => {
+        if (err2) return res.status(500).json({ success: false, message: 'Error enviando el mensaje' });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// 6. Cerrar un caso
+app.put('/api/support/tickets/:id/close', authenticateToken, requireRole('user'), (req, res) => {
+  db.run(`UPDATE support_tickets SET status = 'closed' WHERE id = ? AND user_id = ?`, [req.params.id, req.user.id], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error cerrando el caso' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Caso no encontrado' });
+    res.json({ success: true });
+  });
 });
 
 // 4. Catálogo: Obtener todos los comercios

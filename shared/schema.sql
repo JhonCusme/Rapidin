@@ -188,6 +188,7 @@ CREATE TABLE IF NOT EXISTS support_messages (
     id VARCHAR(50) PRIMARY KEY,
     ticket_id VARCHAR(50) NOT NULL REFERENCES support_tickets(id),
     sender_role VARCHAR(20) NOT NULL, -- 'user' o 'support'
-    text TEXT NOT NULL,
+    text TEXT,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

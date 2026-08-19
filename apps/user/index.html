@@ -1187,6 +1187,121 @@
       padding: 1rem;
     }
 
+    /* --- PANTALLAS 28-33: AYUDA Y SOPORTE --- */
+    .help-category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+    }
+    .help-category-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .help-category-card:hover { border-color: var(--brand-primary); }
+    .help-category-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .faq-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+    }
+    .support-ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+    }
+    .issue-type-row {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+    }
+    .chat-messages-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .chat-bubble {
+      max-width: 78%;
+      padding: 0.7rem 1rem;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .chat-bubble img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 0.4rem;
+      display: block;
+    }
+    .chat-bubble.from-user {
+      align-self: flex-end;
+      background: var(--brand-primary);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.from-support {
+      align-self: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-main);
+    }
+    .chat-input-bar input[type="text"] {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 0.8rem 1.1rem;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+    .chat-attach-btn, .chat-send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .chat-send-btn { background: var(--brand-primary); color: white; border: none; }
+
     /* --- PANTALLA 9: DETALLE DEL NEGOCIO --- */
     .app-store-screen {
       width: 100%;
@@ -3569,7 +3684,7 @@
         <button class="btn-action-list" onclick="openOrderDetailScreen()">
           Ver pedido <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
         </button>
-        <button class="btn-action-list" onclick="alert('Centro de ayuda en desarrollo')">
+        <button class="btn-action-list" onclick="openOrderIssueScreen()">
           Necesito ayuda <i class="fa-solid fa-chevron-right" style="color: var(--text-muted);"></i>
         </button>
       </div>
@@ -3718,7 +3833,7 @@
       <!-- Acciones -->
       <div class="tracking-actions-list">
         <button class="btn-auth-primary" style="margin-bottom: 0.5rem; width: 100%;" onclick="closeOrderDetailScreen()">Ver seguimiento</button>
-        <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" onclick="alert('Pantalla de ayuda en desarrollo')">Necesito ayuda</button>
+        <button class="btn-change-location" style="width: 100%; padding: 1rem; font-size: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" onclick="openOrderIssueScreen()">Necesito ayuda</button>
       </div>
       
       <div style="height: 50px;"></div>
@@ -4048,7 +4163,7 @@
     <!-- Ayuda -->
     <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Ayuda</h2>
     <div class="tracking-actions-list" style="padding: 0 1.5rem; margin-bottom: 1.75rem;">
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Centro de ayuda: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openHelpCenterScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">❓</span>
           <div style="text-align: left; min-width: 0;">
@@ -4058,7 +4173,7 @@
         </div>
         <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.85rem;"></i>
       </button>
-      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="alert('Contactar con Rapidín: pantalla en desarrollo')">
+      <button type="button" class="btn-action-list" style="align-items: center; gap: 0.9rem;" onclick="openSupportContactScreen()">
         <div style="display: flex; align-items: center; gap: 0.9rem; flex: 1; min-width: 0;">
           <span style="font-size: 1.3rem;">💬</span>
           <div style="text-align: left; min-width: 0;">
@@ -4426,6 +4541,146 @@
         <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-settings-language').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div id="settings-country-list"></div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 28: CENTRO DE AYUDA -->
+  <div class="app-main-screen" id="app-help-center-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeHelpCenterScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Centro de ayuda</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="location-search-wrapper" style="margin-bottom: 1.5rem;">
+        <i class="fa-solid fa-magnifying-glass location-search-icon"></i>
+        <input type="text" id="help-search-input" class="location-search-input" placeholder="¿En qué te podemos ayudar?" oninput="handleHelpSearch(event)">
+      </div>
+
+      <div id="help-search-results" style="display: none; margin-bottom: 1.5rem;"></div>
+
+      <div id="help-browse-content">
+        <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Categorías</h2>
+        <div class="help-category-grid" style="margin-bottom: 1.75rem;">
+          <div class="help-category-card" onclick="openHelpCategoryScreen('pedido')"><div class="help-category-icon">📦</div><div style="font-weight: 700; font-size: 0.9rem;">Pedido</div></div>
+          <div class="help-category-card" onclick="openHelpCategoryScreen('pago')"><div class="help-category-icon">💳</div><div style="font-weight: 700; font-size: 0.9rem;">Pago</div></div>
+          <div class="help-category-card" onclick="openHelpCategoryScreen('cuenta')"><div class="help-category-icon">👤</div><div style="font-weight: 700; font-size: 0.9rem;">Cuenta</div></div>
+          <div class="help-category-card" onclick="openHelpCategoryScreen('delivery')"><div class="help-category-icon">🚴</div><div style="font-weight: 700; font-size: 0.9rem;">Delivery</div></div>
+          <div class="help-category-card" onclick="openHelpCategoryScreen('promociones')" style="grid-column: span 2;"><div class="help-category-icon">🎁</div><div style="font-weight: 700; font-size: 0.9rem;">Promociones</div></div>
+        </div>
+
+        <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Preguntas frecuentes</h2>
+        <div id="help-featured-faqs"></div>
+      </div>
+
+      <button type="button" class="btn-auth-primary" style="width: 100%; margin-top: 1rem;" onclick="openSupportContactScreen()"><i class="fa-regular fa-comment-dots"></i> Contactar soporte</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 29: CATEGORÍA DE AYUDA -->
+  <div class="app-main-screen" id="app-help-category-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeHelpCategoryScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2 id="help-category-title">Categoría</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;" id="help-category-faqs"></div>
+  </div>
+
+  <!-- PANTALLA 30: DETALLE DE PREGUNTA (FAQ) -->
+  <div class="app-main-screen" id="app-help-detail-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeHelpDetailScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Pregunta frecuente</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="checkout-section">
+        <h3 style="font-size: 1.1rem; margin-bottom: 0.8rem;" id="help-detail-question">—</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;" id="help-detail-answer">—</p>
+      </div>
+      <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin: 1.5rem 0 0.8rem;">¿No resolvimos tu duda?</p>
+      <button type="button" class="btn-auth-primary" style="width: 100%;" onclick="openSupportContactScreen()"><i class="fa-regular fa-comment-dots"></i> Contactar soporte</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 31: CONTACTAR SOPORTE -->
+  <div class="app-main-screen" id="app-support-contact-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeSupportContactScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>Contactar soporte</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div id="support-existing-tickets"></div>
+
+      <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Nuevo caso</h2>
+      <form id="form-new-ticket" onsubmit="submitNewTicket(event)">
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.6rem; color: var(--text-secondary);">Categoría</label>
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button type="button" class="search-filter-btn active" data-category="pedido" onclick="selectTicketCategory(this)">📦 Pedido</button>
+            <button type="button" class="search-filter-btn" data-category="pago" onclick="selectTicketCategory(this)">💳 Pago</button>
+            <button type="button" class="search-filter-btn" data-category="cuenta" onclick="selectTicketCategory(this)">👤 Cuenta</button>
+            <button type="button" class="search-filter-btn" data-category="delivery" onclick="selectTicketCategory(this)">🚴 Delivery</button>
+            <button type="button" class="search-filter-btn" data-category="promociones" onclick="selectTicketCategory(this)">🎁 Promociones</button>
+            <button type="button" class="search-filter-btn" data-category="otro" onclick="selectTicketCategory(this)">✨ Otro</button>
+          </div>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Asunto</label>
+          <input type="text" id="ticket-subject-input" class="phone-input" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);" placeholder="Cuéntanos en pocas palabras" required>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Mensaje</label>
+          <textarea id="ticket-message-input" class="notes-input" style="width: 100%; min-height: 100px;" placeholder="Danos más detalles..." required></textarea>
+        </div>
+        <button type="submit" class="btn-auth-primary" style="width: 100%;" id="btn-submit-ticket">Enviar caso</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PANTALLA 32: CHAT CON SOPORTE -->
+  <div class="app-main-screen" id="app-support-chat-screen" style="display: none; padding-bottom: 0;">
+    <div class="account-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeSupportChatScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <div style="flex: 1;">
+        <h2 style="font-size: 1.05rem;" id="chat-ticket-subject">Caso de soporte</h2>
+        <span class="status-badge" id="chat-ticket-status" style="margin-top: 0.3rem;">🟢 Abierto</span>
+      </div>
+    </div>
+    <div class="chat-messages-scroll" id="chat-messages-list"></div>
+    <div class="chat-input-bar">
+      <button type="button" class="chat-attach-btn" onclick="document.getElementById('chat-image-input').click()"><i class="fa-solid fa-image"></i></button>
+      <input type="file" id="chat-image-input" accept="image/*" style="display: none;" onchange="handleChatImageSelected(event)">
+      <input type="text" id="chat-text-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter'){event.preventDefault(); sendChatMessage();}">
+      <button type="button" class="chat-send-btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 33: PROBLEMA CON UN PEDIDO -->
+  <div class="app-main-screen" id="app-order-issue-screen" style="display: none;">
+    <div class="account-header">
+      <button type="button" class="btn-back-auth" style="margin: 0;" onclick="closeOrderIssueScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2>¿Cuál es el problema?</h2>
+    </div>
+    <div style="padding: 0.5rem 1.5rem 2rem;">
+      <div class="issue-type-row" onclick="submitOrderIssue('Pedido incompleto')">
+        <span style="font-size: 1.3rem;">📭</span>
+        <span style="font-weight: 700; font-size: 0.95rem;">Pedido incompleto</span>
+      </div>
+      <div class="issue-type-row" onclick="submitOrderIssue('Producto incorrecto')">
+        <span style="font-size: 1.3rem;">🔀</span>
+        <span style="font-weight: 700; font-size: 0.95rem;">Producto incorrecto</span>
+      </div>
+      <div class="issue-type-row" onclick="submitOrderIssue('Pedido retrasado')">
+        <span style="font-size: 1.3rem;">⏰</span>
+        <span style="font-weight: 700; font-size: 0.95rem;">Pedido retrasado</span>
+      </div>
+      <div class="issue-type-row" onclick="submitOrderIssue('Pedido cancelado')">
+        <span style="font-size: 1.3rem;">🚫</span>
+        <span style="font-weight: 700; font-size: 0.95rem;">Pedido cancelado</span>
+      </div>
+      <div class="issue-type-row" onclick="submitOrderIssue('Otro problema')">
+        <span style="font-size: 1.3rem;">✨</span>
+        <span style="font-weight: 700; font-size: 0.95rem;">Otro problema</span>
+      </div>
     </div>
   </div>
 
@@ -6265,11 +6520,11 @@
 
     // === PANTALLAS 19-27: CUENTA (perfil, direcciones, pagos, cupones, notificaciones) ===
 
-    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen'];
+    const ACCOUNT_SCREEN_IDS = ['app-profile-screen', 'app-edit-profile-screen', 'app-addresses-screen', 'app-address-form-screen', 'app-payment-methods-screen', 'app-add-card-screen', 'app-coupons-screen', 'app-notifications-screen', 'app-settings-screen', 'app-privacy-screen', 'app-help-center-screen', 'app-help-category-screen', 'app-help-detail-screen', 'app-support-contact-screen', 'app-support-chat-screen', 'app-order-issue-screen'];
 
     function openAccountSubScreen(targetId) {
       const selector = ACCOUNT_SCREEN_IDS.map(id => `#${id}[style*="display: flex"]`).join(', ');
-      const activeScreen = document.querySelector(selector + ', .app-main-screen[style*="display: flex"], #app-cart-screen[style*="display: flex"], #app-checkout-screen[style*="display: flex"]');
+      const activeScreen = document.querySelector(selector + ', .app-main-screen[style*="display: flex"], #app-cart-screen[style*="display: flex"], #app-checkout-screen[style*="display: flex"], #app-tracking-screen[style*="display: flex"], #app-order-detail-screen[style*="display: flex"], #app-orders-screen[style*="display: flex"]');
       window.previousAccountScreen = activeScreen ? activeScreen.id : 'app-profile-screen';
       if (activeScreen) activeScreen.style.display = 'none';
       document.getElementById(targetId).style.display = 'flex';
@@ -6821,6 +7076,213 @@
         checkAuthGate();
       } else if (window.rapidinAlert) {
         window.rapidinAlert(res.message || 'No se pudo eliminar la cuenta');
+      }
+    };
+
+    // === PANTALLAS 28-33: AYUDA Y SOPORTE ===
+
+    const HELP_CATEGORY_LABELS = { pedido: '📦 Pedido', pago: '💳 Pago', cuenta: '👤 Cuenta', delivery: '🚴 Delivery', promociones: '🎁 Promociones', otro: '✨ Otro' };
+
+    async function ensureFaqsLoaded() {
+      if (!window.helpFaqsCache) {
+        window.helpFaqsCache = await window.rapidinDB.getFaqs();
+      }
+      return window.helpFaqsCache;
+    }
+
+    function faqRowHtml(faq) {
+      return `
+        <div class="faq-row" onclick="openHelpDetailScreen('${faq.id}')">
+          <span style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(faq.question)}</span>
+          <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; margin-left: 0.6rem;"></i>
+        </div>
+      `;
+    }
+
+    window.openHelpCenterScreen = async function() {
+      openAccountSubScreen('app-help-center-screen');
+      document.getElementById('help-search-input').value = '';
+      document.getElementById('help-search-results').style.display = 'none';
+      document.getElementById('help-browse-content').style.display = 'block';
+      const faqs = await ensureFaqsLoaded();
+      document.getElementById('help-featured-faqs').innerHTML = faqs.slice(0, 4).map(faqRowHtml).join('');
+    };
+
+    window.closeHelpCenterScreen = closeAccountSubScreen;
+
+    let helpSearchTimeout;
+    window.handleHelpSearch = function(e) {
+      clearTimeout(helpSearchTimeout);
+      const q = e.target.value.trim().toLowerCase();
+      const resultsEl = document.getElementById('help-search-results');
+      const browseEl = document.getElementById('help-browse-content');
+      if (!q) {
+        resultsEl.style.display = 'none';
+        browseEl.style.display = 'block';
+        return;
+      }
+      helpSearchTimeout = setTimeout(() => {
+        const faqs = window.helpFaqsCache || [];
+        const matches = faqs.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+        browseEl.style.display = 'none';
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = matches.length
+          ? matches.map(faqRowHtml).join('')
+          : '<p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 1.5rem 0;">No encontramos resultados. Prueba contactar a soporte.</p>';
+      }, 250);
+    };
+
+    window.openHelpCategoryScreen = async function(category) {
+      openAccountSubScreen('app-help-category-screen');
+      document.getElementById('help-category-title').textContent = HELP_CATEGORY_LABELS[category] || category;
+      const faqs = await ensureFaqsLoaded();
+      const filtered = faqs.filter(f => f.category === category);
+      document.getElementById('help-category-faqs').innerHTML = filtered.length
+        ? filtered.map(faqRowHtml).join('')
+        : '<p style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 1.5rem 0;">Todavía no hay preguntas en esta categoría.</p>';
+    };
+
+    window.closeHelpCategoryScreen = closeAccountSubScreen;
+
+    window.openHelpDetailScreen = function(faqId) {
+      const faq = (window.helpFaqsCache || []).find(f => f.id === faqId);
+      if (!faq) return;
+      openAccountSubScreen('app-help-detail-screen');
+      document.getElementById('help-detail-question').textContent = faq.question;
+      document.getElementById('help-detail-answer').textContent = faq.answer;
+    };
+
+    window.closeHelpDetailScreen = closeAccountSubScreen;
+
+    // --- Pantalla 31: Contactar soporte ---
+    window.openSupportContactScreen = async function() {
+      openAccountSubScreen('app-support-contact-screen');
+      document.getElementById('form-new-ticket').reset();
+      document.querySelectorAll('#app-support-contact-screen .search-filter-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+
+      const ticketsEl = document.getElementById('support-existing-tickets');
+      const tickets = await window.rapidinDB.getSupportTickets();
+      if (!tickets.length) {
+        ticketsEl.innerHTML = '';
+      } else {
+        ticketsEl.innerHTML = `
+          <h2 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Tus casos</h2>
+          ${tickets.map(t => `
+            <div class="support-ticket-row" onclick="openSupportChatScreen('${t.id}')">
+              <div>
+                <div style="font-weight: 700; font-size: 0.9rem;">${escapeHtml(t.subject)}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">${escapeHtml(HELP_CATEGORY_LABELS[t.category] || t.category)}</div>
+              </div>
+              <span class="badge" style="background: ${t.status === 'open' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)'}; color: ${t.status === 'open' ? '#10B981' : 'var(--text-secondary)'}; border: 1px solid ${t.status === 'open' ? '#10B981' : 'var(--border-color)'}; white-space: nowrap;">${t.status === 'open' ? 'Abierto' : 'Cerrado'}</span>
+            </div>
+          `).join('')}
+          <div style="height: 0.5rem;"></div>
+        `;
+      }
+    };
+
+    window.closeSupportContactScreen = closeAccountSubScreen;
+
+    window.selectTicketCategory = function(btn) {
+      document.querySelectorAll('#app-support-contact-screen .search-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+
+    window.submitNewTicket = async function(e) {
+      e.preventDefault();
+      const category = document.querySelector('#app-support-contact-screen .search-filter-btn.active')?.dataset.category || 'otro';
+      const subject = document.getElementById('ticket-subject-input').value.trim();
+      const message = document.getElementById('ticket-message-input').value.trim();
+
+      const btn = document.getElementById('btn-submit-ticket');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Enviando...';
+
+      const res = await window.rapidinDB.createSupportTicket({ category, subject, message });
+
+      btn.disabled = false;
+      btn.textContent = orig;
+
+      if (res.success) {
+        openSupportChatScreen(res.ticket.id);
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo enviar tu caso');
+      }
+    };
+
+    // --- Pantalla 32: Chat con soporte ---
+    window.openSupportChatScreen = async function(ticketId) {
+      openAccountSubScreen('app-support-chat-screen');
+      window.currentChatTicketId = ticketId;
+      await loadChatMessages();
+    };
+
+    async function loadChatMessages() {
+      const data = await window.rapidinDB.getSupportMessages(window.currentChatTicketId);
+      if (!data.success) return;
+
+      document.getElementById('chat-ticket-subject').textContent = data.ticket.subject;
+      const statusEl = document.getElementById('chat-ticket-status');
+      statusEl.textContent = data.ticket.status === 'open' ? '🟢 Abierto · esperando respuesta' : '⚪ Cerrado';
+
+      const listEl = document.getElementById('chat-messages-list');
+      listEl.innerHTML = data.messages.map(m => `
+        <div class="chat-bubble from-${m.sender_role === 'user' ? 'user' : 'support'}">
+          ${m.text ? escapeHtml(m.text) : ''}
+          ${m.image_url ? `<img src="${escapeHtml(m.image_url)}" alt="Imagen adjunta">` : ''}
+        </div>
+      `).join('');
+      listEl.scrollTop = listEl.scrollHeight;
+    }
+
+    window.closeSupportChatScreen = closeAccountSubScreen;
+
+    window.sendChatMessage = async function() {
+      const input = document.getElementById('chat-text-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      const res = await window.rapidinDB.sendSupportMessage(window.currentChatTicketId, text, null);
+      if (res.success) {
+        await loadChatMessages();
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo enviar el mensaje');
+      }
+    };
+
+    window.handleChatImageSelected = function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const res = await window.rapidinDB.sendSupportMessage(window.currentChatTicketId, null, ev.target.result);
+        if (res.success) await loadChatMessages();
+        else if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo enviar la imagen');
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
+    // --- Pantalla 33: Problema con un pedido ---
+    window.openOrderIssueScreen = function() {
+      openAccountSubScreen('app-order-issue-screen');
+    };
+
+    window.closeOrderIssueScreen = closeAccountSubScreen;
+
+    window.submitOrderIssue = async function(issueLabel) {
+      const orderId = window.currentViewedOrderId || null;
+      const subject = orderId ? `${issueLabel} — Pedido #${orderId}` : issueLabel;
+      const message = orderId
+        ? `Tengo un problema con mi pedido #${orderId}: ${issueLabel}.`
+        : `Tengo un problema con un pedido: ${issueLabel}.`;
+
+      const res = await window.rapidinDB.createSupportTicket({ category: 'pedido', subject, message, orderId });
+      if (res.success) {
+        openSupportChatScreen(res.ticket.id);
+      } else if (window.rapidinAlert) {
+        window.rapidinAlert(res.message || 'No se pudo crear tu caso de soporte');
       }
     };
 

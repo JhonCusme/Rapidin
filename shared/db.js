@@ -346,6 +346,54 @@ class RapidinDatabase {
   }
 
   // ==========================================
+  // AYUDA Y SOPORTE
+  // ==========================================
+
+  async getFaqs() {
+    try {
+      const res = await fetch(`${API_URL}/help/faqs`);
+      const data = await res.json();
+      return data.success ? data.faqs : [];
+    } catch (e) { return []; }
+  }
+
+  async createSupportTicket(ticketData) {
+    try {
+      const res = await fetch(`${API_URL}/support/tickets`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify(ticketData) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async getSupportTickets() {
+    try {
+      const res = await fetch(`${API_URL}/support/tickets`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data.tickets : [];
+    } catch (e) { return []; }
+  }
+
+  async getSupportMessages(ticketId) {
+    try {
+      const res = await fetch(`${API_URL}/support/tickets/${ticketId}/messages`, { headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, ticket: null, messages: [] }; }
+  }
+
+  async sendSupportMessage(ticketId, text, imageUrl) {
+    try {
+      const res = await fetch(`${API_URL}/support/tickets/${ticketId}/messages`, { method: 'POST', headers: this.getAuthHeaders('user'), body: JSON.stringify({ text, imageUrl }) });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  async closeSupportTicket(ticketId) {
+    try {
+      const res = await fetch(`${API_URL}/support/tickets/${ticketId}/close`, { method: 'PUT', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  // ==========================================
   // ADMIN API (Fase 4)
   // ==========================================
 
