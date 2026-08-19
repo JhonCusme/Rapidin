@@ -86,6 +86,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE orders ADD COLUMN customer_lng DECIMAL(10,6)", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN description TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
+    db.run("ALTER TABLE coupons ADD COLUMN promo_type VARCHAR(20) DEFAULT 'general'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS addresses (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, label VARCHAR(50) NOT NULL DEFAULT 'Casa',
       address_text TEXT NOT NULL, reference TEXT, lat DECIMAL(10,6), lng DECIMAL(10,6),
@@ -947,9 +948,46 @@ app.put('/api/payment-methods/:id/default', authenticateToken, requireRole('user
 
 // --- Cupones y promociones ---
 app.get('/api/coupons/active', authenticateToken, (req, res) => {
-  db.all(`SELECT * FROM coupons WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))`, [], (err, coupons) => {
+  const { type } = req.query;
+  let sql = `SELECT * FROM coupons WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))`;
+  const params = [];
+  if (type) {
+    sql += ` AND promo_type = ?`;
+    params.push(type);
+  }
+  db.all(sql, params, (err, coupons) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo promociones' });
     res.json({ success: true, coupons });
+  });
+});
+
+// Negocios con promociones activas cerca de una ubicación
+app.get('/api/stores/with-promos', authenticateToken, (req, res) => {
+  const { lat, lng } = req.query;
+  const userLat = parseFloat(lat);
+  const userLng = parseFloat(lng);
+
+  db.all(`SELECT stores.*, (SELECT COUNT(*) FROM orders WHERE orders.store_id = stores.id AND orders.rating_store IS NOT NULL) as reviewsCount
+          FROM stores WHERE is_open = 1 AND (badge LIKE '%ferta%' OR is_turbo = 1)`, [], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo promociones cercanas' });
+    let stores = rows.map(store => ({
+      ...store,
+      image: store.image_url,
+      logo: store.logo_url,
+      isTurbo: store.is_turbo === 1,
+      deliveryTime: store.delivery_time,
+      deliveryFee: store.delivery_fee,
+      minOrder: store.min_order,
+      tags: store.tags ? JSON.parse(store.tags) : []
+    }));
+    if (!isNaN(userLat) && !isNaN(userLng)) {
+      stores = stores.filter(store => {
+        if (!store.lat || !store.lng) return true;
+        const distanceKm = getDistanceFromLatLonInKm(userLat, userLng, store.lat, store.lng);
+        return distanceKm <= (store.delivery_radius_km || 5.00);
+      });
+    }
+    res.json({ success: true, stores });
   });
 });
 

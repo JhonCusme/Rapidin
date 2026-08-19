@@ -149,7 +149,8 @@ CREATE TABLE IF NOT EXISTS coupons (
     discount_value DECIMAL(10, 2) NOT NULL DEFAULT 0,
     min_order_usd DECIMAL(10, 2) DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
-    expires_at TIMESTAMP
+    expires_at TIMESTAMP,
+    promo_type VARCHAR(20) DEFAULT 'general' -- 'general', '2x1', 'envio_gratis', 'flash'
 );
 
 -- Cupones canjeados/usados por cada usuario

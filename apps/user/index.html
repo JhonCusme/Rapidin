@@ -2821,7 +2821,7 @@
       <div class="promo-banner">
         <h3>🔥 OFERTAS CERCA DE TI</h3>
         <p>Hasta 40% OFF</p>
-        <button type="button" onclick="alert('Promociones')">Pedir ahora &rarr;</button>
+        <button type="button" onclick="openPromotionsScreen()">Ver promociones &rarr;</button>
       </div>
 
       <h2 class="section-title">⭐ Para ti</h2>
@@ -3162,6 +3162,26 @@
         <div style="font-size: 0.85rem; color: var(--text-secondary);" id="promo-detail-expiry"></div>
       </div>
       <button class="btn-auth-primary" style="width: 100%; margin-top: 1.5rem;" onclick="copyPromoCode()">Copiar código</button>
+    </div>
+  </div>
+
+  <!-- PANTALLAS 71-75: PROMOCIONES -->
+  <div class="app-search-screen" id="app-promotions-screen" style="display: none;">
+    <div class="search-header-compact">
+      <button type="button" class="btn-back-search" onclick="closePromotionsScreen()" style="padding:0;">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <h2 style="font-size: 1.2rem; margin: 0;">🔥 Promociones</h2>
+    </div>
+    <div class="search-content" style="display: block;">
+      <div class="search-filters" id="promo-filters-row">
+        <div class="search-filter-btn active" data-promo-filter="today" onclick="loadPromotions('today')">Ofertas del día</div>
+        <div class="search-filter-btn" data-promo-filter="nearby" onclick="loadPromotions('nearby')">Cerca de mí</div>
+        <div class="search-filter-btn" data-promo-filter="2x1" onclick="loadPromotions('2x1')">2x1</div>
+        <div class="search-filter-btn" data-promo-filter="envio_gratis" onclick="loadPromotions('envio_gratis')">Envío gratis</div>
+        <div class="search-filter-btn" data-promo-filter="flash" onclick="loadPromotions('flash')">⚡ Flash</div>
+      </div>
+      <div id="promotions-list" style="margin-top: 1rem;"></div>
     </div>
   </div>
 
@@ -5941,7 +5961,9 @@
     window.openPromoDetailScreen = function(couponId) {
       const c = window.rapidinCouponCache[couponId];
       if (!c) return;
-      document.getElementById('app-store-screen').style.display = 'none';
+      const activeScreen = document.querySelector('#app-store-screen[style*="display: flex"], #app-promotions-screen[style*="display: flex"]');
+      window.previousScreenForPromoDetail = activeScreen ? activeScreen.id : 'app-main-screen';
+      activeScreen ? activeScreen.style.display = 'none' : document.getElementById('app-main-screen').style.display = 'none';
       document.getElementById('promo-detail-title').textContent = c.title;
       document.getElementById('promo-detail-desc').textContent = c.description || '';
       document.getElementById('promo-detail-code').textContent = c.code;
@@ -5956,7 +5978,7 @@
 
     window.closePromoDetailScreen = function() {
       document.getElementById('app-promo-detail-screen').style.display = 'none';
-      document.getElementById('app-store-screen').style.display = 'flex';
+      document.getElementById(window.previousScreenForPromoDetail || 'app-main-screen').style.display = 'flex';
     };
 
     window.copyPromoCode = function() {
@@ -5964,6 +5986,81 @@
       navigator.clipboard.writeText(code).then(() => {
         if (window.rapidinAlert) window.rapidinAlert('Código copiado: ' + code);
       });
+    };
+
+    window.openPromotionsScreen = function() {
+      const activeScreen = document.querySelector('.app-main-screen[style*="display: flex"], .app-search-screen[style*="display: flex"]');
+      window.previousScreenForPromotions = activeScreen ? activeScreen.id : 'app-main-screen';
+      if (activeScreen) activeScreen.style.display = 'none';
+      else document.getElementById('app-main-screen').style.display = 'none';
+      document.getElementById('app-promotions-screen').style.display = 'flex';
+      loadPromotions('today');
+    };
+
+    window.closePromotionsScreen = function() {
+      document.getElementById('app-promotions-screen').style.display = 'none';
+      document.getElementById(window.previousScreenForPromotions || 'app-main-screen').style.display = 'flex';
+    };
+
+    function couponCardWithCountdownHtml(c, showCountdown) {
+      const countdownHtml = showCountdown && c.expires_at
+        ? `<div class="promo-countdown" data-expires="${escapeHtml(c.expires_at)}" style="font-size: 0.75rem; color: #F59E0B; font-weight: 700; margin-top: 0.4rem;">Calculando...</div>`
+        : '';
+      return `
+        <div class="promo-card" onclick="openPromoDetailScreen('${c.id}')" style="cursor: pointer; width: 100%; margin-bottom: 0.8rem;">
+          <div class="promo-title">${escapeHtml(c.title)}</div>
+          <div class="promo-desc">${escapeHtml(c.description || '')}</div>
+          ${countdownHtml}
+        </div>
+      `;
+    }
+
+    function tickPromoCountdowns() {
+      document.querySelectorAll('.promo-countdown').forEach(el => {
+        const expiresAt = new Date(el.dataset.expires.replace(' ', 'T') + 'Z').getTime();
+        const diff = expiresAt - Date.now();
+        if (diff <= 0) { el.textContent = 'Oferta vencida'; return; }
+        const hours = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        el.textContent = `⏰ Termina en ${hours}h ${mins}m`;
+      });
+    }
+    setInterval(tickPromoCountdowns, 60000);
+
+    window.loadPromotions = async function(filter) {
+      document.querySelectorAll('#promo-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.promoFilter === filter));
+      const list = document.getElementById('promotions-list');
+      list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando promociones...</div>';
+
+      if (filter === 'nearby') {
+        let lat = null, lng = null;
+        if (navigator.geolocation) {
+          try {
+            const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 }));
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+          } catch (e) { /* sin ubicación, mostramos todas las cercanas por defecto */ }
+        }
+        const stores = await window.rapidinDB.getStoresWithPromos(lat, lng);
+        cacheStores(stores);
+        if (!stores.length) {
+          list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay negocios con promociones cerca de ti.</div>';
+          return;
+        }
+        list.innerHTML = stores.map(verticalStoreCardHtml).join('');
+        return;
+      }
+
+      const type = filter === 'today' ? null : filter;
+      const coupons = await window.rapidinDB.getActiveCoupons(type);
+      window.rapidinCouponCache = window.rapidinCouponCache || {};
+      coupons.forEach(c => { window.rapidinCouponCache[c.id] = c; });
+      if (!coupons.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay promociones disponibles en esta categoría.</div>';
+        return;
+      }
+      list.innerHTML = coupons.map(c => couponCardWithCountdownHtml(c, filter === 'flash')).join('');
+      tickPromoCountdowns();
     };
 
     window.toggleFavorite = function(btn) {

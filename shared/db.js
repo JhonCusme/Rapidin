@@ -158,15 +158,28 @@ class RapidinDatabase {
     }
   }
 
-  async getActiveCoupons() {
+  async getActiveCoupons(type = null) {
     try {
-      const response = await fetch(`${API_URL}/coupons/active`, {
-        headers: this.getAuthHeaders('user')
-      });
+      let url = `${API_URL}/coupons/active`;
+      if (type) url += `?type=${encodeURIComponent(type)}`;
+      const response = await fetch(url, { headers: this.getAuthHeaders('user') });
       const data = await response.json();
       return data.success ? data.coupons : [];
     } catch (e) {
       console.error('Error fetching active coupons:', e);
+      return [];
+    }
+  }
+
+  async getStoresWithPromos(lat = null, lng = null) {
+    try {
+      let url = `${API_URL}/stores/with-promos`;
+      if (lat !== null && lng !== null) url += `?lat=${lat}&lng=${lng}`;
+      const response = await fetch(url, { headers: this.getAuthHeaders('user') });
+      const data = await response.json();
+      return data.success ? data.stores : [];
+    } catch (e) {
+      console.error('Error fetching nearby promos:', e);
       return [];
     }
   }
