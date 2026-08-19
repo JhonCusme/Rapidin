@@ -218,6 +218,45 @@ app.post('/api/auth/register-driver', async (req, res) => {
 });
 
 
+// 1.2.1 Login/Registro por Teléfono (Auth) - usado por el flujo de verificación SMS
+// La posesión del código SMS (verificado en el cliente) es el factor de autenticación;
+// no se requiere contraseña. Si el teléfono ya existe, inicia sesión; si no, lo crea.
+app.post('/api/auth/phone-login', async (req, res) => {
+  const { phone, name, email } = req.body;
+  if (!phone) {
+    return res.status(400).json({ success: false, message: 'Falta el número de teléfono' });
+  }
+
+  db.get(`SELECT * FROM users WHERE phone = ? AND role = 'user'`, [phone], async (err, existing) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error de servidor' });
+
+    if (existing) {
+      const token = jwt.sign({ id: existing.id, email: existing.email, role: existing.role }, JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ success: true, token, user: { id: existing.id, email: existing.email, name: existing.name, role: existing.role, phone: existing.phone } });
+    }
+
+    if (!name || !email) {
+      return res.status(404).json({ success: false, message: 'Número no registrado. Completa tu perfil para crear una cuenta.' });
+    }
+
+    const userId = 'usr-' + Date.now();
+    const randomPassword = crypto.randomBytes(24).toString('hex');
+    const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+    const sql = `INSERT INTO users (id, role, email, password_hash, name, phone) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.run(sql, [userId, 'user', email, passwordHash, name, phone], function(insertErr) {
+      if (insertErr) {
+        if (insertErr.message.includes('UNIQUE')) {
+          return res.status(400).json({ success: false, message: 'El correo ya está registrado' });
+        }
+        return res.status(500).json({ success: false, message: 'Error interno de BD' });
+      }
+      const token = jwt.sign({ id: userId, email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
+      res.json({ success: true, token, user: { id: userId, email, name, role: 'user', phone } });
+    });
+  });
+});
+
 // 1.3 Registro de Administrador (Auth) - protegido por clave de configuración
 app.post('/api/auth/register-admin', async (req, res) => {
   const { email, password, name, setupKey } = req.body;
@@ -326,6 +365,26 @@ app.get('/api/orders/store/:storeId', authenticateToken, requireRole('store', 'a
   db.all(sql, [storeId], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error fetching orders' });
     
+    const orders = rows.map(r => ({
+      ...r,
+      items: r.items_json ? JSON.parse(r.items_json) : []
+    }));
+    res.json({ success: true, orders });
+  });
+});
+
+// 3.1.1 Obtener pedidos del cliente autenticado ("Mis pedidos")
+app.get('/api/orders/mine', authenticateToken, requireRole('user'), (req, res) => {
+  const sql = `
+    SELECT orders.*, stores.name as storeName
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.id
+    WHERE orders.customer_id = ?
+    ORDER BY orders.created_at DESC
+  `;
+  db.all(sql, [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error fetching orders' });
+
     const orders = rows.map(r => ({
       ...r,
       items: r.items_json ? JSON.parse(r.items_json) : []

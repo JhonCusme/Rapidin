@@ -36,6 +36,31 @@ class RapidinDatabase {
     }
   }
 
+  // Login/registro por teléfono (flujo de verificación SMS). El código SMS ya fue
+  // verificado en el cliente; el backend crea la cuenta si el teléfono es nuevo,
+  // o inicia sesión si ya existe.
+  async phoneLogin({ phone, name, email }) {
+    try {
+      const response = await fetch(`${API_URL}/auth/phone-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name, email })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem(RAPIDIN_KEY_AUTH_USER, JSON.stringify({
+          token: data.token,
+          ...data.user
+        }));
+        return { success: true, user: data.user };
+      }
+      return { success: false, message: data.message || 'No se pudo verificar el número.' };
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   async registerUser(userData) {
     try {
       let endpoint = `${API_URL}/auth/register-user`;
@@ -137,6 +162,34 @@ class RapidinDatabase {
     } catch (e) {
       console.error('Error fetching order:', e);
       return null;
+    }
+  }
+
+  async createOrder(orderData) {
+    try {
+      const response = await fetch(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify(orderData)
+      });
+      const data = await response.json();
+      return data.success ? data.order : null;
+    } catch (e) {
+      console.error('Error creando pedido:', e);
+      return null;
+    }
+  }
+
+  async getMyOrders() {
+    try {
+      const response = await fetch(`${API_URL}/orders/mine`, {
+        headers: this.getAuthHeaders('user')
+      });
+      const data = await response.json();
+      return data.success ? data.orders : [];
+    } catch (e) {
+      console.error('Error obteniendo mis pedidos:', e);
+      return [];
     }
   }
 
