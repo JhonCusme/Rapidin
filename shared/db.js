@@ -113,17 +113,60 @@ class RapidinDatabase {
   // CATÁLOGO DINÁMICO (SQLite via API)
   // ==========================================
   
-  async getStores(lat = null, lng = null) {
+  async getStores(lat = null, lng = null, { category = null, sortBy = null } = {}) {
     try {
       let url = `${window.RAPIDIN_API_BASE}/api/stores`;
+      const params = new URLSearchParams();
       if (lat !== null && lng !== null) {
-        url += `?lat=${lat}&lng=${lng}`;
+        params.set('lat', lat);
+        params.set('lng', lng);
       }
+      if (category) params.set('category', category);
+      if (sortBy) params.set('sortBy', sortBy);
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
       const response = await fetch(url);
       const data = await response.json();
       return data.success ? data.stores : [];
     } catch (e) {
       console.error('Error fetching stores:', e);
+      return [];
+    }
+  }
+
+  async getStoreReviews(storeId) {
+    try {
+      const response = await fetch(`${API_URL}/stores/${storeId}/reviews`, {
+        headers: this.getAuthHeaders('user')
+      });
+      const data = await response.json();
+      return data.success ? data.reviews : [];
+    } catch (e) {
+      console.error('Error fetching store reviews:', e);
+      return [];
+    }
+  }
+
+  async search(query) {
+    try {
+      const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      return data.success ? { stores: data.stores, products: data.products } : { stores: [], products: [] };
+    } catch (e) {
+      console.error('Error en búsqueda:', e);
+      return { stores: [], products: [] };
+    }
+  }
+
+  async getActiveCoupons() {
+    try {
+      const response = await fetch(`${API_URL}/coupons/active`, {
+        headers: this.getAuthHeaders('user')
+      });
+      const data = await response.json();
+      return data.success ? data.coupons : [];
+    } catch (e) {
+      console.error('Error fetching active coupons:', e);
       return [];
     }
   }

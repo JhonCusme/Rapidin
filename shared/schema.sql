@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS stores (
     delivery_radius_km DECIMAL(5, 2) DEFAULT 5.00,
     image_url TEXT,
     logo_url TEXT,
-    tags TEXT
+    tags TEXT,
+    description TEXT,
+    hours TEXT
 );
 
 -- Tabla de Catálogo de Productos / Platillos

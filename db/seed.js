@@ -22,8 +22,8 @@ db.serialize(() => {
     const tags = store.tags ? JSON.stringify(store.tags) : '[]';
     
     db.run(
-      `INSERT INTO stores (id, name, category, country_code, badge, rating, delivery_time, delivery_fee, min_order, is_turbo, is_open, lat, lng, address, delivery_radius_km, image_url, logo_url, tags)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO stores (id, name, category, country_code, badge, rating, delivery_time, delivery_fee, min_order, is_turbo, is_open, lat, lng, address, delivery_radius_km, image_url, logo_url, tags, description, hours)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         store.id,
         store.name,
@@ -42,7 +42,9 @@ db.serialize(() => {
         store.deliveryRadiusKm || 5.00,
         store.image || '',
         store.logo || '',
-        tags
+        tags,
+        store.description || '',
+        store.hours || ''
       ]
     );
 

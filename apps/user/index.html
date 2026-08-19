@@ -2765,35 +2765,35 @@
 
       <h2 class="section-title">¿Qué necesitas?</h2>
       <div class="horizontal-scroll">
-        <div class="category-item" onclick="mockSearch('Comida')">
+        <div class="category-item" onclick="searchByCategory('restaurants', 'Comida')">
           <div class="category-icon">🍔</div>
           <span class="category-name">Comida</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Súper')">
+        <div class="category-item" onclick="searchByCategory('supermarket', 'Súper')">
           <div class="category-icon">🛒</div>
           <span class="category-name">Súper</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Farmacia')">
+        <div class="category-item" onclick="searchByCategory('pharmacy', 'Farmacia')">
           <div class="category-icon">💊</div>
           <span class="category-name">Farmacia</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Bebidas')">
+        <div class="category-item" onclick="searchByCategory('drinks', 'Bebidas')">
           <div class="category-icon">🥤</div>
           <span class="category-name">Bebidas</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Restaurantes')">
+        <div class="category-item" onclick="searchByCategory('restaurants', 'Restaurantes')">
           <div class="category-icon">🍕</div>
           <span class="category-name">Restaurantes</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Tiendas')">
+        <div class="category-item" onclick="searchByCategory('tiendas', 'Tiendas')">
           <div class="category-icon">🛍️</div>
           <span class="category-name">Tiendas</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Mascotas')">
+        <div class="category-item" onclick="searchByCategory('mascotas', 'Mascotas')">
           <div class="category-icon">🐶</div>
           <span class="category-name">Mascotas</span>
         </div>
-        <div class="category-item" onclick="mockSearch('Envíos')">
+        <div class="category-item" onclick="searchByCategory('express', 'Envíos')">
           <div class="category-icon">📦</div>
           <span class="category-name">Envíos</span>
         </div>
@@ -2905,28 +2905,28 @@
 
     <div class="search-content" id="search-content-idle">
       <h3 class="search-section-title">Búsquedas recientes</h3>
-      <div class="recent-search-item" onclick="mockSearch('Hamburguesa')">
+      <div class="recent-search-item" onclick="searchFor('Hamburguesa')">
         <div class="recent-search-left">
           <i class="fa-regular fa-clock"></i>
           <span>Hamburguesa</span>
         </div>
         <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
       </div>
-      <div class="recent-search-item" onclick="mockSearch('Farmacia')">
+      <div class="recent-search-item" onclick="searchFor('Farmacia')">
         <div class="recent-search-left">
           <i class="fa-regular fa-clock"></i>
           <span>Farmacia</span>
         </div>
         <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
       </div>
-      <div class="recent-search-item" onclick="mockSearch('Coca-Cola')">
+      <div class="recent-search-item" onclick="searchFor('Coca-Cola')">
         <div class="recent-search-left">
           <i class="fa-regular fa-clock"></i>
           <span>Coca-Cola</span>
         </div>
         <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
       </div>
-      <div class="recent-search-item" onclick="mockSearch('Pizza')">
+      <div class="recent-search-item" onclick="searchFor('Pizza')">
         <div class="recent-search-left">
           <i class="fa-regular fa-clock"></i>
           <span>Pizza</span>
@@ -2936,12 +2936,12 @@
 
       <h3 class="search-section-title" style="margin-top: 2rem;">🔥 Lo más buscado</h3>
       <div class="popular-tags">
-        <div class="popular-tag" onclick="mockSearch('Hamburguesas')">Hamburguesas</div>
-        <div class="popular-tag" onclick="mockSearch('Pizza')">Pizza</div>
-        <div class="popular-tag" onclick="mockSearch('Sushi')">Sushi</div>
-        <div class="popular-tag" onclick="mockSearch('Farmacia')">Farmacia</div>
-        <div class="popular-tag" onclick="mockSearch('Supermercado')">Supermercado</div>
-        <div class="popular-tag" onclick="mockSearch('Bebidas')">Bebidas</div>
+        <div class="popular-tag" onclick="searchFor('Hamburguesas')">Hamburguesas</div>
+        <div class="popular-tag" onclick="searchFor('Pizza')">Pizza</div>
+        <div class="popular-tag" onclick="searchFor('Sushi')">Sushi</div>
+        <div class="popular-tag" onclick="searchFor('Farmacia')">Farmacia</div>
+        <div class="popular-tag" onclick="searchFor('Supermercado')">Supermercado</div>
+        <div class="popular-tag" onclick="searchFor('Bebidas')">Bebidas</div>
       </div>
     </div>
 
@@ -2951,97 +2951,19 @@
         <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;" id="search-results-count">128 resultados</span>
       </div>
       
-      <div class="search-filters">
-        <div class="search-filter-btn active">Todos</div>
-        <div class="search-filter-btn">Productos</div>
-        <div class="search-filter-btn">Restaurantes</div>
-        <div class="search-filter-btn">Más rápidos</div>
-        <div class="search-filter-btn">Mejor calificados</div>
-        <div class="search-filter-btn">Ofertas</div>
+      <div class="search-filters" id="search-filters-row">
+        <div class="search-filter-btn active" data-filter="all" onclick="applySearchFilter('all')">Todos</div>
+        <div class="search-filter-btn" data-filter="restaurants" onclick="applySearchFilter('restaurants')">Restaurantes</div>
+        <div class="search-filter-btn" data-filter="fastest" onclick="applySearchFilter('fastest')">Más rápidos</div>
+        <div class="search-filter-btn" data-filter="rating" onclick="applySearchFilter('rating')">Mejor calificados</div>
+        <div class="search-filter-btn" data-filter="offers" onclick="applySearchFilter('offers')">Ofertas</div>
       </div>
 
-      <div class="search-sort">
-        <button type="button" class="search-sort-btn">
-          Ordenar ▾
-        </button>
-      </div>
+      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 0.5rem;" id="search-products-heading">🍽️ Productos</h4>
+      <div id="search-products-list"></div>
 
-      <div id="search-best-option-container" style="display: none;">
-        <h4 class="search-section-title" style="font-size: 1.1rem; color: #10B981; margin-top: 0.5rem;"><i class="fa-solid fa-star"></i> Mejor opción para ti</h4>
-        <div class="best-option-card">
-          <div class="store-header" style="margin-bottom: 0.5rem;">
-            <span class="store-name" style="font-size: 1.1rem;" id="mock-best-title">Pizza House</span>
-            <span class="store-rating" style="font-size: 0.9rem;"><i class="fa-solid fa-star"></i> 4.9</span>
-          </div>
-          <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.85rem;">
-            <span>🍕 Pizza italiana</span>
-            <span>⚡ 18-25 min</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.8rem;">
-            <span style="font-size: 0.85rem;">🚴 $0.99 envío</span>
-            <span style="color: #FF3366; font-weight: 800; font-size: 0.9rem;">🔥 20% OFF</span>
-          </div>
-        </div>
-      </div>
-
-      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 0.5rem;">🍕 Productos</h4>
-      <div class="search-product-item">
-        <div style="flex: 1;">
-          <div class="product-info-title" id="mock-prod-title-1">Pizza Pepperoni</div>
-          <div class="product-info-store" id="mock-prod-store-1">Pizza House</div>
-          <div class="product-info-price">
-            <span class="product-info-old-price">~~$12.99~~</span> $9.99
-          </div>
-          <div class="product-info-promo">🔥 23% OFF</div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
-          <button class="btn-add-product"><i class="fa-solid fa-plus"></i></button>
-        </div>
-      </div>
-      <div class="search-product-item">
-        <div style="flex: 1;">
-          <div class="product-info-title" id="mock-prod-title-2">Pizza Familiar</div>
-          <div class="product-info-store" id="mock-prod-store-2">Pizza Luigi</div>
-          <div class="product-info-price">$14.50</div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
-          <button class="btn-add-product"><i class="fa-solid fa-plus"></i></button>
-        </div>
-      </div>
-
-      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 1.5rem;">🏪 Negocios relacionados</h4>
-      <div class="vertical-store-card" style="margin-bottom: 0.8rem;">
-        <div class="vertical-store-img">🍕</div>
-        <div class="vertical-store-info">
-          <div class="store-header" style="margin-bottom: 0;">
-            <span class="store-name" style="font-size: 1rem;" id="mock-store-title-1">Pizza House</span>
-            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.8</span>
-          </div>
-          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">Italiana</div>
-          <div class="store-details" style="font-size: 0.8rem; justify-content: space-between;">
-            <span>⚡ 20-30 min</span>
-            <span>📍 1.2 km</span>
-            <span>🚴 $0.99</span>
-          </div>
-        </div>
-      </div>
-      <div class="vertical-store-card" style="margin-bottom: 0.8rem;">
-        <div class="vertical-store-img">🍕</div>
-        <div class="vertical-store-info">
-          <div class="store-header" style="margin-bottom: 0;">
-            <span class="store-name" style="font-size: 1rem;" id="mock-store-title-2">Pizzería XYZ</span>
-            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.6</span>
-          </div>
-          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">Pizzas, Comida rápida</div>
-          <div class="store-details" style="font-size: 0.8rem; justify-content: space-between;">
-            <span>⚡ 30-45 min</span>
-            <span>📍 2.5 km</span>
-            <span>🚴 $1.50</span>
-          </div>
-        </div>
-      </div>
+      <h4 class="search-section-title" style="font-size: 1.1rem; margin-top: 1.5rem;" id="search-stores-heading">🏪 Negocios</h4>
+      <div id="search-stores-list"></div>
     </div>
 
     <div class="search-content empty-state" id="search-content-empty" style="display: none;">
@@ -3094,12 +3016,13 @@
         <h2 class="store-title-main">Burger House</h2>
         <div class="store-meta-row">
           <span class="store-rating"><i class="fa-solid fa-star"></i> 4.8</span>
-          <span class="store-reviews" id="store-reviews-text">1,240 reseñas</span>
+          <span class="store-reviews" id="store-reviews-text" style="text-decoration: underline; cursor: pointer;" onclick="openStoreReviewsScreen()">1,240 reseñas</span>
           <span class="store-category-dot">•</span>
           <span id="store-category-text">🍔 Hamburguesas</span>
           <span class="store-category-dot">•</span>
           <span id="store-address-text">📍 1.2 km</span>
         </div>
+        <div id="store-description-text" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; display: none;"></div>
       </div>
 
       <!-- Delivery Info -->
@@ -3116,27 +3039,15 @@
       </div>
 
       <!-- Promotions -->
-      <div class="store-promos">
+      <div class="store-promos" id="store-promos-section" style="display: none;">
         <h3 class="section-title" style="margin-bottom: 1rem;">🔥 Promociones</h3>
-        <div class="promo-cards-row">
-          <div class="promo-card">
-            <div class="promo-title">20% OFF</div>
-            <div class="promo-desc">En pedidos superiores a $15</div>
-          </div>
-          <div class="promo-card">
-            <div class="promo-title">🚴 Envío gratis</div>
-            <div class="promo-desc">En productos seleccionados</div>
-          </div>
-        </div>
+        <div class="promo-cards-row" id="store-promos-list"></div>
       </div>
 
       <!-- Categories Navigation -->
       <div class="store-menu-nav">
-        <div class="menu-nav-item active">Más vendidos</div>
-        <div class="menu-nav-item">Hamburguesas</div>
-        <div class="menu-nav-item">Combos</div>
-        <div class="menu-nav-item">Bebidas</div>
-        <div class="menu-nav-item">Postres</div>
+        <div class="menu-nav-item active" id="menu-nav-all" onclick="filterStoreMenu('all')">Todos</div>
+        <div class="menu-nav-item" id="menu-nav-popular" onclick="filterStoreMenu('popular')">🔥 Más vendidos</div>
       </div>
 
       <!-- Products -->
@@ -3165,7 +3076,7 @@
           <i class="fa-regular fa-clock info-icon"></i>
           <div>
             <div class="info-label">Horario</div>
-            <div class="info-value">Lunes - Domingo<br>11:00 AM - 10:00 PM</div>
+            <div class="info-value" id="store-hours-text">Horario no disponible</div>
           </div>
         </div>
 
@@ -3173,13 +3084,13 @@
           <i class="fa-solid fa-location-dot info-icon"></i>
           <div>
             <div class="info-label">Dirección</div>
-            <div class="info-value">Av. Ejemplo, Guayaquil</div>
+            <div class="info-value" id="store-info-address-text">Av. Ejemplo, Guayaquil</div>
           </div>
         </div>
 
         <div class="store-map-mock">
           <div class="map-bg">📍</div>
-          <button class="btn-outline" style="margin-top: 1rem; width: 100%;">Ver ubicación</button>
+          <button class="btn-outline" style="margin-top: 1rem; width: 100%;" onclick="if(window.currentStore && window.currentStore.lat) window.open('https://www.openstreetmap.org/?mlat='+window.currentStore.lat+'&mlon='+window.currentStore.lng+'#map=16/'+window.currentStore.lat+'/'+window.currentStore.lng, '_blank')">Ver ubicación</button>
         </div>
       </div>
       
@@ -3199,6 +3110,58 @@
         </div>
         <i class="fa-solid fa-arrow-right"></i>
       </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 61: RESEÑAS DEL NEGOCIO -->
+  <div class="app-cart-screen" id="app-store-reviews-screen" style="display: none;">
+    <div class="cart-header">
+      <button type="button" class="btn-back-auth" onclick="closeStoreReviewsScreen()" style="margin:0;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 class="cart-title" id="store-reviews-title">Reseñas</h2>
+    </div>
+    <div class="cart-content-scroll" id="store-reviews-list"></div>
+  </div>
+
+  <!-- PANTALLA 62: DETALLE DE RESEÑA -->
+  <div class="app-cart-screen" id="app-review-detail-screen" style="display: none;">
+    <div class="cart-header">
+      <button type="button" class="btn-back-auth" onclick="closeReviewDetailScreen()" style="margin:0;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 class="cart-title">Reseña</h2>
+    </div>
+    <div class="cart-content-scroll">
+      <div class="success-info-card" style="margin-top: 1rem;">
+        <div style="font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;" id="review-detail-customer">Cliente</div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;" id="review-detail-date"></div>
+        <div style="color: var(--text-primary); line-height: 1.5; margin-bottom: 1.5rem;" id="review-detail-text"></div>
+        <div class="summary-row"><span>Negocio</span><span style="color: #F59E0B;" id="review-detail-store-stars"></span></div>
+        <div class="summary-row"><span>Pedido</span><span style="color: #F59E0B;" id="review-detail-order-stars"></span></div>
+        <div class="summary-row"><span>Repartidor</span><span style="color: #F59E0B;" id="review-detail-driver-stars"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 58: DETALLE DE PROMOCIÓN -->
+  <div class="app-cart-screen" id="app-promo-detail-screen" style="display: none;">
+    <div class="cart-header">
+      <button type="button" class="btn-back-auth" onclick="closePromoDetailScreen()" style="margin:0;">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </button>
+      <h2 class="cart-title">Promoción</h2>
+    </div>
+    <div class="cart-content-scroll">
+      <div class="success-info-card" style="margin-top: 1rem; text-align: center;">
+        <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;" id="promo-detail-title">Promoción</div>
+        <div style="color: var(--text-secondary); margin-bottom: 1.5rem;" id="promo-detail-desc"></div>
+        <div style="font-weight: 700; color: var(--brand-primary); font-size: 1.1rem; margin-bottom: 1rem;" id="promo-detail-discount"></div>
+        <div style="background: rgba(255,255,255,0.06); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1rem; font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 1rem;" id="promo-detail-code">CODIGO</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;" id="promo-detail-minorder"></div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);" id="promo-detail-expiry"></div>
+      </div>
+      <button class="btn-auth-primary" style="width: 100%; margin-top: 1.5rem;" onclick="copyPromoCode()">Copiar código</button>
     </div>
   </div>
 
@@ -5619,6 +5582,73 @@
       document.getElementById('app-main-screen').style.display = 'flex';
     };
 
+    window.currentSearchResults = { stores: [], products: [] };
+    window.currentSearchFilter = 'all';
+
+    function searchProductCardHtml(p) {
+      const imgStyle = p.image ? `background-image:url('${escapeHtml(p.image)}'); background-size:cover; background-position:center; font-size:0;` : '';
+      return `
+        <div class="search-product-item" onclick="openProductScreen('${p.id}')" style="cursor: pointer;">
+          <div style="flex: 1;">
+            <div class="product-info-title">${escapeHtml(p.name)}</div>
+            <div class="product-info-store">${escapeHtml(p.storeName || '')}</div>
+            <div class="product-info-price">${fmtMoney(p.price)}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem; ${imgStyle}">${p.image ? '' : '🍽️'}</div>
+            <button class="btn-add-product" onclick="event.stopPropagation(); quickAddToCart('${p.id}')"><i class="fa-solid fa-plus"></i></button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSearchResults() {
+      const { stores, products } = window.currentSearchResults;
+      let filteredStores = stores;
+      let filteredProducts = products;
+      const f = window.currentSearchFilter;
+
+      if (f === 'restaurants') {
+        filteredStores = stores.filter(s => s.category === 'restaurants');
+        filteredProducts = [];
+      } else if (f === 'fastest') {
+        const parseMinutes = (t) => parseInt(String(t).match(/\d+/), 10) || 999;
+        filteredStores = [...stores].sort((a, b) => parseMinutes(a.deliveryTime) - parseMinutes(b.deliveryTime));
+      } else if (f === 'rating') {
+        filteredStores = [...stores].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } else if (f === 'offers') {
+        filteredStores = stores.filter(s => /oferta/i.test(s.badge || '') || s.isTurbo);
+        filteredProducts = [];
+      }
+
+      const prodList = document.getElementById('search-products-list');
+      const storeList = document.getElementById('search-stores-list');
+      document.getElementById('search-products-heading').style.display = filteredProducts.length ? 'block' : 'none';
+      document.getElementById('search-stores-heading').style.display = filteredStores.length ? 'block' : 'none';
+      prodList.innerHTML = filteredProducts.map(searchProductCardHtml).join('');
+      storeList.innerHTML = filteredStores.map(verticalStoreCardHtml).join('');
+
+      document.getElementById('search-results-count').textContent = (filteredStores.length + filteredProducts.length) + ' resultados';
+
+      const empty = document.getElementById('search-content-empty');
+      const results = document.getElementById('search-content-results');
+      if (!filteredStores.length && !filteredProducts.length) {
+        results.style.display = 'none';
+        empty.style.display = 'flex';
+        document.getElementById('empty-state-msg').textContent = 'No encontramos resultados para tu búsqueda.';
+      } else {
+        results.style.display = 'block';
+        empty.style.display = 'none';
+      }
+    }
+
+    window.applySearchFilter = function(filter) {
+      window.currentSearchFilter = filter;
+      document.querySelectorAll('#search-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+      renderSearchResults();
+    };
+
+    let searchDebounceTimer = null;
     window.handleSearchInput = function(e) {
       const val = e.target.value.trim();
       const clearBtn = document.getElementById('search-clear-btn');
@@ -5627,37 +5657,20 @@
       const empty = document.getElementById('search-content-empty');
       const title = document.getElementById('search-results-title');
 
+      clearTimeout(searchDebounceTimer);
+
       if (val.length > 0) {
         clearBtn.style.display = 'flex';
         idle.style.display = 'none';
-        
-        if (val.toLowerCase() === 'xxx' || val.toLowerCase() === 'no') {
-           results.style.display = 'none';
-           empty.style.display = 'flex';
-           document.getElementById('empty-state-msg').textContent = `No encontramos resultados para "${val}".`;
-        } else {
-           results.style.display = 'block';
-           empty.style.display = 'none';
-           title.textContent = `Resultados para "${val}"`;
-           document.getElementById('search-results-count').textContent = Math.floor(Math.random() * 200 + 10) + ' resultados';
-           
-           // Simulación rápida de nombres
-           const pval = val.charAt(0).toUpperCase() + val.slice(1);
-           document.getElementById('mock-prod-title-1').textContent = pval + ' Clásica';
-           document.getElementById('mock-prod-title-2').textContent = pval + ' Familiar';
-           document.getElementById('mock-prod-store-1').textContent = pval + ' House';
-           document.getElementById('mock-prod-store-2').textContent = pval + ' Factory';
-           document.getElementById('mock-store-title-1').textContent = pval + ' House';
-           document.getElementById('mock-store-title-2').textContent = 'Pizzería ' + pval;
-           
-           const bestOption = document.getElementById('search-best-option-container');
-           if (val.toLowerCase().includes('pizza')) {
-               bestOption.style.display = 'block';
-               document.getElementById('mock-best-title').textContent = pval + ' House';
-           } else {
-               bestOption.style.display = 'none';
-           }
-        }
+        title.textContent = `Resultados para "${val}"`;
+
+        searchDebounceTimer = setTimeout(async () => {
+          const { stores, products } = await window.rapidinDB.search(val);
+          window.currentSearchResults = { stores, products };
+          window.currentSearchFilter = 'all';
+          document.querySelectorAll('#search-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+          renderSearchResults();
+        }, 300);
       } else {
         clearBtn.style.display = 'none';
         idle.style.display = 'block';
@@ -5673,11 +5686,26 @@
       handleSearchInput({target: input});
     };
 
-    window.mockSearch = function(term) {
+    window.searchFor = function(term) {
       openSearchScreen();
       const input = document.getElementById('main-search-input');
       input.value = term;
       handleSearchInput({target: input});
+    };
+
+    window.searchByCategory = async function(categoryKey, label) {
+      openSearchScreen();
+      const input = document.getElementById('main-search-input');
+      input.value = label;
+      document.getElementById('search-clear-btn').style.display = 'flex';
+      document.getElementById('search-content-idle').style.display = 'none';
+      document.getElementById('search-results-title').textContent = `Resultados para "${label}"`;
+      const stores = await window.rapidinDB.getStores(null, null, { category: categoryKey });
+      cacheStores(stores);
+      window.currentSearchResults = { stores, products: [] };
+      window.currentSearchFilter = 'all';
+      document.querySelectorAll('#search-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+      renderSearchResults();
     };
     // === DATOS REALES: caché de tiendas/productos y carrito ===
     window.rapidinStoreCache = window.rapidinStoreCache || {};
@@ -5763,7 +5791,15 @@
         document.getElementById('store-time-text').textContent = store.deliveryTime || '';
         document.getElementById('store-fee-text').textContent = store.deliveryFee ? `${fmtMoney(store.deliveryFee)} envío` : 'Envío gratis';
         document.getElementById('store-minorder-text').textContent = `Pedido mínimo: ${fmtMoney(store.minOrder)}`;
+        const descEl = document.getElementById('store-description-text');
+        if (store.description) { descEl.textContent = store.description; descEl.style.display = 'block'; }
+        else { descEl.style.display = 'none'; }
+        document.getElementById('store-hours-text').textContent = store.hours || 'Horario no disponible';
+        document.getElementById('store-info-address-text').textContent = store.address || '';
+        document.getElementById('menu-nav-all').classList.add('active');
+        document.getElementById('menu-nav-popular').classList.remove('active');
         loadStoreProducts(store.id);
+        loadStorePromos();
       } else {
         // Tarjeta decorativa (sin id real, ej. accesos rápidos de Inicio)
         document.querySelector('.store-title-main').textContent = storeIdOrName || 'Comercio';
@@ -5789,14 +5825,24 @@
       container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando menú...</div>';
 
       const products = await window.rapidinDB.getProducts(storeId);
+      window.currentStoreProducts = products;
       if (!products.length) {
         container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Este comercio todavía no tiene productos.</div>';
         return;
       }
 
       const store = window.rapidinStoreCache[storeId];
+      products.forEach(p => { window.rapidinProductCache[p.id] = { ...p, storeId, storeName: store ? store.name : '' }; });
+      renderStoreProductsList(products);
+    }
+
+    function renderStoreProductsList(products) {
+      const container = document.getElementById('store-products-list');
+      if (!products.length) {
+        container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay productos en esta categoría.</div>';
+        return;
+      }
       container.innerHTML = products.map(p => {
-        window.rapidinProductCache[p.id] = { ...p, storeId, storeName: store ? store.name : '' };
         const imgStyle = p.image ? `background-image:url('${escapeHtml(p.image)}'); background-size:cover; background-position:center; font-size:0;` : '';
         return `
           <div class="store-product-card" onclick="openProductScreen('${p.id}')">
@@ -5814,6 +5860,111 @@
         `;
       }).join('');
     }
+
+    window.filterStoreMenu = function(mode) {
+      document.getElementById('menu-nav-all').classList.toggle('active', mode === 'all');
+      document.getElementById('menu-nav-popular').classList.toggle('active', mode === 'popular');
+      const products = window.currentStoreProducts || [];
+      renderStoreProductsList(mode === 'popular' ? products.filter(p => p.popular) : products);
+    };
+
+    async function loadStorePromos() {
+      const section = document.getElementById('store-promos-section');
+      const list = document.getElementById('store-promos-list');
+      const coupons = await window.rapidinDB.getActiveCoupons();
+      window.rapidinCouponCache = {};
+      coupons.forEach(c => { window.rapidinCouponCache[c.id] = c; });
+      if (!coupons.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      list.innerHTML = coupons.map(c => `
+        <div class="promo-card" onclick="openPromoDetailScreen('${c.id}')" style="cursor: pointer;">
+          <div class="promo-title">${escapeHtml(c.title)}</div>
+          <div class="promo-desc">${escapeHtml(c.description || '')}</div>
+        </div>
+      `).join('');
+    }
+
+    window.openStoreReviewsScreen = async function() {
+      const store = window.currentStore;
+      if (!store) return;
+      document.getElementById('app-store-screen').style.display = 'none';
+      document.getElementById('store-reviews-title').textContent = store.name;
+      const list = document.getElementById('store-reviews-list');
+      list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando reseñas...</div>';
+      document.getElementById('app-store-reviews-screen').style.display = 'flex';
+      const reviews = await window.rapidinDB.getStoreReviews(store.id);
+      window.rapidinReviewCache = {};
+      if (!reviews.length) {
+        list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Este comercio todavía no tiene reseñas.</div>';
+        return;
+      }
+      list.innerHTML = reviews.map((r, i) => {
+        window.rapidinReviewCache[i] = r;
+        const stars = '★'.repeat(r.rating_store) + '☆'.repeat(5 - r.rating_store);
+        const date = new Date(r.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `
+          <div class="support-ticket-row" onclick="openReviewDetailScreen(${i})" style="cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: var(--text-primary);">${escapeHtml(r.customerName)}</span>
+              <span style="color: #F59E0B;">${stars}</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">${escapeHtml((r.review_text || 'Sin comentario').slice(0, 80))}${r.review_text && r.review_text.length > 80 ? '…' : ''}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">${date}</div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.closeStoreReviewsScreen = function() {
+      document.getElementById('app-store-reviews-screen').style.display = 'none';
+      document.getElementById('app-store-screen').style.display = 'flex';
+    };
+
+    window.openReviewDetailScreen = function(index) {
+      const r = window.rapidinReviewCache[index];
+      if (!r) return;
+      document.getElementById('app-store-reviews-screen').style.display = 'none';
+      document.getElementById('review-detail-customer').textContent = r.customerName;
+      document.getElementById('review-detail-date').textContent = new Date(r.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('review-detail-text').textContent = r.review_text || 'Sin comentario.';
+      document.getElementById('review-detail-store-stars').textContent = '★'.repeat(r.rating_store) + '☆'.repeat(5 - r.rating_store);
+      document.getElementById('review-detail-order-stars').textContent = r.rating_order ? '★'.repeat(r.rating_order) + '☆'.repeat(5 - r.rating_order) : '—';
+      document.getElementById('review-detail-driver-stars').textContent = r.rating_driver ? '★'.repeat(r.rating_driver) + '☆'.repeat(5 - r.rating_driver) : '—';
+      document.getElementById('app-review-detail-screen').style.display = 'flex';
+    };
+
+    window.closeReviewDetailScreen = function() {
+      document.getElementById('app-review-detail-screen').style.display = 'none';
+      document.getElementById('app-store-reviews-screen').style.display = 'flex';
+    };
+
+    window.openPromoDetailScreen = function(couponId) {
+      const c = window.rapidinCouponCache[couponId];
+      if (!c) return;
+      document.getElementById('app-store-screen').style.display = 'none';
+      document.getElementById('promo-detail-title').textContent = c.title;
+      document.getElementById('promo-detail-desc').textContent = c.description || '';
+      document.getElementById('promo-detail-code').textContent = c.code;
+      const discountText = c.discount_type === 'percent' ? `${Math.round(c.discount_value * 100)}% de descuento`
+        : c.discount_type === 'shipping' ? 'Envío gratis'
+        : `${fmtMoney(c.discount_value)} de descuento`;
+      document.getElementById('promo-detail-discount').textContent = discountText;
+      document.getElementById('promo-detail-minorder').textContent = c.min_order_usd ? `Pedido mínimo: ${fmtMoney(c.min_order_usd)}` : 'Sin pedido mínimo';
+      document.getElementById('promo-detail-expiry').textContent = c.expires_at ? `Vence: ${new Date(c.expires_at).toLocaleDateString('es-PE')}` : 'Sin fecha de vencimiento';
+      document.getElementById('app-promo-detail-screen').style.display = 'flex';
+    };
+
+    window.closePromoDetailScreen = function() {
+      document.getElementById('app-promo-detail-screen').style.display = 'none';
+      document.getElementById('app-store-screen').style.display = 'flex';
+    };
+
+    window.copyPromoCode = function() {
+      const code = document.getElementById('promo-detail-code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        if (window.rapidinAlert) window.rapidinAlert('Código copiado: ' + code);
+      });
+    };
 
     window.toggleFavorite = function(btn) {
       const icon = btn.querySelector('i');

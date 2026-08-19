@@ -84,6 +84,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE orders ADD COLUMN delivery_instructions TEXT", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN customer_lat DECIMAL(10,6)", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN customer_lng DECIMAL(10,6)", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN description TEXT", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS addresses (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, label VARCHAR(50) NOT NULL DEFAULT 'Casa',
       address_text TEXT NOT NULL, reference TEXT, lat DECIMAL(10,6), lng DECIMAL(10,6),
@@ -944,6 +946,13 @@ app.put('/api/payment-methods/:id/default', authenticateToken, requireRole('user
 });
 
 // --- Cupones y promociones ---
+app.get('/api/coupons/active', authenticateToken, (req, res) => {
+  db.all(`SELECT * FROM coupons WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))`, [], (err, coupons) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo promociones' });
+    res.json({ success: true, coupons });
+  });
+});
+
 app.get('/api/coupons', authenticateToken, requireRole('user'), (req, res) => {
   db.all('SELECT id, coupon_id, used_at, order_id FROM user_coupons WHERE user_id = ?', [req.user.id], (err, redeemed) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo cupones' });
@@ -1120,27 +1129,30 @@ app.put('/api/support/tickets/:id/close', authenticateToken, requireRole('user')
 
 // 4. Catálogo: Obtener todos los comercios
 app.get('/api/stores', (req, res) => {
-  const { lat, lng } = req.query;
+  const { lat, lng, category, sortBy } = req.query;
   const userLat = parseFloat(lat);
   const userLng = parseFloat(lng);
-  
-  const sql = `SELECT * FROM stores WHERE is_open = 1`;
+
+  const sql = `
+    SELECT stores.*,
+      (SELECT COUNT(*) FROM orders WHERE orders.store_id = stores.id AND orders.rating_store IS NOT NULL) as reviewsCount
+    FROM stores WHERE is_open = 1
+  `;
   db.all(sql, [], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error al obtener tiendas' });
-    
+
     // Parsear tags de JSON string a Array y mapear propiedades
     let stores = rows.map(store => ({
       ...store,
       image: store.image_url,
       logo: store.logo_url,
-      reviewsCount: Math.floor(Math.random() * 500) + 50, // mock reviewsCount
       isTurbo: store.is_turbo === 1,
       deliveryTime: store.delivery_time,
       deliveryFee: store.delivery_fee,
       minOrder: store.min_order,
       tags: store.tags ? JSON.parse(store.tags) : []
     }));
-    
+
     // Filtrar por distancia si se proveen coordenadas
     if (!isNaN(userLat) && !isNaN(userLng)) {
       stores = stores.filter(store => {
@@ -1149,8 +1161,41 @@ app.get('/api/stores', (req, res) => {
         return distanceKm <= (store.delivery_radius_km || 5.00);
       });
     }
-    
+
+    if (category) {
+      const cat = String(category).toLowerCase();
+      stores = stores.filter(s =>
+        (s.category || '').toLowerCase() === cat ||
+        (s.tags || []).some(t => t.toLowerCase() === cat)
+      );
+    }
+
+    if (sortBy === 'rating') {
+      stores.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sortBy === 'fastest') {
+      const parseMinutes = (t) => parseInt(String(t).match(/\d+/), 10) || 999;
+      stores.sort((a, b) => parseMinutes(a.deliveryTime) - parseMinutes(b.deliveryTime));
+    } else if (sortBy === 'offers') {
+      stores = stores.filter(s => /oferta/i.test(s.badge || '') || s.isTurbo);
+    }
+
     res.json({ success: true, stores });
+  });
+});
+
+// 4.1 Catálogo: Reseñas de un comercio (de pedidos calificados)
+app.get('/api/stores/:id/reviews', authenticateToken, (req, res) => {
+  const sql = `
+    SELECT orders.id as orderId, orders.rating_store, orders.rating_order, orders.rating_driver,
+           orders.review_text, orders.created_at, users.name as customerName
+    FROM orders
+    JOIN users ON users.id = orders.customer_id
+    WHERE orders.store_id = ? AND orders.rating_store IS NOT NULL
+    ORDER BY orders.created_at DESC
+  `;
+  db.all(sql, [req.params.id], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error al obtener reseñas' });
+    res.json({ success: true, reviews: rows });
   });
 });
 
@@ -1171,6 +1216,46 @@ app.get('/api/products/:storeId', (req, res) => {
     }));
     
     res.json({ success: true, products });
+  });
+});
+
+// 5.1 Catálogo: Búsqueda de negocios y productos
+app.get('/api/search', (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json({ success: true, stores: [], products: [] });
+  const like = `%${q}%`;
+
+  db.all(`SELECT * FROM stores WHERE is_open = 1 AND (name LIKE ? OR tags LIKE ?)`, [like, like], (storeErr, storeRows) => {
+    if (storeErr) return res.status(500).json({ success: false, message: 'Error en la búsqueda' });
+    const stores = storeRows.map(store => ({
+      ...store,
+      image: store.image_url,
+      logo: store.logo_url,
+      isTurbo: store.is_turbo === 1,
+      deliveryTime: store.delivery_time,
+      deliveryFee: store.delivery_fee,
+      minOrder: store.min_order,
+      tags: store.tags ? JSON.parse(store.tags) : []
+    }));
+
+    db.all(
+      `SELECT products.*, stores.name as storeName FROM products
+       JOIN stores ON stores.id = products.store_id
+       WHERE products.is_available = 1 AND stores.is_open = 1 AND products.name LIKE ?
+       LIMIT 30`,
+      [like],
+      (prodErr, prodRows) => {
+        if (prodErr) return res.status(500).json({ success: false, message: 'Error en la búsqueda' });
+        const products = prodRows.map(p => ({
+          ...p,
+          price: p.price_usd,
+          image: p.image_url,
+          popular: p.is_popular === 1,
+          options: p.options_json ? JSON.parse(p.options_json) : []
+        }));
+        res.json({ success: true, stores, products });
+      }
+    );
   });
 });
 
