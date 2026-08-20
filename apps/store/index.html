@@ -178,6 +178,7 @@
     <button type="button" class="main-nav-btn" data-view="catalogo" onclick="switchMainView('catalogo')"><i class="fa-solid fa-utensils"></i> Catálogo</button>
     <button type="button" class="main-nav-btn" data-view="resenas" onclick="switchMainView('resenas')"><i class="fa-solid fa-star"></i> Reseñas</button>
     <button type="button" class="main-nav-btn" data-view="promos" onclick="switchMainView('promos')"><i class="fa-solid fa-tag"></i> Promos</button>
+    <button type="button" class="main-nav-btn" data-view="finanzas" onclick="switchMainView('finanzas')"><i class="fa-solid fa-sack-dollar"></i> Finanzas</button>
   </nav>
 
   <main class="container" style="padding: 2rem 1.25rem;">
@@ -273,6 +274,53 @@
         <button type="button" class="btn-action-store" onclick="openPromotionModal()"><i class="fa-solid fa-plus"></i> Nueva promoción</button>
       </div>
       <div id="promotions-list"></div>
+    </div>
+
+    <!-- VISTA: FINANZAS -->
+    <div id="view-finanzas" style="display: none;">
+      <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-sack-dollar" style="color: var(--brand-primary);"></i> Finanzas
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="stat-card-store">
+          <div class="label">Neto de hoy</div>
+          <div class="value" style="color: #10B981;" id="fin-today-net">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Neto últimos 7 días</div>
+          <div class="value" style="color: #10B981;" id="fin-week-net">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Neto últimos 30 días</div>
+          <div class="value" style="color: #10B981;" id="fin-month-net">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Neto histórico</div>
+          <div class="value" id="fin-alltime-net">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Ticket promedio</div>
+          <div class="value" id="fin-avg-ticket">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Tasa de cancelación</div>
+          <div class="value" style="color: #EF4444;" id="fin-cancel-rate">—</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(245,158,11,0.1); border: 1px solid #F59E0B; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #F59E0B;">
+        <i class="fa-solid fa-circle-info"></i> El neto se calcula como el subtotal de productos menos la comisión de Rapidín (<span id="fin-commission-rate">15%</span>). El envío y las propinas van directo al repartidor. La liquidación bancaria real (transferencia a tu cuenta) requiere conectar un procesador de pagos — todavía no está configurado, así que las liquidaciones se muestran como <strong>pendientes</strong>.
+      </div>
+
+      <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🔥 Productos más vendidos</h3>
+      <div id="fin-top-products" style="margin-bottom: 2rem;"></div>
+
+      <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Liquidaciones semanales</h3>
+      <div id="fin-settlements-list" style="margin-bottom: 2rem;"></div>
+
+      <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Detalle de ventas</h3>
+      <div id="fin-sales-list"></div>
     </div>
   </main>
   </div> <!-- Fin de main-app-content -->

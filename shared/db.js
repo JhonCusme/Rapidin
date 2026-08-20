@@ -234,6 +234,40 @@ class RapidinDatabase {
     }
   }
 
+  // --- Finanzas y liquidaciones del comercio ---
+  async getStoreFinanceSummary() {
+    try {
+      const response = await fetch(`${API_URL}/store/finance/summary`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data : null;
+    } catch (e) {
+      console.error('Error obteniendo tus finanzas:', e);
+      return null;
+    }
+  }
+
+  async getStoreSales() {
+    try {
+      const response = await fetch(`${API_URL}/store/finance/sales`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.sales : [];
+    } catch (e) {
+      console.error('Error obteniendo el detalle de ventas:', e);
+      return [];
+    }
+  }
+
+  async getStoreSettlements() {
+    try {
+      const response = await fetch(`${API_URL}/store/finance/settlements`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.settlements : [];
+    } catch (e) {
+      console.error('Error obteniendo tus liquidaciones:', e);
+      return [];
+    }
+  }
+
   // --- Promociones propias del comercio ---
   async getStorePromotions() {
     try {

@@ -35,11 +35,12 @@ function checkAuthGate() {
 // ==========================================
 window.switchMainView = function(view) {
   document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos'].forEach(v => {
+  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos', 'finanzas'].forEach(v => {
     document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'resenas') loadReviews();
   if (view === 'promos') loadPromotions();
+  if (view === 'finanzas') loadFinance();
 };
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
@@ -751,6 +752,83 @@ window.removePromotion = async function(id) {
   if (res.success) await loadPromotions();
   else window.rapidinAlert(res.message || 'No se pudo eliminar la promoción.');
 };
+
+// ==========================================
+// FINANZAS Y LIQUIDACIONES
+// ==========================================
+async function loadFinance() {
+  const [summary, settlements, sales] = await Promise.all([
+    window.rapidinDB.getStoreFinanceSummary(),
+    window.rapidinDB.getStoreSettlements(),
+    window.rapidinDB.getStoreSales()
+  ]);
+  if (summary) renderFinanceSummary(summary);
+  renderSettlements(settlements);
+  renderSales(sales);
+}
+
+function renderFinanceSummary(s) {
+  document.getElementById('fin-today-net').textContent = fmtMoneyStore(s.today.net);
+  document.getElementById('fin-week-net').textContent = fmtMoneyStore(s.week.net);
+  document.getElementById('fin-month-net').textContent = fmtMoneyStore(s.month.net);
+  document.getElementById('fin-alltime-net').textContent = fmtMoneyStore(s.allTime.net);
+  document.getElementById('fin-avg-ticket').textContent = fmtMoneyStore(s.avgTicket);
+  document.getElementById('fin-cancel-rate').textContent = `${s.cancellationRate.toFixed(1)}%`;
+  document.getElementById('fin-commission-rate').textContent = `${Math.round(s.commissionRate * 100)}%`;
+
+  const topEl = document.getElementById('fin-top-products');
+  if (!s.topProducts.length) {
+    topEl.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Todavía no hay ventas completadas.</p>';
+  } else {
+    topEl.innerHTML = s.topProducts.map((p, i) => `
+      <div style="display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color);">
+        <span>${i + 1}. ${escapeHtml(p.name)}</span>
+        <strong>${p.qty} vendidos</strong>
+      </div>
+    `).join('');
+  }
+}
+
+function renderSettlements(settlements) {
+  const list = document.getElementById('fin-settlements-list');
+  if (!settlements.length) {
+    list.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Todavía no tienes ventas para liquidar.</p>';
+    return;
+  }
+  list.innerHTML = settlements.map(s => `
+    <div class="card-job">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <span style="font-weight: 700;">${s.weekStart} → ${s.weekEnd}</span>
+        <span class="badge" style="background: rgba(245,158,11,0.15); color: #F59E0B;">Pendiente</span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">${s.orders} pedidos · Ventas ${fmtMoneyStore(s.grossSales)} · Comisión ${fmtMoneyStore(s.commission)}</div>
+      <div style="font-size: 1.1rem; font-weight: 800; color: #10B981;">${fmtMoneyStore(s.netEarnings)} neto</div>
+    </div>
+  `).join('');
+}
+
+function renderSales(sales) {
+  const list = document.getElementById('fin-sales-list');
+  if (!sales.length) {
+    list.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Todavía no hay ventas completadas.</p>';
+    return;
+  }
+  list.innerHTML = sales.map(s => {
+    const date = new Date(s.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+        <div>
+          <div style="font-weight: 700; font-size: 0.9rem;">#${escapeHtml(s.id)}</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">${date}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 800; color: #10B981;">${fmtMoneyStore(s.netEarnings)}</div>
+          <div style="font-size: 0.7rem; color: var(--text-secondary);">Ventas ${fmtMoneyStore(s.grossSales)} · Com. ${fmtMoneyStore(s.commission)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 // ==========================================
 // TIEMPO REAL

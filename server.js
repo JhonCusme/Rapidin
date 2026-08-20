@@ -1773,6 +1773,131 @@ app.get('/api/products/:storeId', (req, res) => {
   });
 });
 
+// --- Panel de comercios: finanzas y liquidaciones ---
+// El "neto del comercio" se calcula solo sobre el subtotal de productos (subtotal_usd):
+// el envío y la propina son dinero que pasa directo al repartidor, no le pertenecen
+// al comercio ni se les aplica comisión de la plataforma.
+const STORE_COMMISSION_RATE = 0.15;
+
+function fetchCompletedStoreOrders(storeId, callback) {
+  db.all(
+    `SELECT id, subtotal_usd, total_amount_usd, items_json, created_at, is_cancelled, status_step
+     FROM orders WHERE store_id = ? ORDER BY created_at DESC`,
+    [storeId],
+    (err, rows) => callback(err, rows || [])
+  );
+}
+
+app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), (req, res) => {
+  fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus finanzas' });
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getTime() - 7 * 86400000);
+    const monthAgo = new Date(now.getTime() - 30 * 86400000);
+
+    const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4);
+    const cancelled = rows.filter(o => o.is_cancelled);
+
+    const netOf = (o) => o.subtotal_usd * (1 - STORE_COMMISSION_RATE);
+
+    const sumSince = (since) => completed
+      .filter(o => new Date(o.created_at.replace(' ', 'T') + 'Z') >= since)
+      .reduce((acc, o) => ({ net: acc.net + netOf(o), gross: acc.gross + o.subtotal_usd, count: acc.count + 1 }), { net: 0, gross: 0, count: 0 });
+
+    const today = sumSince(new Date(todayStr + 'T00:00:00Z'));
+    const week = sumSince(weekAgo);
+    const month = sumSince(monthAgo);
+    const allTime = completed.reduce((acc, o) => ({ net: acc.net + netOf(o), gross: acc.gross + o.subtotal_usd, count: acc.count + 1 }), { net: 0, gross: 0, count: 0 });
+
+    const avgTicket = completed.length ? completed.reduce((s, o) => s + o.subtotal_usd, 0) / completed.length : 0;
+    const cancellationRate = rows.length ? (cancelled.length / rows.length) * 100 : 0;
+
+    const productCounts = {};
+    completed.forEach(o => {
+      let items = [];
+      try { items = JSON.parse(o.items_json || '[]'); } catch (e) { items = []; }
+      items.forEach(it => {
+        productCounts[it.name] = (productCounts[it.name] || 0) + (it.quantity || 1);
+      });
+    });
+    const topProducts = Object.entries(productCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, qty]) => ({ name, qty }));
+
+    const round2 = (n) => Math.round(n * 100) / 100;
+    res.json({
+      success: true,
+      today: { net: round2(today.net), gross: round2(today.gross), orders: today.count },
+      week: { net: round2(week.net), gross: round2(week.gross), orders: week.count },
+      month: { net: round2(month.net), gross: round2(month.gross), orders: month.count },
+      allTime: { net: round2(allTime.net), gross: round2(allTime.gross), orders: allTime.count },
+      avgTicket: round2(avgTicket),
+      cancellationRate: round2(cancellationRate),
+      topProducts,
+      commissionRate: STORE_COMMISSION_RATE
+    });
+  });
+});
+
+app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), (req, res) => {
+  fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo el detalle de ventas' });
+    const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4).slice(0, 100);
+    const sales = completed.map(o => ({
+      id: o.id,
+      createdAt: o.created_at,
+      grossSales: o.subtotal_usd,
+      commission: Math.round(o.subtotal_usd * STORE_COMMISSION_RATE * 100) / 100,
+      netEarnings: Math.round(o.subtotal_usd * (1 - STORE_COMMISSION_RATE) * 100) / 100
+    }));
+    res.json({ success: true, sales });
+  });
+});
+
+app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'), (req, res) => {
+  fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus liquidaciones' });
+    const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4);
+    if (!completed.length) return res.json({ success: true, settlements: [] });
+
+    // Agrupamos en periodos semanales (lunes a domingo) a partir del pedido más antiguo.
+    const buckets = {};
+    completed.forEach(o => {
+      const date = new Date(o.created_at.replace(' ', 'T') + 'Z');
+      const day = date.getUTCDay();
+      const monday = new Date(date);
+      monday.setUTCDate(date.getUTCDate() - ((day + 6) % 7));
+      monday.setUTCHours(0, 0, 0, 0);
+      const key = monday.toISOString().slice(0, 10);
+      if (!buckets[key]) buckets[key] = { orders: 0, gross: 0 };
+      buckets[key].orders++;
+      buckets[key].gross += o.subtotal_usd;
+    });
+
+    const settlements = Object.entries(buckets)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([weekStart, b]) => {
+        const start = new Date(weekStart + 'T00:00:00Z');
+        const end = new Date(start.getTime() + 6 * 86400000);
+        const net = b.gross * (1 - STORE_COMMISSION_RATE);
+        return {
+          weekStart,
+          weekEnd: end.toISOString().slice(0, 10),
+          orders: b.orders,
+          grossSales: Math.round(b.gross * 100) / 100,
+          commission: Math.round(b.gross * STORE_COMMISSION_RATE * 100) / 100,
+          netEarnings: Math.round(net * 100) / 100,
+          status: 'pending'
+        };
+      });
+
+    res.json({ success: true, settlements });
+  });
+});
+
 // --- Panel de comercios: promociones propias ---
 app.get('/api/store/promotions', authenticateToken, requireRole('store'), (req, res) => {
   db.all('SELECT * FROM coupons WHERE store_id = ? ORDER BY rowid DESC', [req.user.storeId], (err, rows) => {
