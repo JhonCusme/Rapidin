@@ -3137,6 +3137,10 @@
         <div class="summary-row"><span>Pedido</span><span style="color: #F59E0B;" id="review-detail-order-stars"></span></div>
         <div class="summary-row"><span>Repartidor</span><span style="color: #F59E0B;" id="review-detail-driver-stars"></span></div>
       </div>
+      <div class="success-info-card" id="review-detail-reply-section" style="display: none;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem;">RESPUESTA DEL NEGOCIO</div>
+        <div style="color: var(--text-primary); line-height: 1.5;" id="review-detail-reply-text"></div>
+      </div>
     </div>
   </div>
 
@@ -6205,7 +6209,7 @@
       const list = document.getElementById('store-reviews-list');
       list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Cargando reseñas...</div>';
       document.getElementById('app-store-reviews-screen').style.display = 'flex';
-      const reviews = await window.rapidinDB.getStoreReviews(store.id);
+      const reviews = await window.rapidinDB.getPublicStoreReviews(store.id);
       window.rapidinReviewCache = {};
       if (!reviews.length) {
         list.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">Este comercio todavía no tiene reseñas.</div>';
@@ -6222,7 +6226,7 @@
               <span style="color: #F59E0B;">${stars}</span>
             </div>
             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.3rem;">${escapeHtml((r.review_text || 'Sin comentario').slice(0, 80))}${r.review_text && r.review_text.length > 80 ? '…' : ''}</div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary);">${date}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">${date}${r.store_reply_text ? ' · <span style="color: #10B981;">✓ Respondido por el negocio</span>' : ''}</div>
           </div>
         `;
       }).join('');
@@ -6243,6 +6247,13 @@
       document.getElementById('review-detail-store-stars').textContent = '★'.repeat(r.rating_store) + '☆'.repeat(5 - r.rating_store);
       document.getElementById('review-detail-order-stars').textContent = r.rating_order ? '★'.repeat(r.rating_order) + '☆'.repeat(5 - r.rating_order) : '—';
       document.getElementById('review-detail-driver-stars').textContent = r.rating_driver ? '★'.repeat(r.rating_driver) + '☆'.repeat(5 - r.rating_driver) : '—';
+      const replySection = document.getElementById('review-detail-reply-section');
+      if (r.store_reply_text) {
+        document.getElementById('review-detail-reply-text').textContent = r.store_reply_text;
+        replySection.style.display = 'block';
+      } else {
+        replySection.style.display = 'none';
+      }
       document.getElementById('app-review-detail-screen').style.display = 'flex';
     };
 

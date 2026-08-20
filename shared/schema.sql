@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS orders (
     rating_driver INT,
     rating_store INT,
     review_text TEXT,
+    store_reply_text TEXT,
+    store_reply_at TIMESTAMP,
     is_delayed BOOLEAN DEFAULT FALSE,
     is_cancelled BOOLEAN DEFAULT FALSE,
     cancel_reason TEXT,

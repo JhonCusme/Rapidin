@@ -100,6 +100,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN paused_until TIMESTAMP", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN owner_user_id VARCHAR(50)", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN store_reply_text TEXT", (err) => {});
+    db.run("ALTER TABLE orders ADD COLUMN store_reply_at TIMESTAMP", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -1690,7 +1692,7 @@ app.get('/api/stores', (req, res) => {
 app.get('/api/stores/:id/reviews', authenticateToken, (req, res) => {
   const sql = `
     SELECT orders.id as orderId, orders.rating_store, orders.rating_order, orders.rating_driver,
-           orders.review_text, orders.created_at, users.name as customerName
+           orders.review_text, orders.created_at, orders.store_reply_text, orders.store_reply_at, users.name as customerName
     FROM orders
     JOIN users ON users.id = orders.customer_id
     WHERE orders.store_id = ? AND orders.rating_store IS NOT NULL
@@ -1699,6 +1701,39 @@ app.get('/api/stores/:id/reviews', authenticateToken, (req, res) => {
   db.all(sql, [req.params.id], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error al obtener reseñas' });
     res.json({ success: true, reviews: rows });
+  });
+});
+
+// --- Panel de comercios: reputación (ver y responder reseñas) ---
+app.get('/api/store/reviews', authenticateToken, requireRole('store'), (req, res) => {
+  const sql = `
+    SELECT orders.id as orderId, orders.rating_store, orders.rating_order, orders.rating_driver,
+           orders.review_text, orders.created_at, orders.store_reply_text, orders.store_reply_at, users.name as customerName
+    FROM orders
+    JOIN users ON users.id = orders.customer_id
+    WHERE orders.store_id = ? AND orders.rating_store IS NOT NULL
+    ORDER BY orders.created_at DESC
+  `;
+  db.all(sql, [req.user.storeId], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error al obtener tus reseñas' });
+    const avg = rows.length ? rows.reduce((s, r) => s + r.rating_store, 0) / rows.length : null;
+    res.json({ success: true, reviews: rows, averageRating: avg ? Math.round(avg * 100) / 100 : null, totalReviews: rows.length });
+  });
+});
+
+app.put('/api/store/reviews/:orderId/reply', authenticateToken, requireRole('store'), (req, res) => {
+  const { text } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ success: false, message: 'Escribe una respuesta' });
+  db.get('SELECT id FROM orders WHERE id = ? AND store_id = ? AND rating_store IS NOT NULL', [req.params.orderId, req.user.storeId], (err, row) => {
+    if (err || !row) return res.status(404).json({ success: false, message: 'Reseña no encontrada' });
+    db.run(
+      `UPDATE orders SET store_reply_text = ?, store_reply_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [text.trim(), req.params.orderId],
+      (updErr) => {
+        if (updErr) return res.status(500).json({ success: false, message: 'Error guardando tu respuesta' });
+        res.json({ success: true });
+      }
+    );
   });
 });
 

@@ -35,9 +35,10 @@ function checkAuthGate() {
 // ==========================================
 window.switchMainView = function(view) {
   document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ['inicio', 'pedidos', 'catalogo'].forEach(v => {
+  ['inicio', 'pedidos', 'catalogo', 'resenas'].forEach(v => {
     document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
   });
+  if (view === 'resenas') loadReviews();
 };
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
@@ -554,6 +555,73 @@ document.getElementById('form-product')?.addEventListener('submit', async (e) =>
   } else {
     errorEl.textContent = res.message || 'No se pudo guardar el producto.';
     errorEl.style.display = 'block';
+  }
+});
+
+// ==========================================
+// REPUTACIÓN: RESEÑAS
+// ==========================================
+let currentReviewsCache = [];
+
+async function loadReviews() {
+  const data = await window.rapidinDB.getStoreReviews();
+  currentReviewsCache = data.reviews;
+  document.getElementById('stat-avg-rating').textContent = data.averageRating != null ? `⭐ ${data.averageRating}` : '—';
+  document.getElementById('stat-total-reviews').textContent = data.totalReviews;
+  renderReviewsList();
+}
+
+function renderReviewsList() {
+  const list = document.getElementById('reviews-list');
+  if (!currentReviewsCache.length) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 3rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-star" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3>Todavía no tienes reseñas</h3>
+        <p style="color: var(--text-secondary);">Aparecerán aquí cuando tus clientes califiquen sus pedidos.</p>
+      </div>
+    `;
+    return;
+  }
+  list.innerHTML = currentReviewsCache.map(r => {
+    const stars = '★'.repeat(r.rating_store) + '☆'.repeat(5 - r.rating_store);
+    const date = new Date(r.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+    const replyHtml = r.store_reply_text
+      ? `<div style="background: var(--bg-main); border-radius: var(--radius-md); padding: 0.85rem; margin-top: 0.75rem;">
+           <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.3rem;">TU RESPUESTA</div>
+           <div style="font-size: 0.85rem;">${escapeHtml(r.store_reply_text)}</div>
+         </div>`
+      : `<button type="button" class="btn-action-store outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-top: 0.6rem;" onclick="openReplyModal('${r.orderId}')"><i class="fa-solid fa-reply"></i> Responder</button>`;
+    return `
+      <div class="card-job">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+          <span style="font-weight: 700;">${escapeHtml(r.customerName)}</span>
+          <span style="color: #F59E0B;">${stars}</span>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Pedido #${escapeHtml(r.orderId)} · ${date}</div>
+        <div style="font-size: 0.9rem;">${escapeHtml(r.review_text || 'Sin comentario.')}</div>
+        ${replyHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+window.openReplyModal = function(orderId) {
+  document.getElementById('reply-order-id-input').value = orderId;
+  document.getElementById('reply-text-input').value = '';
+  document.getElementById('modal-reply-review').classList.add('active');
+};
+
+document.getElementById('form-reply-review')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const orderId = document.getElementById('reply-order-id-input').value;
+  const text = document.getElementById('reply-text-input').value.trim();
+  const res = await window.rapidinDB.replyToReview(orderId, text);
+  if (res.success) {
+    document.getElementById('modal-reply-review').classList.remove('active');
+    await loadReviews();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo enviar tu respuesta.');
   }
 });
 

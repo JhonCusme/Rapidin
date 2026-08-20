@@ -234,6 +234,29 @@ class RapidinDatabase {
     }
   }
 
+  // --- Reputación del comercio ---
+  async getStoreReviews() {
+    try {
+      const response = await fetch(`${API_URL}/store/reviews`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data : { reviews: [], averageRating: null, totalReviews: 0 };
+    } catch (e) {
+      console.error('Error obteniendo tus reseñas:', e);
+      return { reviews: [], averageRating: null, totalReviews: 0 };
+    }
+  }
+
+  async replyToReview(orderId, text) {
+    try {
+      const response = await fetch(`${API_URL}/store/reviews/${orderId}/reply`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ text })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // --- Catálogo del comercio ---
   async getStoreCategories() {
     try {
@@ -403,7 +426,7 @@ class RapidinDatabase {
     }
   }
 
-  async getStoreReviews(storeId) {
+  async getPublicStoreReviews(storeId) {
     try {
       const response = await fetch(`${API_URL}/stores/${storeId}/reviews`, {
         headers: this.getAuthHeaders('user')

@@ -176,6 +176,7 @@
     <button type="button" class="main-nav-btn active" data-view="inicio" onclick="switchMainView('inicio')"><i class="fa-solid fa-house"></i> Inicio</button>
     <button type="button" class="main-nav-btn" data-view="pedidos" onclick="switchMainView('pedidos')"><i class="fa-solid fa-receipt"></i> Pedidos</button>
     <button type="button" class="main-nav-btn" data-view="catalogo" onclick="switchMainView('catalogo')"><i class="fa-solid fa-utensils"></i> Catálogo</button>
+    <button type="button" class="main-nav-btn" data-view="resenas" onclick="switchMainView('resenas')"><i class="fa-solid fa-star"></i> Reseñas</button>
   </nav>
 
   <main class="container" style="padding: 2rem 1.25rem;">
@@ -242,6 +243,24 @@
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;" id="catalog-products-grid"></div>
+    </div>
+
+    <!-- VISTA: RESEÑAS -->
+    <div id="view-resenas" style="display: none;">
+      <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-star" style="color: var(--brand-primary);"></i> Reseñas
+      </h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="stat-card-store">
+          <div class="label">Calificación promedio</div>
+          <div class="value" style="color: #F59E0B;" id="stat-avg-rating">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Total de reseñas</div>
+          <div class="value" id="stat-total-reviews">—</div>
+        </div>
+      </div>
+      <div id="reviews-list"></div>
     </div>
   </main>
   </div> <!-- Fin de main-app-content -->
@@ -380,6 +399,21 @@
 
         <div id="product-error" style="color: #EF4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
         <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Guardar producto</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL RESPONDER RESEÑA -->
+  <div class="modal-backdrop" id="modal-reply-review">
+    <div class="modal-card" style="max-width: 460px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;">Responder reseña</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-reply-review').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-reply-review">
+        <input type="hidden" id="reply-order-id-input">
+        <textarea id="reply-text-input" class="coupon-input" style="width: 100%; min-height: 100px; margin-bottom: 1.25rem;" placeholder="Gracias por tu comentario..." required></textarea>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Enviar respuesta</button>
       </form>
     </div>
   </div>
