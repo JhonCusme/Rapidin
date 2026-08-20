@@ -159,6 +159,56 @@ button {
   to { transform: translateX(120%) scale(0.9); opacity: 0; }
 }
 
+/* Modal base (backdrop + card + close button). Vivía solo en styles.css, que apps/user es
+   la única que enlaza — por eso los modales con class="modal-backdrop" en apps/admin,
+   apps/store y apps/driver se veían pero no recibían clics (quedaban sin position:fixed
+   ni z-index, así que la pantalla de debajo se los "robaba"). Movido aquí para que las
+   cuatro apps compartan la misma base real. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.btn-close-modal {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-body {
+  padding: 1.5rem;
+}
+
 /* Modal Smooth Transitions */
 .modal-backdrop.active .modal-card {
   animation: modal-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
