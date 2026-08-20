@@ -10,6 +10,7 @@
   <link rel="icon" type="image/png" href="../../assets/icons/icon-192.png">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="../../shared/styles-core.css">
   <style>
     .store-header {
@@ -111,6 +112,10 @@
     .avail-select { font-size: 0.8rem; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); font-weight: 700; }
     .option-group-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem; }
     .option-choice-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+    .settings-map { width: 100%; height: 220px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1rem; }
+    .config-section-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .hours-day-row { display: grid; grid-template-columns: 90px 1fr 1fr auto; gap: 0.6rem; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); }
+    .hours-day-row:last-child { border-bottom: none; }
     .auth-gate-screen {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: var(--bg-main); z-index: 9999;
@@ -179,6 +184,7 @@
     <button type="button" class="main-nav-btn" data-view="resenas" onclick="switchMainView('resenas')"><i class="fa-solid fa-star"></i> Reseñas</button>
     <button type="button" class="main-nav-btn" data-view="promos" onclick="switchMainView('promos')"><i class="fa-solid fa-tag"></i> Promos</button>
     <button type="button" class="main-nav-btn" data-view="finanzas" onclick="switchMainView('finanzas')"><i class="fa-solid fa-sack-dollar"></i> Finanzas</button>
+    <button type="button" class="main-nav-btn" data-view="config" onclick="switchMainView('config')"><i class="fa-solid fa-gear"></i> Config</button>
   </nav>
 
   <main class="container" style="padding: 2rem 1.25rem;">
@@ -321,6 +327,111 @@
 
       <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">Detalle de ventas</h3>
       <div id="fin-sales-list"></div>
+    </div>
+
+    <!-- VISTA: CONFIGURACIÓN DEL NEGOCIO -->
+    <div id="view-config" style="display: none;">
+      <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-gear" style="color: var(--brand-primary);"></i> Configuración del negocio
+      </h2>
+
+      <!-- Perfil -->
+      <div class="config-section-card">
+        <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 1rem;">🏪 Perfil del negocio</h3>
+        <form id="form-store-profile">
+          <div style="margin-bottom: 0.85rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre del negocio</label>
+            <input type="text" id="cfg-profile-name" class="coupon-input" style="width: 100%;" required>
+          </div>
+          <div style="margin-bottom: 0.85rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Categoría</label>
+            <select id="cfg-profile-category" class="coupon-input" style="width: 100%;">
+              <option value="restaurants">Restaurantes y comida</option>
+              <option value="supermarket">Supermercado y abarrotes</option>
+              <option value="pharmacy">Farmacia</option>
+              <option value="drinks">Licores y bebidas</option>
+              <option value="express">Mensajería / envíos</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 0.85rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Descripción</label>
+            <textarea id="cfg-profile-description" class="coupon-input" style="width: 100%; min-height: 70px;"></textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Foto de portada (URL)</label>
+              <input type="text" id="cfg-profile-image" class="coupon-input" style="width: 100%;" placeholder="https://...">
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Logo (URL)</label>
+              <input type="text" id="cfg-profile-logo" class="coupon-input" style="width: 100%;" placeholder="https://...">
+            </div>
+          </div>
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Ubicación</label>
+          <div id="settings-map" class="settings-map"></div>
+          <div class="location-search-wrapper" style="margin-bottom: 1rem; position: relative;">
+            <input type="text" id="cfg-address-search" class="coupon-input" style="width: 100%;" placeholder="Busca tu dirección" oninput="handleStoreAddressSearch(event)">
+          </div>
+          <div style="margin-bottom: 1.25rem;">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Dirección</label>
+            <input type="text" id="cfg-profile-address" class="coupon-input" style="width: 100%;" placeholder="Toca el mapa o busca tu dirección" required>
+          </div>
+          <div id="profile-error" style="color: #EF4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+          <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Guardar perfil</button>
+        </form>
+      </div>
+
+      <!-- Horarios -->
+      <div class="config-section-card">
+        <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 1rem;">🕒 Horarios de atención</h3>
+        <div id="hours-editor"></div>
+        <button type="button" class="btn-action-store" style="width: 100%; justify-content: center; margin-top: 1rem;" onclick="saveStoreHours()">Guardar horarios</button>
+      </div>
+
+      <!-- Días especiales -->
+      <div class="config-section-card">
+        <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 1rem;">🎉 Días especiales / feriados</h3>
+        <form id="form-special-day" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.6rem; margin-bottom: 1.25rem; align-items: end;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Fecha</label>
+            <input type="date" id="special-day-date" class="coupon-input" style="width: 100%;" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Motivo</label>
+            <input type="text" id="special-day-label" class="coupon-input" style="width: 100%;" placeholder="Ej: Navidad" required>
+          </div>
+          <button type="submit" class="btn-action-store" style="padding: 0.6rem 1rem;"><i class="fa-solid fa-plus"></i></button>
+        </form>
+        <div id="special-days-list"></div>
+      </div>
+
+      <!-- Configuración de pedidos -->
+      <div class="config-section-card">
+        <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 1rem;">📦 Configuración de pedidos</h3>
+        <form id="form-order-settings">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Costo de envío (USD)</label>
+              <input type="number" id="cfg-delivery-fee" class="coupon-input" style="width: 100%;" step="0.01" min="0" required>
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Pedido mínimo (USD)</label>
+              <input type="number" id="cfg-min-order" class="coupon-input" style="width: 100%;" step="0.01" min="0" required>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1.25rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Radio de entrega (km)</label>
+              <input type="number" id="cfg-delivery-radius" class="coupon-input" style="width: 100%;" step="0.5" min="0" required>
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Tiempo de preparación (min)</label>
+              <input type="number" id="cfg-prep-time" class="coupon-input" style="width: 100%;" step="1" min="0" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Guardar configuración</button>
+        </form>
+      </div>
     </div>
   </main>
   </div> <!-- Fin de main-app-content -->
@@ -538,6 +649,7 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../../shared/config.js"></script>
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>

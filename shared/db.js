@@ -234,6 +234,62 @@ class RapidinDatabase {
     }
   }
 
+  // --- Configuración del negocio ---
+  async getStoreProfile() {
+    try {
+      const response = await fetch(`${API_URL}/store/profile`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.store : null;
+    } catch (e) {
+      console.error('Error obteniendo tu perfil de negocio:', e);
+      return null;
+    }
+  }
+
+  async updateStoreProfile(payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/profile`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreHours(hours) {
+    try {
+      const response = await fetch(`${API_URL}/store/hours`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ hours })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreSpecialDays(specialDays) {
+    try {
+      const response = await fetch(`${API_URL}/store/special-days`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ specialDays })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreOrderSettings(payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/order-settings`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // --- Finanzas y liquidaciones del comercio ---
   async getStoreFinanceSummary() {
     try {

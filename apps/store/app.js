@@ -35,12 +35,13 @@ function checkAuthGate() {
 // ==========================================
 window.switchMainView = function(view) {
   document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos', 'finanzas'].forEach(v => {
+  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos', 'finanzas', 'config'].forEach(v => {
     document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'resenas') loadReviews();
   if (view === 'promos') loadPromotions();
   if (view === 'finanzas') loadFinance();
+  if (view === 'config') loadConfig();
 };
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
@@ -829,6 +830,188 @@ function renderSales(sales) {
     `;
   }).join('');
 }
+
+// ==========================================
+// CONFIGURACIÓN DEL NEGOCIO
+// ==========================================
+const WEEKDAYS_CFG = [
+  { day: 'monday', label: 'Lunes' }, { day: 'tuesday', label: 'Martes' }, { day: 'wednesday', label: 'Miércoles' },
+  { day: 'thursday', label: 'Jueves' }, { day: 'friday', label: 'Viernes' }, { day: 'saturday', label: 'Sábado' }, { day: 'sunday', label: 'Domingo' }
+];
+
+let currentStoreProfile = null;
+let currentHours = [];
+let currentSpecialDays = [];
+let settingsMapInstance = null;
+let settingsMapMarker = null;
+
+async function loadConfig() {
+  currentStoreProfile = await window.rapidinDB.getStoreProfile();
+  if (!currentStoreProfile) return;
+
+  document.getElementById('cfg-profile-name').value = currentStoreProfile.name || '';
+  document.getElementById('cfg-profile-category').value = currentStoreProfile.category || 'restaurants';
+  document.getElementById('cfg-profile-description').value = currentStoreProfile.description || '';
+  document.getElementById('cfg-profile-image').value = currentStoreProfile.image_url || '';
+  document.getElementById('cfg-profile-logo').value = currentStoreProfile.logo_url || '';
+  document.getElementById('cfg-profile-address').value = currentStoreProfile.address || '';
+
+  const lat = currentStoreProfile.lat || -2.170998;
+  const lng = currentStoreProfile.lng || -79.922359;
+  setTimeout(() => initSettingsMap(lat, lng), 50);
+
+  currentHours = Array.isArray(currentStoreProfile.hours) && currentStoreProfile.hours.length === 7
+    ? currentStoreProfile.hours
+    : WEEKDAYS_CFG.map(d => ({ day: d.day, label: d.label, open: '09:00', close: '21:00', closed: false }));
+  renderHoursEditor();
+
+  currentSpecialDays = currentStoreProfile.specialDays || [];
+  renderSpecialDaysList();
+
+  document.getElementById('cfg-delivery-fee').value = currentStoreProfile.delivery_fee || 0;
+  document.getElementById('cfg-min-order').value = currentStoreProfile.min_order || 0;
+  document.getElementById('cfg-delivery-radius').value = currentStoreProfile.delivery_radius_km || 5;
+  document.getElementById('cfg-prep-time').value = currentStoreProfile.prep_time_minutes || 20;
+}
+
+function initSettingsMap(lat, lng) {
+  if (settingsMapInstance) { settingsMapInstance.remove(); settingsMapInstance = null; }
+  settingsMapInstance = L.map('settings-map').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(settingsMapInstance);
+  settingsMapMarker = L.marker([lat, lng], { draggable: true }).addTo(settingsMapInstance);
+  settingsMapMarker.on('dragend', () => {
+    const pos = settingsMapMarker.getLatLng();
+    window.currentSettingsLatLng = { lat: pos.lat, lng: pos.lng };
+  });
+  settingsMapInstance.on('click', (e) => {
+    settingsMapMarker.setLatLng(e.latlng);
+    window.currentSettingsLatLng = { lat: e.latlng.lat, lng: e.latlng.lng };
+  });
+  window.currentSettingsLatLng = { lat, lng };
+}
+
+let storeAddressSearchTimeout;
+window.handleStoreAddressSearch = function(e) {
+  clearTimeout(storeAddressSearchTimeout);
+  const q = e.target.value.trim();
+  if (q.length < 4) return;
+  storeAddressSearchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`);
+      const results = await res.json();
+      if (results.length) {
+        const r = results[0];
+        window.currentSettingsLatLng = { lat: parseFloat(r.lat), lng: parseFloat(r.lon) };
+        if (settingsMapInstance && settingsMapMarker) {
+          settingsMapInstance.setView([r.lat, r.lon], 16);
+          settingsMapMarker.setLatLng([r.lat, r.lon]);
+        }
+        document.getElementById('cfg-profile-address').value = r.display_name;
+      }
+    } catch (err) { console.error('Error buscando dirección:', err); }
+  }, 600);
+};
+
+document.getElementById('form-store-profile')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('profile-error');
+  errorEl.style.display = 'none';
+  const latLng = window.currentSettingsLatLng || {};
+
+  const res = await window.rapidinDB.updateStoreProfile({
+    name: document.getElementById('cfg-profile-name').value.trim(),
+    category: document.getElementById('cfg-profile-category').value,
+    description: document.getElementById('cfg-profile-description').value.trim(),
+    imageUrl: document.getElementById('cfg-profile-image').value.trim(),
+    logoUrl: document.getElementById('cfg-profile-logo').value.trim(),
+    address: document.getElementById('cfg-profile-address').value.trim(),
+    lat: latLng.lat, lng: latLng.lng
+  });
+
+  if (res.success) {
+    document.getElementById('store-header-name').textContent = document.getElementById('cfg-profile-name').value.trim();
+    window.rapidinAlert('Perfil actualizado correctamente.');
+  } else {
+    errorEl.textContent = res.message || 'No se pudo guardar el perfil.';
+    errorEl.style.display = 'block';
+  }
+});
+
+function renderHoursEditor() {
+  const container = document.getElementById('hours-editor');
+  container.innerHTML = currentHours.map((h, i) => `
+    <div class="hours-day-row">
+      <span style="font-weight: 700; font-size: 0.85rem;">${escapeHtml(h.label)}</span>
+      <input type="time" class="coupon-input" value="${h.open}" ${h.closed ? 'disabled' : ''} onchange="updateHourField(${i}, 'open', this.value)">
+      <input type="time" class="coupon-input" value="${h.close}" ${h.closed ? 'disabled' : ''} onchange="updateHourField(${i}, 'close', this.value)">
+      <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; white-space: nowrap; cursor: pointer;">
+        <input type="checkbox" ${h.closed ? 'checked' : ''} onchange="toggleHourClosed(${i}, this.checked)"> Cerrado
+      </label>
+    </div>
+  `).join('');
+}
+
+window.updateHourField = function(i, field, value) { currentHours[i][field] = value; };
+window.toggleHourClosed = function(i, closed) { currentHours[i].closed = closed; renderHoursEditor(); };
+
+window.saveStoreHours = async function() {
+  const res = await window.rapidinDB.updateStoreHours(currentHours);
+  if (res.success) window.rapidinAlert('Horarios actualizados correctamente.');
+  else window.rapidinAlert(res.message || 'No se pudieron guardar los horarios.');
+};
+
+function renderSpecialDaysList() {
+  const list = document.getElementById('special-days-list');
+  if (!currentSpecialDays.length) {
+    list.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Sin días especiales configurados.</p>';
+    return;
+  }
+  const sorted = [...currentSpecialDays].sort((a, b) => a.date.localeCompare(b.date));
+  list.innerHTML = sorted.map(d => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color);">
+      <div>
+        <span style="font-weight: 700;">${escapeHtml(d.label)}</span>
+        <span style="color: var(--text-secondary); font-size: 0.85rem;"> · ${new Date(d.date + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })} · Cerrado</span>
+      </div>
+      <button type="button" class="btn-action-store danger" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="removeSpecialDay('${d.date}')"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('form-special-day')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const date = document.getElementById('special-day-date').value;
+  const label = document.getElementById('special-day-label').value.trim();
+  if (!date || !label) return;
+  currentSpecialDays = currentSpecialDays.filter(d => d.date !== date);
+  currentSpecialDays.push({ date, label, closed: true });
+  const res = await window.rapidinDB.updateStoreSpecialDays(currentSpecialDays);
+  if (res.success) {
+    document.getElementById('form-special-day').reset();
+    renderSpecialDaysList();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo guardar el día especial.');
+  }
+});
+
+window.removeSpecialDay = async function(date) {
+  currentSpecialDays = currentSpecialDays.filter(d => d.date !== date);
+  const res = await window.rapidinDB.updateStoreSpecialDays(currentSpecialDays);
+  if (res.success) renderSpecialDaysList();
+  else window.rapidinAlert(res.message || 'No se pudo eliminar el día especial.');
+};
+
+document.getElementById('form-order-settings')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const res = await window.rapidinDB.updateStoreOrderSettings({
+    deliveryFee: Number(document.getElementById('cfg-delivery-fee').value),
+    minOrder: Number(document.getElementById('cfg-min-order').value),
+    deliveryRadiusKm: Number(document.getElementById('cfg-delivery-radius').value),
+    prepTimeMinutes: Number(document.getElementById('cfg-prep-time').value)
+  });
+  if (res.success) window.rapidinAlert('Configuración de pedidos actualizada.');
+  else window.rapidinAlert(res.message || 'No se pudo guardar la configuración.');
+});
 
 // ==========================================
 // TIEMPO REAL

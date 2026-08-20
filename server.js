@@ -103,6 +103,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE orders ADD COLUMN store_reply_text TEXT", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN store_reply_at TIMESTAMP", (err) => {});
     db.run("ALTER TABLE coupons ADD COLUMN store_id VARCHAR(50)", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN special_days TEXT", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN prep_time_minutes INT DEFAULT 20", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -1771,6 +1773,70 @@ app.get('/api/products/:storeId', (req, res) => {
     
     res.json({ success: true, products });
   });
+});
+
+// --- Panel de comercios: configuración del negocio ---
+app.get('/api/store/profile', authenticateToken, requireRole('store'), (req, res) => {
+  db.get('SELECT * FROM stores WHERE id = ?', [req.user.storeId], (err, store) => {
+    if (err || !store) return res.status(404).json({ success: false, message: 'Comercio no encontrado' });
+    res.json({
+      success: true,
+      store: {
+        ...store,
+        tags: store.tags ? JSON.parse(store.tags) : [],
+        hours: store.hours ? (() => { try { return JSON.parse(store.hours); } catch (e) { return null; } })() : null,
+        specialDays: store.special_days ? (() => { try { return JSON.parse(store.special_days); } catch (e) { return []; } })() : []
+      }
+    });
+  });
+});
+
+app.put('/api/store/profile', authenticateToken, requireRole('store'), (req, res) => {
+  const { name, category, description, imageUrl, logoUrl, address, lat, lng } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre es obligatorio' });
+  db.run(
+    `UPDATE stores SET name = ?, category = ?, description = ?, image_url = ?, logo_url = ?, address = ?, lat = ?, lng = ? WHERE id = ?`,
+    [name.trim(), category || 'restaurants', description || '', imageUrl || '', logoUrl || '', address || '', lat ?? null, lng ?? null, req.user.storeId],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando tu perfil' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.put('/api/store/hours', authenticateToken, requireRole('store'), (req, res) => {
+  const { hours } = req.body;
+  if (!Array.isArray(hours) || hours.length !== 7) {
+    return res.status(400).json({ success: false, message: 'Los horarios deben incluir los 7 días de la semana' });
+  }
+  db.run('UPDATE stores SET hours = ? WHERE id = ?', [JSON.stringify(hours), req.user.storeId], (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando tus horarios' });
+    res.json({ success: true });
+  });
+});
+
+app.put('/api/store/special-days', authenticateToken, requireRole('store'), (req, res) => {
+  const { specialDays } = req.body;
+  if (!Array.isArray(specialDays)) return res.status(400).json({ success: false, message: 'Formato inválido' });
+  db.run('UPDATE stores SET special_days = ? WHERE id = ?', [JSON.stringify(specialDays), req.user.storeId], (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando tus días especiales' });
+    res.json({ success: true });
+  });
+});
+
+app.put('/api/store/order-settings', authenticateToken, requireRole('store'), (req, res) => {
+  const { deliveryFee, minOrder, deliveryRadiusKm, prepTimeMinutes } = req.body;
+  if ([deliveryFee, minOrder, deliveryRadiusKm, prepTimeMinutes].some(v => typeof v !== 'number' || v < 0)) {
+    return res.status(400).json({ success: false, message: 'Todos los valores deben ser números válidos' });
+  }
+  db.run(
+    `UPDATE stores SET delivery_fee = ?, min_order = ?, delivery_radius_km = ?, prep_time_minutes = ? WHERE id = ?`,
+    [deliveryFee, minOrder, deliveryRadiusKm, prepTimeMinutes, req.user.storeId],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando la configuración de pedidos' });
+      res.json({ success: true });
+    }
+  );
 });
 
 // --- Panel de comercios: finanzas y liquidaciones ---

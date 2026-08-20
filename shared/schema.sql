@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS stores (
     tags TEXT,
     description TEXT,
     hours TEXT,
-    paused_until TIMESTAMP
+    paused_until TIMESTAMP,
+    special_days TEXT, -- JSON: dias especiales/feriados con horario propio o cerrado
+    prep_time_minutes INT DEFAULT 20
 );
 
 -- Categorías del catálogo de cada comercio (ej. Hamburguesas, Bebidas, Postres)

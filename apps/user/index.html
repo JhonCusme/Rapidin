@@ -6031,6 +6031,23 @@
 
     function fmtMoney(n) { return '$' + Number(n || 0).toFixed(2); }
 
+    const WEEKDAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    function formatStoreHours(hoursRaw) {
+      if (!hoursRaw) return 'Horario no disponible';
+      let days = hoursRaw;
+      if (typeof hoursRaw === 'string') {
+        try { days = JSON.parse(hoursRaw); } catch (e) { return hoursRaw; }
+      }
+      if (!Array.isArray(days) || days.length !== 7) return typeof hoursRaw === 'string' ? hoursRaw : 'Horario no disponible';
+
+      const todayLabel = WEEKDAY_LABELS[new Date().getDay()];
+      const today = days.find(d => d.label === todayLabel);
+      const allSame = days.every(d => !d.closed && d.open === days[0].open && d.close === days[0].close) && !days[0].closed;
+      if (allSame) return `Lunes a Domingo: ${days[0].open} - ${days[0].close}`;
+      if (!today) return 'Horario no disponible';
+      return today.closed ? `Hoy (${todayLabel}): Cerrado` : `Hoy (${todayLabel}): ${today.open} - ${today.close}`;
+    }
+
     function cacheStores(stores) {
       stores.forEach(s => { window.rapidinStoreCache[s.id] = s; });
     }
@@ -6111,7 +6128,7 @@
         const descEl = document.getElementById('store-description-text');
         if (store.description) { descEl.textContent = store.description; descEl.style.display = 'block'; }
         else { descEl.style.display = 'none'; }
-        document.getElementById('store-hours-text').textContent = store.hours || 'Horario no disponible';
+        document.getElementById('store-hours-text').textContent = formatStoreHours(store.hours);
         document.getElementById('store-info-address-text').textContent = store.address || '';
         document.getElementById('menu-nav-all').classList.add('active');
         document.getElementById('menu-nav-popular').classList.remove('active');
