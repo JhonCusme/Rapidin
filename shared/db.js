@@ -234,6 +234,62 @@ class RapidinDatabase {
     }
   }
 
+  // --- Personal y permisos del comercio ---
+  async getStoreAccess() {
+    try {
+      const response = await fetch(`${API_URL}/store/me/access`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data : { isOwner: false, permissions: {} };
+    } catch (e) {
+      console.error('Error obteniendo tus permisos:', e);
+      return { isOwner: false, permissions: {} };
+    }
+  }
+
+  async getStoreStaff() {
+    try {
+      const response = await fetch(`${API_URL}/store/staff`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.staff : [];
+    } catch (e) {
+      console.error('Error obteniendo tu equipo:', e);
+      return [];
+    }
+  }
+
+  async createStoreStaff(payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/staff`, {
+        method: 'POST', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStaffPermissions(id, permissions) {
+    try {
+      const response = await fetch(`${API_URL}/store/staff/${id}/permissions`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ permissions })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async removeStoreStaff(id) {
+    try {
+      const response = await fetch(`${API_URL}/store/staff/${id}`, {
+        method: 'DELETE', headers: this.getAuthHeaders('store')
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // --- Configuración del negocio ---
   async getStoreProfile() {
     try {

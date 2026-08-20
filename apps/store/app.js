@@ -11,23 +11,40 @@ let currentCategoriesCache = [];
 let currentProductsCache = [];
 let currentCatalogFilter = 'all';
 let currentOptionGroups = [];
+let currentAccess = { isOwner: false, permissions: {} };
 
 // ==========================================
 // AUTH GATE
 // ==========================================
-function checkAuthGate() {
+async function checkAuthGate() {
   const store = window.rapidinDB.getCurrentUser('store');
   if (store) {
     document.getElementById('auth-gate-screen').style.display = 'none';
     document.getElementById('main-app-content').style.display = 'block';
     document.getElementById('store-header-name').textContent = store.name || 'Comercio';
-    loadDashboard();
-    loadStoreOrders();
-    loadCatalog();
+
+    currentAccess = await window.rapidinDB.getStoreAccess();
+    applyAccessGating();
+
+    if (currentAccess.permissions.pedidos) { loadDashboard(); loadStoreOrders(); }
+    if (currentAccess.permissions.catalogo) loadCatalog();
   } else {
     document.getElementById('auth-gate-screen').style.display = 'flex';
     document.getElementById('main-app-content').style.display = 'none';
   }
+}
+
+function applyAccessGating() {
+  const tabPermissionMap = { inicio: 'pedidos', pedidos: 'pedidos', catalogo: 'catalogo', resenas: 'resenas', promos: 'promociones', finanzas: 'finanzas', config: 'configuracion' };
+  Object.entries(tabPermissionMap).forEach(([view, perm]) => {
+    const btn = document.querySelector(`.main-nav-btn[data-view="${view}"]`);
+    if (btn) btn.style.display = currentAccess.permissions[perm] ? '' : 'none';
+  });
+  document.getElementById('nav-btn-equipo').style.display = currentAccess.isOwner ? '' : 'none';
+
+  // Aterrizar en la primera pestaña a la que el usuario sí tiene acceso.
+  const firstAllowed = Object.entries(tabPermissionMap).find(([, perm]) => currentAccess.permissions[perm]);
+  if (firstAllowed) switchMainView(firstAllowed[0]);
 }
 
 // ==========================================
@@ -35,13 +52,14 @@ function checkAuthGate() {
 // ==========================================
 window.switchMainView = function(view) {
   document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos', 'finanzas', 'config'].forEach(v => {
+  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos', 'finanzas', 'config', 'equipo'].forEach(v => {
     document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'resenas') loadReviews();
   if (view === 'promos') loadPromotions();
   if (view === 'finanzas') loadFinance();
   if (view === 'config') loadConfig();
+  if (view === 'equipo') loadStaff();
 };
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
@@ -1011,6 +1029,133 @@ document.getElementById('form-order-settings')?.addEventListener('submit', async
   });
   if (res.success) window.rapidinAlert('Configuración de pedidos actualizada.');
   else window.rapidinAlert(res.message || 'No se pudo guardar la configuración.');
+});
+
+// ==========================================
+// EQUIPO Y PERMISOS
+// ==========================================
+const STAFF_PERMISSION_LABELS = {
+  pedidos: { icon: '📦', label: 'Pedidos', desc: 'Ver y gestionar pedidos, pausar el negocio' },
+  catalogo: { icon: '🍔', label: 'Catálogo', desc: 'Crear y editar productos y categorías' },
+  promociones: { icon: '🏷️', label: 'Promociones', desc: 'Crear y gestionar cupones propios' },
+  finanzas: { icon: '💰', label: 'Finanzas', desc: 'Ver ventas, ganancias y liquidaciones' },
+  resenas: { icon: '⭐', label: 'Reseñas', desc: 'Ver y responder reseñas de clientes' },
+  configuracion: { icon: '⚙️', label: 'Configuración', desc: 'Editar perfil, horarios y ajustes del negocio' }
+};
+
+let currentStaffCache = [];
+
+function renderPermissionsEditor(containerId, currentPerms) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = Object.entries(STAFF_PERMISSION_LABELS).map(([key, meta]) => `
+    <label style="display: flex; align-items: center; gap: 0.7rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+      <input type="checkbox" data-perm="${key}" ${currentPerms && currentPerms[key] ? 'checked' : ''} style="width: 18px; height: 18px;">
+      <div>
+        <div style="font-weight: 700; font-size: 0.9rem;">${meta.icon} ${meta.label}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary);">${meta.desc}</div>
+      </div>
+    </label>
+  `).join('');
+}
+
+function readPermissionsEditor(containerId) {
+  const perms = {};
+  document.querySelectorAll(`#${containerId} input[data-perm]`).forEach(cb => { perms[cb.dataset.perm] = cb.checked; });
+  return perms;
+}
+
+async function loadStaff() {
+  currentStaffCache = await window.rapidinDB.getStoreStaff();
+  renderStaffList();
+}
+
+function renderStaffList() {
+  const list = document.getElementById('staff-list');
+  if (!currentStaffCache.length) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 3rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-users" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3>Todavía no tienes empleados</h3>
+        <p style="color: var(--text-secondary);">Agrega a tu equipo para que te ayuden a gestionar el negocio.</p>
+      </div>
+    `;
+    return;
+  }
+  list.innerHTML = currentStaffCache.map(s => {
+    const activePerms = Object.entries(STAFF_PERMISSION_LABELS).filter(([key]) => s.permissions[key]).map(([, meta]) => meta.icon + ' ' + meta.label);
+    return `
+      <div class="card-job">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <div>
+            <h3 style="font-size: 1.05rem;">${escapeHtml(s.name)}</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(s.email)}</p>
+          </div>
+          <button type="button" class="btn-action-store danger" style="padding: 0.4rem 0.7rem; font-size: 0.8rem;" onclick="confirmRemoveStaff('${s.id}')"><i class="fa-solid fa-user-minus"></i> Quitar</button>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">${activePerms.length ? activePerms.join(' · ') : 'Sin permisos asignados'}</div>
+        <div id="staff-perm-editor-${s.id}"></div>
+        <button type="button" class="btn-action-store outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-top: 0.6rem;" onclick="toggleStaffEditor('${s.id}')"><i class="fa-solid fa-pen"></i> Editar permisos</button>
+      </div>
+    `;
+  }).join('');
+}
+
+window.toggleStaffEditor = function(staffId) {
+  const container = document.getElementById(`staff-perm-editor-${staffId}`);
+  if (container.dataset.open === 'true') {
+    container.innerHTML = '';
+    container.dataset.open = 'false';
+    return;
+  }
+  const staff = currentStaffCache.find(s => s.id === staffId);
+  container.innerHTML = `<div id="staff-perm-inner-${staffId}"></div><button type="button" class="btn-action-store" style="margin-top: 0.6rem; padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="saveStaffPermissions('${staffId}')">Guardar</button>`;
+  renderPermissionsEditor(`staff-perm-inner-${staffId}`, staff.permissions);
+  container.dataset.open = 'true';
+};
+
+window.saveStaffPermissions = async function(staffId) {
+  const permissions = readPermissionsEditor(`staff-perm-inner-${staffId}`);
+  const res = await window.rapidinDB.updateStaffPermissions(staffId, permissions);
+  if (res.success) {
+    window.rapidinAlert('Permisos actualizados.');
+    await loadStaff();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudieron actualizar los permisos.');
+  }
+};
+
+window.confirmRemoveStaff = async function(staffId) {
+  if (!confirm('¿Quitarle el acceso a este empleado?')) return;
+  const res = await window.rapidinDB.removeStoreStaff(staffId);
+  if (res.success) await loadStaff();
+  else window.rapidinAlert(res.message || 'No se pudo quitar al empleado.');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderPermissionsEditor('staff-permissions-editor', {});
+});
+
+document.getElementById('form-staff')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('staff-error');
+  errorEl.style.display = 'none';
+
+  const res = await window.rapidinDB.createStoreStaff({
+    name: document.getElementById('staff-name-input').value.trim(),
+    email: document.getElementById('staff-email-input').value.trim(),
+    password: document.getElementById('staff-password-input').value,
+    permissions: readPermissionsEditor('staff-permissions-editor')
+  });
+
+  if (res.success) {
+    document.getElementById('modal-staff').classList.remove('active');
+    document.getElementById('form-staff').reset();
+    renderPermissionsEditor('staff-permissions-editor', {});
+    await loadStaff();
+  } else {
+    errorEl.textContent = res.message || 'No se pudo crear el empleado.';
+    errorEl.style.display = 'block';
+  }
 });
 
 // ==========================================

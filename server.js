@@ -105,6 +105,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE coupons ADD COLUMN store_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN special_days TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN prep_time_minutes INT DEFAULT 20", (err) => {});
+    db.run(`CREATE TABLE IF NOT EXISTS store_staff (
+      id VARCHAR(50) PRIMARY KEY, store_id VARCHAR(50) NOT NULL, user_id VARCHAR(50) NOT NULL,
+      permissions TEXT NOT NULL DEFAULT '{}', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -276,8 +280,8 @@ app.post('/api/auth/register-store', async (req, res) => {
               return res.status(500).json({ success: false, message: 'Error al crear comercio' });
             }
             db.run('COMMIT');
-            const token = jwt.sign({ id: userId, email, role: userRole, storeId }, JWT_SECRET, { expiresIn: '7d' });
-            res.json({ success: true, token, user: { id: userId, email, name, role: userRole, storeId } });
+            const token = jwt.sign({ id: userId, email, role: userRole, storeId, isOwner: true }, JWT_SECRET, { expiresIn: '7d' });
+            res.json({ success: true, token, user: { id: userId, email, name, role: userRole, storeId, isOwner: true } });
         });
     });
   });
@@ -490,7 +494,10 @@ app.post('/api/auth/login', (req, res) => {
 
     if (user.role === 'store') {
       db.get('SELECT id FROM stores WHERE owner_user_id = ?', [user.id], (storeErr, row) => {
-        finish(row ? { storeId: row.id } : {});
+        if (row) return finish({ storeId: row.id, isOwner: true });
+        db.get('SELECT store_id FROM store_staff WHERE user_id = ?', [user.id], (staffErr, staffRow) => {
+          finish(staffRow ? { storeId: staffRow.store_id, isOwner: false } : {});
+        });
       });
     } else if (user.role === 'driver') {
       db.get('SELECT id FROM drivers WHERE user_id = ?', [user.id], (drvErr, row) => {
@@ -624,7 +631,10 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
 });
 
 // 3.1 Obtener pedidos de una tienda
-app.get('/api/orders/store/:storeId', authenticateToken, requireRole('store', 'admin'), (req, res) => {
+app.get('/api/orders/store/:storeId', authenticateToken, requireRole('store', 'admin'), (req, res, next) => {
+  if (req.user.role === 'store') return requireStorePermission('pedidos')(req, res, next);
+  next();
+}, (req, res) => {
   const { storeId } = req.params;
   if (req.user.role === 'store' && req.user.storeId !== storeId) {
     return res.status(403).json({ success: false, message: 'No puedes ver pedidos de otro comercio' });
@@ -745,7 +755,10 @@ app.get('/api/orders/:id', authenticateToken, (req, res) => {
 });
 
 // 3.3 Actualizar estado de pedido
-app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'driver', 'admin'), (req, res) => {
+app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'driver', 'admin'), (req, res, next) => {
+  if (req.user.role === 'store') return requireStorePermission('pedidos')(req, res, next);
+  next();
+}, (req, res) => {
   const { id } = req.params;
   const { statusStep, statusText, extraData } = req.body;
 
@@ -800,7 +813,10 @@ app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'drive
 });
 
 // 3.3.1 El comercio rechaza un pedido nuevo (solo mientras está pendiente de aceptación)
-app.put('/api/orders/:id/reject', authenticateToken, requireRole('store', 'admin'), (req, res) => {
+app.put('/api/orders/:id/reject', authenticateToken, requireRole('store', 'admin'), (req, res, next) => {
+  if (req.user.role === 'store') return requireStorePermission('pedidos')(req, res, next);
+  next();
+}, (req, res) => {
   const { reason } = req.body;
   db.get('SELECT * FROM orders WHERE id = ?', [req.params.id], (err, order) => {
     if (err || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
@@ -823,7 +839,7 @@ app.put('/api/orders/:id/reject', authenticateToken, requireRole('store', 'admin
 });
 
 // 3.3.2 Resumen del panel del comercio: pedidos por estado, ventas y pedidos de hoy
-app.get('/api/stores/me/dashboard', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/stores/me/dashboard', authenticateToken, requireRole('store'), requireStorePermission('pedidos'), (req, res) => {
   const storeId = req.user.storeId;
   const sql = `
     SELECT status_step, is_cancelled, total_amount_usd, created_at
@@ -865,7 +881,7 @@ app.get('/api/stores/me/dashboard', authenticateToken, requireRole('store'), (re
 });
 
 // 3.3.3 Abrir/cerrar el negocio, o pausar la recepción de pedidos por un rato
-app.put('/api/stores/me/status', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/stores/me/status', authenticateToken, requireRole('store'), requireStorePermission('pedidos'), (req, res) => {
   const { isOpen, pauseMinutes, resume } = req.body;
   const storeId = req.user.storeId;
 
@@ -1723,7 +1739,7 @@ app.get('/api/stores/:id/reviews', authenticateToken, (req, res) => {
 });
 
 // --- Panel de comercios: reputación (ver y responder reseñas) ---
-app.get('/api/store/reviews', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/reviews', authenticateToken, requireRole('store'), requireStorePermission('resenas'), (req, res) => {
   const sql = `
     SELECT orders.id as orderId, orders.rating_store, orders.rating_order, orders.rating_driver,
            orders.review_text, orders.created_at, orders.store_reply_text, orders.store_reply_at, users.name as customerName
@@ -1739,7 +1755,7 @@ app.get('/api/store/reviews', authenticateToken, requireRole('store'), (req, res
   });
 });
 
-app.put('/api/store/reviews/:orderId/reply', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/reviews/:orderId/reply', authenticateToken, requireRole('store'), requireStorePermission('resenas'), (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) return res.status(400).json({ success: false, message: 'Escribe una respuesta' });
   db.get('SELECT id FROM orders WHERE id = ? AND store_id = ? AND rating_store IS NOT NULL', [req.params.orderId, req.user.storeId], (err, row) => {
@@ -1775,8 +1791,107 @@ app.get('/api/products/:storeId', (req, res) => {
   });
 });
 
+// --- Panel de comercios: personal y permisos ---
+// El dueño (owner_user_id) siempre tiene acceso total. Los empleados solo pueden
+// hacer lo que su fila en store_staff.permissions les permita explícitamente,
+// verificado en cada request (no confiamos en un JWT viejo si el dueño le quitó
+// un permiso a un empleado después de que inició sesión).
+function requireStorePermission(permKey) {
+  return (req, res, next) => {
+    if (req.user.isOwner) return next();
+    db.get('SELECT permissions FROM store_staff WHERE store_id = ? AND user_id = ?', [req.user.storeId, req.user.id], (err, row) => {
+      if (err || !row) return res.status(403).json({ success: false, message: 'No tienes acceso a este comercio' });
+      let perms = {};
+      try { perms = JSON.parse(row.permissions || '{}'); } catch (e) {}
+      if (!perms[permKey]) return res.status(403).json({ success: false, message: 'No tienes permiso para esta acción' });
+      next();
+    });
+  };
+}
+
+app.get('/api/store/me/access', authenticateToken, requireRole('store'), (req, res) => {
+  if (req.user.isOwner) {
+    return res.json({ success: true, isOwner: true, permissions: { pedidos: true, catalogo: true, promociones: true, finanzas: true, resenas: true, configuracion: true, personal: true } });
+  }
+  db.get('SELECT permissions FROM store_staff WHERE store_id = ? AND user_id = ?', [req.user.storeId, req.user.id], (err, row) => {
+    if (err || !row) return res.status(403).json({ success: false, message: 'No tienes acceso a este comercio' });
+    let perms = {};
+    try { perms = JSON.parse(row.permissions || '{}'); } catch (e) {}
+    res.json({ success: true, isOwner: false, permissions: { pedidos: false, catalogo: false, promociones: false, finanzas: false, resenas: false, configuracion: false, ...perms, personal: false } });
+  });
+});
+
+app.get('/api/store/staff', authenticateToken, requireRole('store'), (req, res) => {
+  if (!req.user.isOwner) return res.status(403).json({ success: false, message: 'Solo el dueño puede ver el equipo' });
+  db.all(
+    `SELECT store_staff.id, store_staff.permissions, store_staff.created_at, users.name, users.email
+     FROM store_staff JOIN users ON users.id = store_staff.user_id
+     WHERE store_staff.store_id = ? ORDER BY store_staff.created_at DESC`,
+    [req.user.storeId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tu equipo' });
+      const staff = rows.map(r => ({ ...r, permissions: (() => { try { return JSON.parse(r.permissions); } catch (e) { return {}; } })() }));
+      res.json({ success: true, staff });
+    }
+  );
+});
+
+app.post('/api/store/staff', authenticateToken, requireRole('store'), async (req, res) => {
+  if (!req.user.isOwner) return res.status(403).json({ success: false, message: 'Solo el dueño puede agregar empleados' });
+  const { name, email, password, permissions } = req.body;
+  if (!name || !email || !password || password.length < 6) {
+    return res.status(400).json({ success: false, message: 'Nombre, correo y una contraseña de al menos 6 caracteres son obligatorios' });
+  }
+  const userId = 'usr-' + Date.now();
+  const staffId = 'staff-' + Date.now();
+  const passwordHash = await bcrypt.hash(password, 10);
+  const perms = {
+    pedidos: !!permissions?.pedidos, catalogo: !!permissions?.catalogo, promociones: !!permissions?.promociones,
+    finanzas: !!permissions?.finanzas, resenas: !!permissions?.resenas, configuracion: !!permissions?.configuracion
+  };
+
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    db.run(`INSERT INTO users (id, role, email, password_hash, name) VALUES (?, ?, ?, ?, ?)`, [userId, 'store', email, passwordHash, name], (err) => {
+      if (err) {
+        db.run('ROLLBACK');
+        if (err.message.includes('UNIQUE')) return res.status(400).json({ success: false, message: 'Ese correo ya está registrado' });
+        return res.status(500).json({ success: false, message: 'Error creando el empleado' });
+      }
+      db.run(`INSERT INTO store_staff (id, store_id, user_id, permissions) VALUES (?, ?, ?, ?)`, [staffId, req.user.storeId, userId, JSON.stringify(perms)], (err2) => {
+        if (err2) { db.run('ROLLBACK'); return res.status(500).json({ success: false, message: 'Error asignando el empleado al comercio' }); }
+        db.run('COMMIT');
+        res.json({ success: true, staffId });
+      });
+    });
+  });
+});
+
+app.put('/api/store/staff/:id/permissions', authenticateToken, requireRole('store'), (req, res) => {
+  if (!req.user.isOwner) return res.status(403).json({ success: false, message: 'Solo el dueño puede editar permisos' });
+  const { permissions } = req.body;
+  const perms = {
+    pedidos: !!permissions?.pedidos, catalogo: !!permissions?.catalogo, promociones: !!permissions?.promociones,
+    finanzas: !!permissions?.finanzas, resenas: !!permissions?.resenas, configuracion: !!permissions?.configuracion
+  };
+  db.run('UPDATE store_staff SET permissions = ? WHERE id = ? AND store_id = ?', [JSON.stringify(perms), req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando permisos' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Empleado no encontrado' });
+    res.json({ success: true });
+  });
+});
+
+app.delete('/api/store/staff/:id', authenticateToken, requireRole('store'), (req, res) => {
+  if (!req.user.isOwner) return res.status(403).json({ success: false, message: 'Solo el dueño puede quitar empleados' });
+  db.run('DELETE FROM store_staff WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error quitando el empleado' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Empleado no encontrado' });
+    res.json({ success: true });
+  });
+});
+
 // --- Panel de comercios: configuración del negocio ---
-app.get('/api/store/profile', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/profile', authenticateToken, requireRole('store'), requireStorePermission('configuracion'), (req, res) => {
   db.get('SELECT * FROM stores WHERE id = ?', [req.user.storeId], (err, store) => {
     if (err || !store) return res.status(404).json({ success: false, message: 'Comercio no encontrado' });
     res.json({
@@ -1791,7 +1906,7 @@ app.get('/api/store/profile', authenticateToken, requireRole('store'), (req, res
   });
 });
 
-app.put('/api/store/profile', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/profile', authenticateToken, requireRole('store'), requireStorePermission('configuracion'), (req, res) => {
   const { name, category, description, imageUrl, logoUrl, address, lat, lng } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre es obligatorio' });
   db.run(
@@ -1804,7 +1919,7 @@ app.put('/api/store/profile', authenticateToken, requireRole('store'), (req, res
   );
 });
 
-app.put('/api/store/hours', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/hours', authenticateToken, requireRole('store'), requireStorePermission('configuracion'), (req, res) => {
   const { hours } = req.body;
   if (!Array.isArray(hours) || hours.length !== 7) {
     return res.status(400).json({ success: false, message: 'Los horarios deben incluir los 7 días de la semana' });
@@ -1815,7 +1930,7 @@ app.put('/api/store/hours', authenticateToken, requireRole('store'), (req, res) 
   });
 });
 
-app.put('/api/store/special-days', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/special-days', authenticateToken, requireRole('store'), requireStorePermission('configuracion'), (req, res) => {
   const { specialDays } = req.body;
   if (!Array.isArray(specialDays)) return res.status(400).json({ success: false, message: 'Formato inválido' });
   db.run('UPDATE stores SET special_days = ? WHERE id = ?', [JSON.stringify(specialDays), req.user.storeId], (err) => {
@@ -1824,7 +1939,7 @@ app.put('/api/store/special-days', authenticateToken, requireRole('store'), (req
   });
 });
 
-app.put('/api/store/order-settings', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/order-settings', authenticateToken, requireRole('store'), requireStorePermission('configuracion'), (req, res) => {
   const { deliveryFee, minOrder, deliveryRadiusKm, prepTimeMinutes } = req.body;
   if ([deliveryFee, minOrder, deliveryRadiusKm, prepTimeMinutes].some(v => typeof v !== 'number' || v < 0)) {
     return res.status(400).json({ success: false, message: 'Todos los valores deben ser números válidos' });
@@ -1854,7 +1969,7 @@ function fetchCompletedStoreOrders(storeId, callback) {
   );
 }
 
-app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus finanzas' });
 
@@ -1908,7 +2023,7 @@ app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), (
   });
 });
 
-app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo el detalle de ventas' });
     const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4).slice(0, 100);
@@ -1923,7 +2038,7 @@ app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), (re
   });
 });
 
-app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus liquidaciones' });
     const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4);
@@ -1965,14 +2080,14 @@ app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'
 });
 
 // --- Panel de comercios: promociones propias ---
-app.get('/api/store/promotions', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/promotions', authenticateToken, requireRole('store'), requireStorePermission('promociones'), (req, res) => {
   db.all('SELECT * FROM coupons WHERE store_id = ? ORDER BY rowid DESC', [req.user.storeId], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus promociones' });
     res.json({ success: true, promotions: rows });
   });
 });
 
-app.post('/api/store/promotions', authenticateToken, requireRole('store'), (req, res) => {
+app.post('/api/store/promotions', authenticateToken, requireRole('store'), requireStorePermission('promociones'), (req, res) => {
   const { code, title, description, discountType, discountValue, minOrder, promoType, expiresAt } = req.body;
   if (!code || !code.trim() || !title || !title.trim()) {
     return res.status(400).json({ success: false, message: 'Código y título son obligatorios' });
@@ -1995,7 +2110,7 @@ app.post('/api/store/promotions', authenticateToken, requireRole('store'), (req,
   );
 });
 
-app.put('/api/store/promotions/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/promotions/:id', authenticateToken, requireRole('store'), requireStorePermission('promociones'), (req, res) => {
   const { title, description, discountType, discountValue, minOrder, promoType, expiresAt } = req.body;
   if (!title || !title.trim() || !['fixed', 'percent', 'shipping'].includes(discountType)) {
     return res.status(400).json({ success: false, message: 'Datos de la promoción inválidos' });
@@ -2012,7 +2127,7 @@ app.put('/api/store/promotions/:id', authenticateToken, requireRole('store'), (r
   );
 });
 
-app.put('/api/store/promotions/:id/toggle', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/promotions/:id/toggle', authenticateToken, requireRole('store'), requireStorePermission('promociones'), (req, res) => {
   const { isActive } = req.body;
   db.run('UPDATE coupons SET is_active = ? WHERE id = ? AND store_id = ?', [isActive ? 1 : 0, req.params.id, req.user.storeId], function(err) {
     if (err) return res.status(500).json({ success: false, message: 'Error actualizando la promoción' });
@@ -2021,7 +2136,7 @@ app.put('/api/store/promotions/:id/toggle', authenticateToken, requireRole('stor
   });
 });
 
-app.delete('/api/store/promotions/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.delete('/api/store/promotions/:id', authenticateToken, requireRole('store'), requireStorePermission('promociones'), (req, res) => {
   db.run('DELETE FROM coupons WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], function(err) {
     if (err) return res.status(500).json({ success: false, message: 'Error eliminando la promoción' });
     if (this.changes === 0) return res.status(404).json({ success: false, message: 'Promoción no encontrada' });
@@ -2088,14 +2203,14 @@ app.put('/api/drivers/me/location', authenticateToken, requireRole('driver'), (r
 
 // --- Panel de comercios: gestión del catálogo (categorías y productos propios) ---
 
-app.get('/api/store/categories', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/categories', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   db.all('SELECT * FROM product_categories WHERE store_id = ? ORDER BY sort_order ASC, created_at ASC', [req.user.storeId], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo categorías' });
     res.json({ success: true, categories: rows });
   });
 });
 
-app.post('/api/store/categories', authenticateToken, requireRole('store'), (req, res) => {
+app.post('/api/store/categories', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre de la categoría es obligatorio' });
   const id = 'cat-' + Date.now();
@@ -2105,7 +2220,7 @@ app.post('/api/store/categories', authenticateToken, requireRole('store'), (req,
   });
 });
 
-app.put('/api/store/categories/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/categories/:id', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre de la categoría es obligatorio' });
   db.run('UPDATE product_categories SET name = ? WHERE id = ? AND store_id = ?', [name.trim(), req.params.id, req.user.storeId], function(err) {
@@ -2115,7 +2230,7 @@ app.put('/api/store/categories/:id', authenticateToken, requireRole('store'), (r
   });
 });
 
-app.delete('/api/store/categories/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.delete('/api/store/categories/:id', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   db.get('SELECT id FROM product_categories WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], (err, row) => {
     if (err || !row) return res.status(404).json({ success: false, message: 'Categoría no encontrada' });
     db.run('UPDATE products SET category_id = NULL WHERE category_id = ?', [req.params.id], () => {
@@ -2127,7 +2242,7 @@ app.delete('/api/store/categories/:id', authenticateToken, requireRole('store'),
   });
 });
 
-app.get('/api/store/products', authenticateToken, requireRole('store'), (req, res) => {
+app.get('/api/store/products', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   db.all('SELECT * FROM products WHERE store_id = ? ORDER BY created_at DESC', [req.user.storeId], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tu catálogo' });
     const products = rows.map(p => ({ ...p, options: p.options_json ? JSON.parse(p.options_json) : [] }));
@@ -2135,7 +2250,7 @@ app.get('/api/store/products', authenticateToken, requireRole('store'), (req, re
   });
 });
 
-app.post('/api/store/products', authenticateToken, requireRole('store'), (req, res) => {
+app.post('/api/store/products', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   const { name, description, price, image, categoryId, calories, options } = req.body;
   if (!name || !name.trim() || typeof price !== 'number' || price < 0) {
     return res.status(400).json({ success: false, message: 'Nombre y precio válido son obligatorios' });
@@ -2152,7 +2267,7 @@ app.post('/api/store/products', authenticateToken, requireRole('store'), (req, r
   );
 });
 
-app.put('/api/store/products/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/products/:id', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   const { name, description, price, image, categoryId, calories, options } = req.body;
   if (!name || !name.trim() || typeof price !== 'number' || price < 0) {
     return res.status(400).json({ success: false, message: 'Nombre y precio válido son obligatorios' });
@@ -2169,7 +2284,7 @@ app.put('/api/store/products/:id', authenticateToken, requireRole('store'), (req
   );
 });
 
-app.delete('/api/store/products/:id', authenticateToken, requireRole('store'), (req, res) => {
+app.delete('/api/store/products/:id', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   db.run('DELETE FROM products WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], function(err) {
     if (err) return res.status(500).json({ success: false, message: 'Error eliminando el producto' });
     if (this.changes === 0) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
@@ -2177,7 +2292,7 @@ app.delete('/api/store/products/:id', authenticateToken, requireRole('store'), (
   });
 });
 
-app.put('/api/store/products/:id/availability', authenticateToken, requireRole('store'), (req, res) => {
+app.put('/api/store/products/:id/availability', authenticateToken, requireRole('store'), requireStorePermission('catalogo'), (req, res) => {
   const { status } = req.body;
   if (!['available', 'out_of_stock', 'paused'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Estado de disponibilidad inválido' });

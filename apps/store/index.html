@@ -185,6 +185,7 @@
     <button type="button" class="main-nav-btn" data-view="promos" onclick="switchMainView('promos')"><i class="fa-solid fa-tag"></i> Promos</button>
     <button type="button" class="main-nav-btn" data-view="finanzas" onclick="switchMainView('finanzas')"><i class="fa-solid fa-sack-dollar"></i> Finanzas</button>
     <button type="button" class="main-nav-btn" data-view="config" onclick="switchMainView('config')"><i class="fa-solid fa-gear"></i> Config</button>
+    <button type="button" class="main-nav-btn" data-view="equipo" id="nav-btn-equipo" onclick="switchMainView('equipo')" style="display: none;"><i class="fa-solid fa-users"></i> Equipo</button>
   </nav>
 
   <main class="container" style="padding: 2rem 1.25rem;">
@@ -433,6 +434,18 @@
         </form>
       </div>
     </div>
+
+    <!-- VISTA: EQUIPO (solo dueño) -->
+    <div id="view-equipo" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-users" style="color: var(--brand-primary);"></i> Equipo
+        </h2>
+        <button type="button" class="btn-action-store" onclick="document.getElementById('modal-staff').classList.add('active')"><i class="fa-solid fa-user-plus"></i> Agregar empleado</button>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem;">Dale acceso a tu equipo sin compartir tu contraseña. Elige exactamente qué puede ver y hacer cada persona.</p>
+      <div id="staff-list"></div>
+    </div>
   </main>
   </div> <!-- Fin de main-app-content -->
 
@@ -585,6 +598,34 @@
         <input type="hidden" id="reply-order-id-input">
         <textarea id="reply-text-input" class="coupon-input" style="width: 100%; min-height: 100px; margin-bottom: 1.25rem;" placeholder="Gracias por tu comentario..." required></textarea>
         <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Enviar respuesta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL AGREGAR/EDITAR EMPLEADO -->
+  <div class="modal-backdrop" id="modal-staff">
+    <div class="modal-card" style="max-width: 460px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;">Agregar empleado</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-staff').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-staff">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre completo</label>
+          <input type="text" id="staff-name-input" class="coupon-input" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Correo electrónico</label>
+          <input type="email" id="staff-email-input" class="coupon-input" style="width: 100%;" required>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Contraseña temporal</label>
+          <input type="password" id="staff-password-input" class="coupon-input" style="width: 100%;" minlength="6" required>
+        </div>
+        <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.6rem;">Permisos</label>
+        <div id="staff-permissions-editor" style="margin-bottom: 1.25rem;"></div>
+        <div id="staff-error" style="color: #EF4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Crear cuenta de empleado</button>
       </form>
     </div>
   </div>

@@ -61,6 +61,15 @@ CREATE TABLE IF NOT EXISTS stores (
     prep_time_minutes INT DEFAULT 20
 );
 
+-- Empleados de un comercio, con permisos independientes del dueno (owner_user_id)
+CREATE TABLE IF NOT EXISTS store_staff (
+    id VARCHAR(50) PRIMARY KEY,
+    store_id VARCHAR(50) NOT NULL REFERENCES stores(id),
+    user_id VARCHAR(50) NOT NULL REFERENCES users(id),
+    permissions TEXT NOT NULL DEFAULT '{}', -- JSON: { pedidos, catalogo, promociones, finanzas, resenas, configuracion }
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Categorías del catálogo de cada comercio (ej. Hamburguesas, Bebidas, Postres)
 CREATE TABLE IF NOT EXISTS product_categories (
     id VARCHAR(50) PRIMARY KEY,
