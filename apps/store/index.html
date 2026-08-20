@@ -177,6 +177,7 @@
     <button type="button" class="main-nav-btn" data-view="pedidos" onclick="switchMainView('pedidos')"><i class="fa-solid fa-receipt"></i> Pedidos</button>
     <button type="button" class="main-nav-btn" data-view="catalogo" onclick="switchMainView('catalogo')"><i class="fa-solid fa-utensils"></i> Catálogo</button>
     <button type="button" class="main-nav-btn" data-view="resenas" onclick="switchMainView('resenas')"><i class="fa-solid fa-star"></i> Reseñas</button>
+    <button type="button" class="main-nav-btn" data-view="promos" onclick="switchMainView('promos')"><i class="fa-solid fa-tag"></i> Promos</button>
   </nav>
 
   <main class="container" style="padding: 2rem 1.25rem;">
@@ -261,6 +262,17 @@
         </div>
       </div>
       <div id="reviews-list"></div>
+    </div>
+
+    <!-- VISTA: PROMOCIONES -->
+    <div id="view-promos" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-tag" style="color: var(--brand-primary);"></i> Promociones
+        </h2>
+        <button type="button" class="btn-action-store" onclick="openPromotionModal()"><i class="fa-solid fa-plus"></i> Nueva promoción</button>
+      </div>
+      <div id="promotions-list"></div>
     </div>
   </main>
   </div> <!-- Fin de main-app-content -->
@@ -414,6 +426,66 @@
         <input type="hidden" id="reply-order-id-input">
         <textarea id="reply-text-input" class="coupon-input" style="width: 100%; min-height: 100px; margin-bottom: 1.25rem;" placeholder="Gracias por tu comentario..." required></textarea>
         <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Enviar respuesta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PROMOCIÓN (CREAR/EDITAR) -->
+  <div class="modal-backdrop" id="modal-promotion">
+    <div class="modal-card" style="max-width: 480px; padding: 2rem; max-height: 88vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;" id="promotion-modal-title">Nueva promoción</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-promotion').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-promotion">
+        <input type="hidden" id="promotion-id-input">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Código del cupón</label>
+          <input type="text" id="promotion-code-input" class="coupon-input" style="width: 100%; text-transform: uppercase;" placeholder="Ej: PIZZA20" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Título</label>
+          <input type="text" id="promotion-title-input" class="coupon-input" style="width: 100%;" placeholder="Ej: 20% OFF en tu pedido" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Descripción</label>
+          <textarea id="promotion-description-input" class="coupon-input" style="width: 100%; min-height: 60px;" placeholder="Detalles de la promoción"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Tipo de descuento</label>
+            <select id="promotion-discount-type-input" class="coupon-input" style="width: 100%;" onchange="togglePromotionValueField()">
+              <option value="percent">Porcentaje</option>
+              <option value="fixed">Monto fijo</option>
+              <option value="shipping">Envío gratis</option>
+            </select>
+          </div>
+          <div id="promotion-value-wrapper">
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Valor</label>
+            <input type="number" id="promotion-value-input" class="coupon-input" style="width: 100%;" step="0.01" min="0" value="0">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Pedido mínimo (USD)</label>
+            <input type="number" id="promotion-minorder-input" class="coupon-input" style="width: 100%;" step="0.01" min="0" value="0">
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Categoría</label>
+            <select id="promotion-type-input" class="coupon-input" style="width: 100%;">
+              <option value="general">General</option>
+              <option value="2x1">2x1</option>
+              <option value="envio_gratis">Envío gratis</option>
+              <option value="flash">Oferta flash (por tiempo limitado)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Fecha de vencimiento (opcional)</label>
+          <input type="date" id="promotion-expires-input" class="coupon-input" style="width: 100%;">
+        </div>
+        <div id="promotion-error" style="color: #EF4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Guardar promoción</button>
       </form>
     </div>
   </div>

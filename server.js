@@ -102,6 +102,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE stores ADD COLUMN owner_user_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN store_reply_text TEXT", (err) => {});
     db.run("ALTER TABLE orders ADD COLUMN store_reply_at TIMESTAMP", (err) => {});
+    db.run("ALTER TABLE coupons ADD COLUMN store_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -528,6 +529,17 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
       const unavailable = productRows.filter(p => !p.is_available).map(p => p.name);
       if (unavailable.length) {
         return res.status(409).json({ success: false, code: 'PRODUCT_UNAVAILABLE', message: 'Algunos productos ya no están disponibles.', unavailableItems: unavailable });
+      }
+
+      // Si el pedido lleva un cupón, verificamos que siga activo y que, si es un
+      // cupón propio de un comercio, se esté usando en ese mismo comercio.
+      if (newOrder.couponCode) {
+        const coupon = await new Promise((resolve) => {
+          db.get(`SELECT * FROM coupons WHERE code = ? AND is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))`, [newOrder.couponCode], (e, r) => resolve(e ? null : r));
+        });
+        if (!coupon || (coupon.store_id && coupon.store_id !== newOrder.storeId)) {
+          return res.status(400).json({ success: false, code: 'COUPON_INVALID', message: 'El cupón ya no es válido para este pedido.' });
+        }
       }
 
       const itemsJson = JSON.stringify(items);
@@ -1415,12 +1427,16 @@ app.put('/api/shipments/:id/cancel', authenticateToken, requireRole('user'), (re
 
 // --- Cupones y promociones ---
 app.get('/api/coupons/active', authenticateToken, (req, res) => {
-  const { type } = req.query;
+  const { type, storeId } = req.query;
   let sql = `SELECT * FROM coupons WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))`;
   const params = [];
   if (type) {
     sql += ` AND promo_type = ?`;
     params.push(type);
+  }
+  if (storeId) {
+    sql += ` AND (store_id IS NULL OR store_id = ?)`;
+    params.push(storeId);
   }
   db.all(sql, params, (err, coupons) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo promociones' });
@@ -1754,6 +1770,71 @@ app.get('/api/products/:storeId', (req, res) => {
     }));
     
     res.json({ success: true, products });
+  });
+});
+
+// --- Panel de comercios: promociones propias ---
+app.get('/api/store/promotions', authenticateToken, requireRole('store'), (req, res) => {
+  db.all('SELECT * FROM coupons WHERE store_id = ? ORDER BY rowid DESC', [req.user.storeId], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus promociones' });
+    res.json({ success: true, promotions: rows });
+  });
+});
+
+app.post('/api/store/promotions', authenticateToken, requireRole('store'), (req, res) => {
+  const { code, title, description, discountType, discountValue, minOrder, promoType, expiresAt } = req.body;
+  if (!code || !code.trim() || !title || !title.trim()) {
+    return res.status(400).json({ success: false, message: 'Código y título son obligatorios' });
+  }
+  if (!['fixed', 'percent', 'shipping'].includes(discountType)) {
+    return res.status(400).json({ success: false, message: 'Tipo de descuento inválido' });
+  }
+  const id = 'cpn-' + Date.now();
+  db.run(
+    `INSERT INTO coupons (id, store_id, code, title, description, discount_type, discount_value, min_order_usd, is_active, promo_type, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+    [id, req.user.storeId, code.trim().toUpperCase(), title.trim(), description || '', discountType, discountValue || 0, minOrder || 0, promoType || 'general', expiresAt || null],
+    (err) => {
+      if (err) {
+        if (err.message.includes('UNIQUE')) return res.status(400).json({ success: false, message: 'Ya existe un cupón con ese código' });
+        return res.status(500).json({ success: false, message: 'Error creando la promoción' });
+      }
+      res.json({ success: true, promotionId: id });
+    }
+  );
+});
+
+app.put('/api/store/promotions/:id', authenticateToken, requireRole('store'), (req, res) => {
+  const { title, description, discountType, discountValue, minOrder, promoType, expiresAt } = req.body;
+  if (!title || !title.trim() || !['fixed', 'percent', 'shipping'].includes(discountType)) {
+    return res.status(400).json({ success: false, message: 'Datos de la promoción inválidos' });
+  }
+  db.run(
+    `UPDATE coupons SET title = ?, description = ?, discount_type = ?, discount_value = ?, min_order_usd = ?, promo_type = ?, expires_at = ?
+     WHERE id = ? AND store_id = ?`,
+    [title.trim(), description || '', discountType, discountValue || 0, minOrder || 0, promoType || 'general', expiresAt || null, req.params.id, req.user.storeId],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando la promoción' });
+      if (this.changes === 0) return res.status(404).json({ success: false, message: 'Promoción no encontrada' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.put('/api/store/promotions/:id/toggle', authenticateToken, requireRole('store'), (req, res) => {
+  const { isActive } = req.body;
+  db.run('UPDATE coupons SET is_active = ? WHERE id = ? AND store_id = ?', [isActive ? 1 : 0, req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando la promoción' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Promoción no encontrada' });
+    res.json({ success: true });
+  });
+});
+
+app.delete('/api/store/promotions/:id', authenticateToken, requireRole('store'), (req, res) => {
+  db.run('DELETE FROM coupons WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error eliminando la promoción' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Promoción no encontrada' });
+    res.json({ success: true });
   });
 });
 

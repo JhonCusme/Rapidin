@@ -234,6 +234,62 @@ class RapidinDatabase {
     }
   }
 
+  // --- Promociones propias del comercio ---
+  async getStorePromotions() {
+    try {
+      const response = await fetch(`${API_URL}/store/promotions`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.promotions : [];
+    } catch (e) {
+      console.error('Error obteniendo tus promociones:', e);
+      return [];
+    }
+  }
+
+  async createStorePromotion(payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/promotions`, {
+        method: 'POST', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStorePromotion(id, payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/promotions/${id}`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async toggleStorePromotion(id, isActive) {
+    try {
+      const response = await fetch(`${API_URL}/store/promotions/${id}/toggle`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ isActive })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async deleteStorePromotion(id) {
+    try {
+      const response = await fetch(`${API_URL}/store/promotions/${id}`, {
+        method: 'DELETE', headers: this.getAuthHeaders('store')
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // --- Reputación del comercio ---
   async getStoreReviews() {
     try {
@@ -575,10 +631,13 @@ class RapidinDatabase {
     }
   }
 
-  async getActiveCoupons(type = null) {
+  async getActiveCoupons(type = null, storeId = null) {
     try {
-      let url = `${API_URL}/coupons/active`;
-      if (type) url += `?type=${encodeURIComponent(type)}`;
+      const params = new URLSearchParams();
+      if (type) params.set('type', type);
+      if (storeId) params.set('storeId', storeId);
+      const qs = params.toString();
+      const url = `${API_URL}/coupons/active${qs ? '?' + qs : ''}`;
       const response = await fetch(url, { headers: this.getAuthHeaders('user') });
       const data = await response.json();
       return data.success ? data.coupons : [];

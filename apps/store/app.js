@@ -35,10 +35,11 @@ function checkAuthGate() {
 // ==========================================
 window.switchMainView = function(view) {
   document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ['inicio', 'pedidos', 'catalogo', 'resenas'].forEach(v => {
+  ['inicio', 'pedidos', 'catalogo', 'resenas', 'promos'].forEach(v => {
     document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
   });
   if (view === 'resenas') loadReviews();
+  if (view === 'promos') loadPromotions();
 };
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
@@ -624,6 +625,132 @@ document.getElementById('form-reply-review')?.addEventListener('submit', async (
     window.rapidinAlert(res.message || 'No se pudo enviar tu respuesta.');
   }
 });
+
+// ==========================================
+// PROMOCIONES PROPIAS DEL COMERCIO
+// ==========================================
+let currentPromotionsCache = [];
+
+async function loadPromotions() {
+  currentPromotionsCache = await window.rapidinDB.getStorePromotions();
+  renderPromotionsList();
+}
+
+const PROMOTION_TYPE_LABELS = { general: 'General', '2x1': '2x1', envio_gratis: 'Envío gratis', flash: 'Flash' };
+
+function renderPromotionsList() {
+  const list = document.getElementById('promotions-list');
+  if (!currentPromotionsCache.length) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 3rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-tag" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3>Todavía no tienes promociones</h3>
+        <p style="color: var(--text-secondary);">Crea un cupón para atraer más pedidos a tu negocio.</p>
+      </div>
+    `;
+    return;
+  }
+  list.innerHTML = currentPromotionsCache.map(p => {
+    const discountLabel = p.discount_type === 'percent' ? `${Math.round(p.discount_value * 100)}% OFF`
+      : p.discount_type === 'shipping' ? 'Envío gratis'
+      : `$${Number(p.discount_value).toFixed(2)} OFF`;
+    const expired = p.expires_at && new Date(p.expires_at.replace(' ', 'T') + 'Z') < new Date();
+    return `
+      <div class="card-job">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <div>
+            <span class="badge" style="background: var(--brand-secondary); color: #fff; margin-bottom: 0.4rem;">${escapeHtml(p.code)}</span>
+            <h3 style="font-size: 1.05rem;">${escapeHtml(p.title)}</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(p.description || '')}</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 1.2rem; font-weight: 900; color: #10B981;">${discountLabel}</div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${PROMOTION_TYPE_LABELS[p.promo_type] || 'General'}</span>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+          ${p.min_order_usd ? `Pedido mínimo $${Number(p.min_order_usd).toFixed(2)} · ` : ''}${p.expires_at ? (expired ? 'Venció el ' : 'Vence el ') + new Date(p.expires_at).toLocaleDateString('es-PE') : 'Sin fecha de vencimiento'}
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="button" class="btn-action-store outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="openPromotionModal('${p.id}')"><i class="fa-solid fa-pen"></i> Editar</button>
+          <button type="button" class="btn-action-store ${p.is_active ? 'danger' : ''}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; ${!p.is_active ? 'background: #10B981;' : ''}" onclick="togglePromotion('${p.id}', ${p.is_active ? 'false' : 'true'})">
+            <i class="fa-solid ${p.is_active ? 'fa-pause' : 'fa-play'}"></i> ${p.is_active ? 'Pausar' : 'Activar'}
+          </button>
+          <button type="button" class="btn-action-store danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="removePromotion('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.togglePromotionValueField = function() {
+  const type = document.getElementById('promotion-discount-type-input').value;
+  document.getElementById('promotion-value-wrapper').style.display = type === 'shipping' ? 'none' : 'block';
+};
+
+window.openPromotionModal = function(promotionId) {
+  const errorEl = document.getElementById('promotion-error');
+  errorEl.style.display = 'none';
+  document.getElementById('form-promotion').reset();
+  document.getElementById('promotion-id-input').value = promotionId || '';
+
+  const existing = promotionId ? currentPromotionsCache.find(p => p.id === promotionId) : null;
+  document.getElementById('promotion-modal-title').textContent = existing ? 'Editar promoción' : 'Nueva promoción';
+  document.getElementById('promotion-code-input').value = existing ? existing.code : '';
+  document.getElementById('promotion-code-input').disabled = !!existing;
+  document.getElementById('promotion-title-input').value = existing ? existing.title : '';
+  document.getElementById('promotion-description-input').value = existing ? (existing.description || '') : '';
+  document.getElementById('promotion-discount-type-input').value = existing ? existing.discount_type : 'percent';
+  document.getElementById('promotion-value-input').value = existing ? existing.discount_value : 0;
+  document.getElementById('promotion-minorder-input').value = existing ? existing.min_order_usd : 0;
+  document.getElementById('promotion-type-input').value = existing ? existing.promo_type : 'general';
+  document.getElementById('promotion-expires-input').value = existing && existing.expires_at ? existing.expires_at.slice(0, 10) : '';
+  togglePromotionValueField();
+
+  document.getElementById('modal-promotion').classList.add('active');
+};
+
+document.getElementById('form-promotion')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('promotion-error');
+  errorEl.style.display = 'none';
+
+  const id = document.getElementById('promotion-id-input').value;
+  const discountType = document.getElementById('promotion-discount-type-input').value;
+  const rawValue = Number(document.getElementById('promotion-value-input').value) || 0;
+  const payload = {
+    code: document.getElementById('promotion-code-input').value.trim(),
+    title: document.getElementById('promotion-title-input').value.trim(),
+    description: document.getElementById('promotion-description-input').value.trim(),
+    discountType,
+    discountValue: discountType === 'percent' ? rawValue / 100 : (discountType === 'shipping' ? 0 : rawValue),
+    minOrder: Number(document.getElementById('promotion-minorder-input').value) || 0,
+    promoType: document.getElementById('promotion-type-input').value,
+    expiresAt: document.getElementById('promotion-expires-input').value || null
+  };
+
+  const res = id ? await window.rapidinDB.updateStorePromotion(id, payload) : await window.rapidinDB.createStorePromotion(payload);
+  if (res.success) {
+    document.getElementById('modal-promotion').classList.remove('active');
+    await loadPromotions();
+  } else {
+    errorEl.textContent = res.message || 'No se pudo guardar la promoción.';
+    errorEl.style.display = 'block';
+  }
+});
+
+window.togglePromotion = async function(id, activate) {
+  const res = await window.rapidinDB.toggleStorePromotion(id, activate);
+  if (res.success) await loadPromotions();
+  else window.rapidinAlert(res.message || 'No se pudo actualizar la promoción.');
+};
+
+window.removePromotion = async function(id) {
+  if (!confirm('¿Eliminar esta promoción?')) return;
+  const res = await window.rapidinDB.deleteStorePromotion(id);
+  if (res.success) await loadPromotions();
+  else window.rapidinAlert(res.message || 'No se pudo eliminar la promoción.');
+};
 
 // ==========================================
 // TIEMPO REAL

@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
 -- Cupones/promociones disponibles en la plataforma
 CREATE TABLE IF NOT EXISTS coupons (
     id VARCHAR(50) PRIMARY KEY,
+    store_id VARCHAR(50) REFERENCES stores(id), -- NULL = cupon de la plataforma, no NULL = cupon propio del comercio
     code VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,

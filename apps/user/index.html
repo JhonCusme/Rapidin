@@ -6188,7 +6188,7 @@
     async function loadStorePromos() {
       const section = document.getElementById('store-promos-section');
       const list = document.getElementById('store-promos-list');
-      const coupons = await window.rapidinDB.getActiveCoupons();
+      const coupons = await window.rapidinDB.getActiveCoupons(null, window.currentStore ? window.currentStore.id : null);
       window.rapidinCouponCache = {};
       coupons.forEach(c => { window.rapidinCouponCache[c.id] = c; });
       if (!coupons.length) { section.style.display = 'none'; return; }
