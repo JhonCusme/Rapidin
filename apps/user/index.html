@@ -6822,7 +6822,10 @@
       const itemsEl = document.getElementById('checkout-items-list');
       itemsEl.innerHTML = cart.map(item => `
         <div class="checkout-item-row">
-          <div class="checkout-item-name">${escapeHtml(item.name)} ×${item.qty}</div>
+          <div>
+            <div class="checkout-item-name">${escapeHtml(item.name)} ×${item.qty}</div>
+            ${item.optionsText ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(item.optionsText)}</div>` : ''}
+          </div>
           <div class="checkout-item-price">${fmtMoney(item.unitPrice * item.qty)}</div>
         </div>
       `).join('');
@@ -6932,7 +6935,7 @@
         storeId: cart[0].storeId,
         storeName: cart[0].storeName,
         customerAddress: address,
-        items: cart.map(i => ({ productId: i.productId, name: i.name, quantity: i.qty, price: i.unitPrice })),
+        items: cart.map(i => ({ productId: i.productId, name: i.name, quantity: i.qty, price: i.unitPrice, options: i.optionsText || '' })),
         subtotal: productsTotal,
         shippingFee: shipping,
         driverTip: 0,
@@ -8539,7 +8542,10 @@
 
       document.getElementById('orderdetail-item-list').innerHTML = (order.items || []).map(item => `
         <div class="checkout-item-row">
-          <div class="checkout-item-name" style="font-weight: 700;">${escapeHtml(item.name)}</div>
+          <div>
+            <div class="checkout-item-name" style="font-weight: 700;">${escapeHtml(item.name)}</div>
+            ${item.options ? `<div style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(item.options)}</div>` : ''}
+          </div>
           <div class="checkout-item-price" style="color: var(--text-primary); font-weight: 700;">${item.quantity} × ${fmtMoney(item.price)}</div>
         </div>
       `).join('');

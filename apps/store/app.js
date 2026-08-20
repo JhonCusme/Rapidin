@@ -278,7 +278,7 @@ function renderOrdersList() {
           <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">Productos:</div>
           ${items.map(item => `
             <div style="display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0;">
-              <span><strong>${item.quantity}x</strong> ${escapeHtml(item.name)}</span>
+              <span><strong>${item.quantity}x</strong> ${escapeHtml(item.name)}${item.options ? ` <span style="color: var(--text-secondary);">(${escapeHtml(item.options)})</span>` : ''}</span>
               <span style="font-weight: 700;">${fmtMoneyStore(item.price * item.quantity)}</span>
             </div>
           `).join('')}

@@ -304,8 +304,11 @@
       }
     });
 
-    // Ejecutar chequeo al inicio
-    checkAuthGate();
+    // Ejecutar chequeo al inicio. Se difiere a DOMContentLoaded para que corra
+    // después del listener de app.js, que es quien define window.loadAdminApp
+    // (si no, la primera carga de la pantalla se queda vacía porque loadAdminApp
+    // todavía no existe cuando este script corre).
+    document.addEventListener('DOMContentLoaded', checkAuthGate);
 
     // Lógica para pestañas del Admin
     const tabOverview = document.getElementById('atab-btn-overview');
