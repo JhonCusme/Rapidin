@@ -892,6 +892,31 @@ class RapidinDatabase {
     }
   }
 
+  async savePayphoneCredentials(token, storeId) {
+    try {
+      const res = await fetch(`${API_URL}/admin/payphone-credentials`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('admin'),
+        body: JSON.stringify({ token, storeId })
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async deletePayphoneCredentials() {
+    try {
+      const res = await fetch(`${API_URL}/admin/payphone-credentials`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders('admin')
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   async getMyOrders() {
     try {
       const response = await fetch(`${API_URL}/orders/mine`, {

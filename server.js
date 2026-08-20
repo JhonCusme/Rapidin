@@ -58,14 +58,51 @@ if (!twilioClient || !TWILIO_VERIFY_SERVICE_SID) {
 }
 
 // Payphone (Botón de Pago) - pasarela alternativa a Stripe, usada sobre todo en Ecuador.
-// Token y StoreId se generan en el panel de Payphone (Aplicaciones > Credenciales).
-const PAYPHONE_TOKEN = process.env.PAYPHONE_TOKEN || null;
-const PAYPHONE_STORE_ID = process.env.PAYPHONE_STORE_ID || null;
-const payphoneConfigured = !!(PAYPHONE_TOKEN && PAYPHONE_STORE_ID);
-if (!payphoneConfigured) {
-  console.warn('⚠️  PAYPHONE_TOKEN/PAYPHONE_STORE_ID no configurados: la pasarela Payphone quedará deshabilitada.');
-}
+// Token y StoreId se pueden configurar por .env (PAYPHONE_TOKEN/PAYPHONE_STORE_ID) o, más cómodo,
+// desde el panel de Super Admin — ahí se guardan cifrados en la base de datos (nunca en texto plano).
+// Si hay credenciales guardadas en la base de datos, tienen prioridad sobre las de .env.
 const PAYPHONE_API_BASE = 'https://pay.payphonetodoesposible.com/api';
+
+// Clave simétrica derivada de JWT_SECRET, solo para cifrar credenciales de terceros guardadas en
+// la base de datos (Payphone, etc.). No es una clave nueva que haya que gestionar aparte.
+const SECRETS_ENCRYPTION_KEY = crypto.createHash('sha256').update(JWT_SECRET).digest();
+
+function encryptSecret(plainText) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', SECRETS_ENCRYPTION_KEY, iv);
+  const ciphertext = Buffer.concat([cipher.update(plainText, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return [iv.toString('hex'), authTag.toString('hex'), ciphertext.toString('hex')].join(':');
+}
+
+function decryptSecret(encoded) {
+  try {
+    const [ivHex, authTagHex, ciphertextHex] = encoded.split(':');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', SECRETS_ENCRYPTION_KEY, Buffer.from(ivHex, 'hex'));
+    decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+    return Buffer.concat([decipher.update(Buffer.from(ciphertextHex, 'hex')), decipher.final()]).toString('utf8');
+  } catch (e) {
+    return null;
+  }
+}
+
+// Devuelve las credenciales de Payphone activas: primero las guardadas en la base de datos
+// (desde el panel de Super Admin), y si no hay, las de .env como respaldo.
+function getPayphoneCredentials() {
+  return new Promise((resolve) => {
+    db.get('SELECT payphone_token_enc, payphone_store_id_enc FROM platform_settings WHERE id = 1', [], (err, row) => {
+      if (!err && row && row.payphone_token_enc && row.payphone_store_id_enc) {
+        const token = decryptSecret(row.payphone_token_enc);
+        const storeId = decryptSecret(row.payphone_store_id_enc);
+        if (token && storeId) return resolve({ token, storeId, configured: true, source: 'db' });
+      }
+      const envToken = process.env.PAYPHONE_TOKEN || null;
+      const envStoreId = process.env.PAYPHONE_STORE_ID || null;
+      if (envToken && envStoreId) return resolve({ token: envToken, storeId: envStoreId, configured: true, source: 'env' });
+      resolve({ token: null, storeId: null, configured: false, source: null });
+    });
+  });
+}
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,capacitor://localhost,http://localhost')
   .split(',')
@@ -124,6 +161,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     )`, () => {
       db.run(`INSERT OR IGNORE INTO platform_settings (id, commission_rate) VALUES (1, 0.15)`);
       db.run("ALTER TABLE platform_settings ADD COLUMN active_payment_provider VARCHAR(20) NOT NULL DEFAULT 'stripe'", (err) => {});
+      db.run("ALTER TABLE platform_settings ADD COLUMN payphone_token_enc TEXT", (err) => {});
+      db.run("ALTER TABLE platform_settings ADD COLUMN payphone_store_id_enc TEXT", (err) => {});
     });
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
@@ -599,7 +638,8 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
       // Cobro real con Payphone: el cliente ya pagó y volvió con un id/clientTransactionId de Payphone;
       // lo re-confirmamos aquí (no confiamos en el resultado que reporte el cliente) antes de crear el pedido.
       if (newOrder.paymentMethod === 'payphone') {
-        if (!payphoneConfigured) {
+        const payphoneCreds = await getPayphoneCredentials();
+        if (!payphoneCreds.configured) {
           return res.status(400).json({ success: false, code: 'PAYPHONE_NOT_CONFIGURED', message: 'Payphone no está configurado en el servidor.' });
         }
         const { payphoneId, payphoneClientTransactionId } = newOrder;
@@ -609,7 +649,7 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
         try {
           const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/V2/Confirm`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${payphoneCreds.token}` },
             body: JSON.stringify({ id: Number(payphoneId), clientTxId: payphoneClientTransactionId })
           });
           const ppData = await ppRes.json();
@@ -1315,8 +1355,10 @@ app.put('/api/payment-methods/:id/default', authenticateToken, requireRole('user
 // Flujo real: 1) el cliente pide "Prepare" con el monto -> Payphone devuelve una URL de pago.
 // 2) el cliente paga en esa página de Payphone y vuelve a nuestra app con ?id=...&clientTransactionId=...
 // 3) el backend llama "Confirm" con esos dos valores para verificar y capturar el cobro antes de crear el pedido.
-function requirePayphone(req, res, next) {
-  if (!payphoneConfigured) return res.status(503).json({ success: false, message: 'El pago con Payphone no está configurado todavía.' });
+async function requirePayphone(req, res, next) {
+  const creds = await getPayphoneCredentials();
+  if (!creds.configured) return res.status(503).json({ success: false, message: 'El pago con Payphone no está configurado todavía.' });
+  req.payphoneCreds = creds;
   next();
 }
 
@@ -1341,7 +1383,7 @@ app.post('/api/payments/payphone/prepare', authenticateToken, requireRole('user'
   try {
     const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/Prepare`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${req.payphoneCreds.token}` },
       body: JSON.stringify({
         amount: amountCents,
         amountWithoutTax: amountCents,
@@ -1351,7 +1393,7 @@ app.post('/api/payments/payphone/prepare', authenticateToken, requireRole('user'
         currency: 'USD',
         reference: reference || 'Pedido Rapidín',
         clientTransactionId,
-        storeId: PAYPHONE_STORE_ID,
+        storeId: req.payphoneCreds.storeId,
         ...(isAllowedRedirect(responseUrl) ? { responseUrl } : {}),
         ...(isAllowedRedirect(cancellationUrl) ? { cancellationUrl } : {})
       })
@@ -1381,7 +1423,7 @@ app.post('/api/payments/payphone/confirm', authenticateToken, requireRole('user'
   try {
     const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/V2/Confirm`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${req.payphoneCreds.token}` },
       body: JSON.stringify({ id: Number(id), clientTxId: clientTransactionId })
     });
     const ppData = await ppRes.json();
@@ -2509,11 +2551,12 @@ app.get('/api/search', (req, res) => {
 // 6. Configuración global (Categorías, Ofertas)
 app.get('/api/config', async (req, res) => {
   const activePaymentProvider = await getActivePaymentProvider();
+  const payphoneCreds = await getPayphoneCredentials();
   res.json({
     success: true,
     stripePublishableKey: STRIPE_PUBLISHABLE_KEY,
     activePaymentProvider,
-    payphoneConfigured,
+    payphoneConfigured: payphoneCreds.configured,
     categories: [
       { id: 'all', name: 'Todo', icon: 'fa-border-all', badge: null },
       { id: 'turbo', name: 'Turbo 15m', icon: 'fa-bolt', badge: '15 MIN' },
@@ -2595,17 +2638,19 @@ app.put('/api/admin/users/:id/toggle', (req, res) => {
 app.get('/api/admin/settings', async (req, res) => {
   const commissionRate = await getPlatformCommissionRate();
   const activePaymentProvider = await getActivePaymentProvider();
+  const payphoneCreds = await getPayphoneCredentials();
   res.json({
     success: true,
     commissionRate,
     stripeConfigured: !!stripe,
     twilioConfigured: !!(twilioClient && TWILIO_VERIFY_SERVICE_SID),
-    payphoneConfigured,
+    payphoneConfigured: payphoneCreds.configured,
+    payphoneCredentialsSource: payphoneCreds.source,
     activePaymentProvider
   });
 });
 
-app.put('/api/admin/settings', (req, res) => {
+app.put('/api/admin/settings', async (req, res) => {
   const { commissionRate, activePaymentProvider } = req.body;
 
   const updates = [];
@@ -2622,8 +2667,11 @@ app.put('/api/admin/settings', (req, res) => {
     if (activePaymentProvider === 'stripe' && !stripe) {
       return res.status(400).json({ success: false, message: 'No puedes activar Stripe: STRIPE_SECRET_KEY no está configurado en el servidor.' });
     }
-    if (activePaymentProvider === 'payphone' && !payphoneConfigured) {
-      return res.status(400).json({ success: false, message: 'No puedes activar Payphone: PAYPHONE_TOKEN/PAYPHONE_STORE_ID no están configurados en el servidor.' });
+    if (activePaymentProvider === 'payphone') {
+      const payphoneCreds = await getPayphoneCredentials();
+      if (!payphoneCreds.configured) {
+        return res.status(400).json({ success: false, message: 'No puedes activar Payphone: primero guarda el Token y StoreId en esta misma pantalla.' });
+      }
     }
     updates.push({ sql: 'UPDATE platform_settings SET active_payment_provider = ? WHERE id = 1', params: [activePaymentProvider] });
   }
@@ -2637,6 +2685,38 @@ app.put('/api/admin/settings', (req, res) => {
       if (err) return res.status(500).json({ success: false, message: 'Error actualizando la configuración' });
       res.json({ success: true, commissionRate: row.commission_rate, activePaymentProvider: row.active_payment_provider });
     });
+  });
+});
+
+// Guarda (o borra) las credenciales de Payphone desde el panel de Super Admin.
+// Se cifran con AES-256-GCM antes de guardarse; nunca se devuelven en texto plano después de guardarlas.
+app.put('/api/admin/payphone-credentials', (req, res) => {
+  const { token, storeId } = req.body;
+  if (!token || !storeId || typeof token !== 'string' || typeof storeId !== 'string') {
+    return res.status(400).json({ success: false, message: 'Falta el Token o el StoreId de Payphone.' });
+  }
+  const tokenEnc = encryptSecret(token.trim());
+  const storeIdEnc = encryptSecret(storeId.trim());
+  db.run(
+    'UPDATE platform_settings SET payphone_token_enc = ?, payphone_store_id_enc = ? WHERE id = 1',
+    [tokenEnc, storeIdEnc],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'No se pudieron guardar las credenciales.' });
+      res.json({ success: true, message: 'Credenciales de Payphone guardadas.' });
+    }
+  );
+});
+
+app.delete('/api/admin/payphone-credentials', (req, res) => {
+  db.run('UPDATE platform_settings SET payphone_token_enc = NULL, payphone_store_id_enc = NULL WHERE id = 1', [], async (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'No se pudieron eliminar las credenciales.' });
+    // Si Payphone quedó sin credenciales (ni en DB ni en .env) y era la pasarela activa, volvemos a Stripe
+    // para no dejar el checkout roto.
+    const creds = await getPayphoneCredentials();
+    if (!creds.configured) {
+      db.run("UPDATE platform_settings SET active_payment_provider = 'stripe' WHERE id = 1 AND active_payment_provider = 'payphone'");
+    }
+    res.json({ success: true, message: 'Credenciales de Payphone eliminadas.' });
   });
 });
 

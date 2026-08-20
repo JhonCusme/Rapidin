@@ -34,6 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #EF4444;">○ No configurado</span>';
       document.getElementById('status-payphone').innerHTML = settings.payphoneConfigured
         ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #EF4444;">○ No configurado</span>';
+      const payphoneSourceEl = document.getElementById('status-payphone-source');
+      if (payphoneSourceEl) {
+        payphoneSourceEl.textContent = settings.payphoneConfigured
+          ? (settings.payphoneCredentialsSource === 'env' ? 'Configurado por .env del servidor' : 'Configurado desde este panel')
+          : 'Configúralo abajo';
+      }
+      const deleteBtn = document.getElementById('btn-delete-payphone-creds');
+      if (deleteBtn) {
+        deleteBtn.style.display = (settings.payphoneConfigured && settings.payphoneCredentialsSource === 'db') ? '' : 'none';
+      }
       document.getElementById('status-twilio').innerHTML = settings.twilioConfigured
         ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #F59E0B;">○ Modo de prueba (código 123456)</span>';
 
@@ -158,6 +168,37 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminOverview();
     } else {
       window.rapidinAlert(res.message || 'No se pudo actualizar la comisión.');
+    }
+  };
+
+  window.savePayphoneCredentials = async function() {
+    const token = document.getElementById('payphone-token-input').value.trim();
+    const storeId = document.getElementById('payphone-storeid-input').value.trim();
+    const msgEl = document.getElementById('payphone-creds-msg');
+    if (!token || !storeId) {
+      if (msgEl) { msgEl.style.color = '#EF4444'; msgEl.textContent = 'Completa el Token y el StoreId.'; }
+      return;
+    }
+    const res = await window.rapidinDB.savePayphoneCredentials(token, storeId);
+    if (res.success) {
+      if (msgEl) { msgEl.style.color = '#10B981'; msgEl.textContent = '✅ Credenciales de Payphone guardadas y cifradas.'; }
+      document.getElementById('payphone-token-input').value = '';
+      document.getElementById('payphone-storeid-input').value = '';
+      renderAdminOverview();
+    } else {
+      if (msgEl) { msgEl.style.color = '#EF4444'; msgEl.textContent = res.message || 'No se pudieron guardar las credenciales.'; }
+    }
+  };
+
+  window.deletePayphoneCredentials = async function() {
+    if (!confirm('¿Eliminar las credenciales de Payphone guardadas en el panel? Si Payphone es la pasarela activa, se volverá a Stripe automáticamente.')) return;
+    const res = await window.rapidinDB.deletePayphoneCredentials();
+    const msgEl = document.getElementById('payphone-creds-msg');
+    if (res.success) {
+      if (msgEl) { msgEl.style.color = '#10B981'; msgEl.textContent = '🗑️ Credenciales de Payphone eliminadas.'; }
+      renderAdminOverview();
+    } else {
+      if (msgEl) { msgEl.style.color = '#EF4444'; msgEl.textContent = res.message || 'No se pudieron eliminar las credenciales.'; }
     }
   };
 

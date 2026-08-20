@@ -218,7 +218,7 @@
     <div id="atab-content-integrations" style="display: none;">
       <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px; margin-bottom: 1.5rem;">
         <h2 style="margin-bottom: 1rem;">Estado de las integraciones 🔌</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Estas credenciales se configuran directamente en el archivo <code>.env</code> del servidor, no desde aquí — es la forma segura de manejar secretos de producción. Esta pantalla solo te muestra si ya están activas.</p>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Stripe y Twilio se configuran en el archivo <code>.env</code> del servidor. Payphone puedes configurarlo directamente aquí abajo, sin tocar el servidor.</p>
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 1rem;">
           <div>
             <div style="font-weight: 700;">💳 Stripe (pagos con tarjeta)</div>
@@ -229,7 +229,7 @@
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 1rem;">
           <div>
             <div style="font-weight: 700;">🅿️ Payphone (botón de pago)</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary);">PAYPHONE_TOKEN / PAYPHONE_STORE_ID</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);" id="status-payphone-source">Configúralo abajo</div>
           </div>
           <span class="badge" id="status-payphone">—</span>
         </div>
@@ -242,9 +242,27 @@
         </div>
       </div>
 
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px; margin-bottom: 1.5rem;">
+        <h2 style="margin-bottom: 1rem;">Credenciales de Payphone 🅿️</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Copia el Token y el StoreId desde tu panel de Payphone (Aplicaciones → Credenciales) y pégalos aquí. Se guardan cifrados en la base de datos — nadie puede volver a verlos en texto plano desde esta pantalla, ni siquiera tú.</p>
+        <label style="font-weight: 700; display: block; margin-bottom: 0.4rem; font-size: 0.85rem;">Token</label>
+        <input type="password" id="payphone-token-input" placeholder="Pega aquí el Token de Payphone" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); margin-bottom: 1rem; font-family: monospace;">
+        <label style="font-weight: 700; display: block; margin-bottom: 0.4rem; font-size: 0.85rem;">StoreId</label>
+        <input type="text" id="payphone-storeid-input" placeholder="Pega aquí el StoreId de Payphone" style="width: 100%; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); margin-bottom: 1.5rem; font-family: monospace;">
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="badge" style="flex: 1; background: #10B981; color: #fff; padding: 0.85rem 1.5rem; font-size: 0.9rem; justify-content: center;" onclick="savePayphoneCredentials()">
+            Guardar Credenciales 💾
+          </button>
+          <button class="badge" id="btn-delete-payphone-creds" style="background: transparent; color: #EF4444; border: 1px solid #EF4444; padding: 0.85rem 1.25rem; font-size: 0.9rem; justify-content: center; display: none;" onclick="deletePayphoneCredentials()">
+            Eliminar 🗑️
+          </button>
+        </div>
+        <p id="payphone-creds-msg" style="margin-top: 0.75rem; font-size: 0.85rem;"></p>
+      </div>
+
       <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px;">
         <h2 style="margin-bottom: 1rem;">Pasarela de pago activa 🔀</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Elige con cuál de las pasarelas configuradas se procesarán los cobros con tarjeta de los clientes. Solo puedes activar una pasarela que ya tenga sus credenciales configuradas en <code>.env</code>.</p>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Elige con cuál de las pasarelas configuradas se procesarán los cobros con tarjeta de los clientes. Solo puedes activar una pasarela que ya esté configurada (Stripe en <code>.env</code>, Payphone arriba).</p>
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
           <label id="provider-option-stripe" style="flex: 1; display: flex; align-items: center; gap: 0.6rem; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); border: 2px solid transparent; cursor: pointer;">
             <input type="radio" name="payment-provider" value="stripe" id="provider-radio-stripe">
