@@ -109,6 +109,11 @@ const db = new sqlite3.Database(dbPath, (err) => {
       id VARCHAR(50) PRIMARY KEY, store_id VARCHAR(50) NOT NULL, user_id VARCHAR(50) NOT NULL,
       permissions TEXT NOT NULL DEFAULT '{}', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
+    db.run(`CREATE TABLE IF NOT EXISTS platform_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1), commission_rate DECIMAL(5,4) NOT NULL DEFAULT 0.15
+    )`, () => {
+      db.run(`INSERT OR IGNORE INTO platform_settings (id, commission_rate) VALUES (1, 0.15)`);
+    });
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -193,6 +198,15 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Demasiados intentos. Intenta de nuevo en unos minutos.' }
 });
 app.use('/api/auth', authLimiter);
+
+// Comisión de la plataforma, configurable en vivo por el Super Admin (fila única en platform_settings).
+function getPlatformCommissionRate() {
+  return new Promise((resolve) => {
+    db.get('SELECT commission_rate FROM platform_settings WHERE id = 1', [], (err, row) => {
+      resolve(row ? row.commission_rate : 0.15);
+    });
+  });
+}
 
 // ==========================================
 // MIDDLEWARE DE AUTENTICACIÓN Y AUTORIZACIÓN
@@ -406,6 +420,7 @@ app.post('/api/auth/phone-login', async (req, res) => {
     if (err) return res.status(500).json({ success: false, message: 'Error de servidor' });
 
     if (existing) {
+      if (!existing.active) return res.status(403).json({ success: false, message: 'Tu cuenta fue suspendida. Contacta a soporte de Rapidín.' });
       const token = jwt.sign({ id: existing.id, email: existing.email, role: existing.role }, JWT_SECRET, { expiresIn: '7d' });
       return res.json({ success: true, token, user: { id: existing.id, email: existing.email, name: existing.name, role: existing.role, phone: existing.phone } });
     }
@@ -484,6 +499,7 @@ app.post('/api/auth/login', (req, res) => {
 
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+    if (!user.active) return res.status(403).json({ success: false, message: 'Tu cuenta fue suspendida. Contacta a soporte de Rapidín.' });
 
     // El token debe llevar storeId/driverId también al iniciar sesión (no solo al registrarse),
     // o los endpoints que dependen de esos campos fallan para cuentas que vuelven a loguearse.
@@ -557,7 +573,8 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
       const tip = newOrder.driverTip || 0;
       const discount = newOrder.discount || 0;
       const total = newOrder.total || (subtotal + shipping + tip - discount);
-      const commission = total * 0.15; // 15% platform commission
+      const commissionRate = await getPlatformCommissionRate();
+      const commission = total * commissionRate;
 
       // Cobro real con Stripe si el cliente eligió una tarjeta guardada
       if (newOrder.paymentMethodId && newOrder.paymentMethodId !== 'cash' && stripe) {
@@ -1957,8 +1974,8 @@ app.put('/api/store/order-settings', authenticateToken, requireRole('store'), re
 // --- Panel de comercios: finanzas y liquidaciones ---
 // El "neto del comercio" se calcula solo sobre el subtotal de productos (subtotal_usd):
 // el envío y la propina son dinero que pasa directo al repartidor, no le pertenecen
-// al comercio ni se les aplica comisión de la plataforma.
-const STORE_COMMISSION_RATE = 0.15;
+// al comercio ni se les aplica comisión de la plataforma. La tasa es la misma que
+// configura el Super Admin para toda la plataforma (platform_settings.commission_rate).
 
 function fetchCompletedStoreOrders(storeId, callback) {
   db.all(
@@ -1969,7 +1986,8 @@ function fetchCompletedStoreOrders(storeId, callback) {
   );
 }
 
-app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
+app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), async (req, res) => {
+  const rate = await getPlatformCommissionRate();
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus finanzas' });
 
@@ -1981,7 +1999,7 @@ app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), r
     const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4);
     const cancelled = rows.filter(o => o.is_cancelled);
 
-    const netOf = (o) => o.subtotal_usd * (1 - STORE_COMMISSION_RATE);
+    const netOf = (o) => o.subtotal_usd * (1 - rate);
 
     const sumSince = (since) => completed
       .filter(o => new Date(o.created_at.replace(' ', 'T') + 'Z') >= since)
@@ -2018,12 +2036,13 @@ app.get('/api/store/finance/summary', authenticateToken, requireRole('store'), r
       avgTicket: round2(avgTicket),
       cancellationRate: round2(cancellationRate),
       topProducts,
-      commissionRate: STORE_COMMISSION_RATE
+      commissionRate: rate
     });
   });
 });
 
-app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
+app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), async (req, res) => {
+  const rate = await getPlatformCommissionRate();
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo el detalle de ventas' });
     const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4).slice(0, 100);
@@ -2031,14 +2050,15 @@ app.get('/api/store/finance/sales', authenticateToken, requireRole('store'), req
       id: o.id,
       createdAt: o.created_at,
       grossSales: o.subtotal_usd,
-      commission: Math.round(o.subtotal_usd * STORE_COMMISSION_RATE * 100) / 100,
-      netEarnings: Math.round(o.subtotal_usd * (1 - STORE_COMMISSION_RATE) * 100) / 100
+      commission: Math.round(o.subtotal_usd * rate * 100) / 100,
+      netEarnings: Math.round(o.subtotal_usd * (1 - rate) * 100) / 100
     }));
     res.json({ success: true, sales });
   });
 });
 
-app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), (req, res) => {
+app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'), requireStorePermission('finanzas'), async (req, res) => {
+  const rate = await getPlatformCommissionRate();
   fetchCompletedStoreOrders(req.user.storeId, (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tus liquidaciones' });
     const completed = rows.filter(o => !o.is_cancelled && o.status_step >= 4);
@@ -2063,13 +2083,13 @@ app.get('/api/store/finance/settlements', authenticateToken, requireRole('store'
       .map(([weekStart, b]) => {
         const start = new Date(weekStart + 'T00:00:00Z');
         const end = new Date(start.getTime() + 6 * 86400000);
-        const net = b.gross * (1 - STORE_COMMISSION_RATE);
+        const net = b.gross * (1 - rate);
         return {
           weekStart,
           weekEnd: end.toISOString().slice(0, 10),
           orders: b.orders,
           grossSales: Math.round(b.gross * 100) / 100,
-          commission: Math.round(b.gross * STORE_COMMISSION_RATE * 100) / 100,
+          commission: Math.round(b.gross * rate * 100) / 100,
           netEarnings: Math.round(net * 100) / 100,
           status: 'pending'
         };
@@ -2382,10 +2402,16 @@ app.get('/api/admin/overview', (req, res) => {
     data.storeCount = storeRow ? storeRow.count : 0;
     db.get("SELECT COUNT(*) as count FROM users WHERE role = 'driver'", [], (err, driverRow) => {
       data.driverCount = driverRow ? driverRow.count : 0;
-      db.get("SELECT SUM(total_amount_usd) as gmv, SUM(platform_commission_usd) as commission FROM orders", [], (err, orderRow) => {
-        data.gmv = orderRow && orderRow.gmv ? orderRow.gmv : 0;
-        data.commission = orderRow && orderRow.commission ? orderRow.commission : 0;
-        res.json({ success: true, payload: data });
+      db.get("SELECT COUNT(*) as count FROM drivers WHERE is_online = 1", [], (err, onlineRow) => {
+        data.driversOnline = onlineRow ? onlineRow.count : 0;
+        db.get("SELECT COUNT(*) as count FROM users WHERE role = 'user'", [], (err, custRow) => {
+          data.customerCount = custRow ? custRow.count : 0;
+          db.get("SELECT SUM(total_amount_usd) as gmv, SUM(platform_commission_usd) as commission FROM orders WHERE is_cancelled = 0", [], (err, orderRow) => {
+            data.gmv = orderRow && orderRow.gmv ? orderRow.gmv : 0;
+            data.commission = orderRow && orderRow.commission ? orderRow.commission : 0;
+            res.json({ success: true, payload: data });
+          });
+        });
       });
     });
   });
@@ -2393,10 +2419,12 @@ app.get('/api/admin/overview', (req, res) => {
 
 app.get('/api/admin/orders', (req, res) => {
   const sql = `
-    SELECT o.id, u.name as storeName, o.customer_address as customerName, o.total_amount_usd as total, o.status_text as statusText 
-    FROM orders o 
-    LEFT JOIN users u ON o.store_id = u.id 
-    ORDER BY o.created_at DESC LIMIT 50
+    SELECT orders.id, stores.name as storeName, users.name as customerName,
+           orders.total_amount_usd as total, orders.platform_commission_usd as commission, orders.status_text as statusText
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.id
+    LEFT JOIN users ON orders.customer_id = users.id
+    ORDER BY orders.created_at DESC LIMIT 50
   `;
   db.all(sql, [], (err, rows) => {
     if (err) return res.json({ success: false });
@@ -2421,6 +2449,27 @@ app.put('/api/admin/users/:id/toggle', (req, res) => {
       if (err) return res.json({ success: false });
       res.json({ success: true, active: newState });
     });
+  });
+});
+
+app.get('/api/admin/settings', async (req, res) => {
+  const commissionRate = await getPlatformCommissionRate();
+  res.json({
+    success: true,
+    commissionRate,
+    stripeConfigured: !!stripe,
+    twilioConfigured: !!(twilioClient && TWILIO_VERIFY_SERVICE_SID)
+  });
+});
+
+app.put('/api/admin/settings', (req, res) => {
+  const { commissionRate } = req.body;
+  if (typeof commissionRate !== 'number' || commissionRate < 0.05 || commissionRate > 0.30) {
+    return res.status(400).json({ success: false, message: 'La comisión debe estar entre 5% y 30%' });
+  }
+  db.run('UPDATE platform_settings SET commission_rate = ? WHERE id = 1', [commissionRate], (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando la comisión' });
+    res.json({ success: true, commissionRate });
   });
 });
 

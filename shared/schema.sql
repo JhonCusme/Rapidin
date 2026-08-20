@@ -70,6 +70,13 @@ CREATE TABLE IF NOT EXISTS store_staff (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Configuracion global de la plataforma (una sola fila, id=1)
+CREATE TABLE IF NOT EXISTS platform_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    commission_rate DECIMAL(5, 4) NOT NULL DEFAULT 0.15
+);
+INSERT OR IGNORE INTO platform_settings (id, commission_rate) VALUES (1, 0.15);
+
 -- Categorías del catálogo de cada comercio (ej. Hamburguesas, Bebidas, Postres)
 CREATE TABLE IF NOT EXISTS product_categories (
     id VARCHAR(50) PRIMARY KEY,

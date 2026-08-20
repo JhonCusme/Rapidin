@@ -36,6 +36,24 @@ class RapidinDatabase {
     }
   }
 
+  async registerAdmin({ name, email, password, setupKey }) {
+    try {
+      const response = await fetch(`${API_URL}/auth/register-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, setupKey })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem(this._getSessionKeyByRole('admin'), JSON.stringify({ token: data.token, ...data.user }));
+        return { success: true, user: data.user };
+      }
+      return { success: false, message: data.message || 'No se pudo crear la cuenta de administrador.' };
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // Envía un código de verificación real por SMS (Twilio Verify) al número indicado.
   async sendOtp(phone) {
     try {
@@ -1122,6 +1140,29 @@ class RapidinDatabase {
   // ==========================================
   // ADMIN API (Fase 4)
   // ==========================================
+
+  async getAdminSettings() {
+    try {
+      const res = await fetch(`${API_URL}/admin/settings`, { headers: this.getAuthHeaders('admin') });
+      const data = await res.json();
+      return data.success ? data : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async updateAdminSettings(commissionRate) {
+    try {
+      const res = await fetch(`${API_URL}/admin/settings`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('admin'),
+        body: JSON.stringify({ commissionRate })
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
 
   async getAdminOverview() {
     try {
