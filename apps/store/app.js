@@ -7,6 +7,10 @@ function fmtMoneyStore(n) { return '$' + Number(n || 0).toFixed(2); }
 let currentOrdersTab = 'all';
 let currentOrdersCache = [];
 let currentRejectingOrderId = null;
+let currentCategoriesCache = [];
+let currentProductsCache = [];
+let currentCatalogFilter = 'all';
+let currentOptionGroups = [];
 
 // ==========================================
 // AUTH GATE
@@ -19,11 +23,22 @@ function checkAuthGate() {
     document.getElementById('store-header-name').textContent = store.name || 'Comercio';
     loadDashboard();
     loadStoreOrders();
+    loadCatalog();
   } else {
     document.getElementById('auth-gate-screen').style.display = 'flex';
     document.getElementById('main-app-content').style.display = 'none';
   }
 }
+
+// ==========================================
+// NAVEGACIÓN PRINCIPAL
+// ==========================================
+window.switchMainView = function(view) {
+  document.querySelectorAll('.main-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  ['inicio', 'pedidos', 'catalogo'].forEach(v => {
+    document.getElementById('view-' + v).style.display = v === view ? 'block' : 'none';
+  });
+};
 
 document.getElementById('gate-store-form-login')?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -287,6 +302,258 @@ document.getElementById('form-reject-order')?.addEventListener('submit', async (
     loadDashboard();
   } else {
     window.rapidinAlert(res.message || 'No se pudo rechazar el pedido.');
+  }
+});
+
+// ==========================================
+// CATÁLOGO: CATEGORÍAS
+// ==========================================
+async function loadCatalog() {
+  const store = window.rapidinDB.getCurrentUser('store');
+  if (!store) return;
+  currentCategoriesCache = await window.rapidinDB.getStoreCategories();
+  currentProductsCache = await window.rapidinDB.getStoreProducts();
+  renderCategoryFilters();
+  renderCategorySelectOptions();
+  renderCatalogGrid();
+}
+
+function renderCategoryFilters() {
+  const container = document.getElementById('catalog-category-filters');
+  const chips = ['<button type="button" class="category-chip ' + (currentCatalogFilter === 'all' ? 'active' : '') + '" data-cat="all" onclick="filterCatalogByCategory(\'all\')">Todos</button>'];
+  currentCategoriesCache.forEach(c => {
+    chips.push(`<button type="button" class="category-chip ${currentCatalogFilter === c.id ? 'active' : ''}" data-cat="${c.id}" onclick="filterCatalogByCategory('${c.id}')">${escapeHtml(c.name)}</button>`);
+  });
+  container.innerHTML = chips.join('');
+}
+
+function renderCategorySelectOptions() {
+  const select = document.getElementById('product-category-input');
+  const current = select.value;
+  select.innerHTML = '<option value="">Sin categoría</option>' + currentCategoriesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  select.value = current;
+}
+
+window.filterCatalogByCategory = function(catId) {
+  currentCatalogFilter = catId;
+  renderCategoryFilters();
+  renderCatalogGrid();
+};
+
+window.openCategoryModal = function() {
+  document.getElementById('modal-categories').classList.add('active');
+  renderCategoriesManageList();
+};
+
+function renderCategoriesManageList() {
+  const list = document.getElementById('categories-manage-list');
+  if (!currentCategoriesCache.length) {
+    list.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 1rem 0;">Todavía no tienes categorías.</p>';
+    return;
+  }
+  list.innerHTML = currentCategoriesCache.map(c => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color);">
+      <span style="font-weight: 700;">${escapeHtml(c.name)}</span>
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="button" class="btn-action-store outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="renameCategory('${c.id}', '${escapeHtml(c.name).replace(/'/g, "\\'")}')"><i class="fa-solid fa-pen"></i></button>
+        <button type="button" class="btn-action-store danger" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="removeCategory('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('form-new-category')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('new-category-name');
+  const res = await window.rapidinDB.createStoreCategory(input.value.trim());
+  if (res.success) {
+    input.value = '';
+    await loadCatalog();
+    renderCategoriesManageList();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo crear la categoría.');
+  }
+});
+
+window.renameCategory = async function(id, currentName) {
+  const name = prompt('Nuevo nombre de la categoría:', currentName);
+  if (!name || !name.trim()) return;
+  const res = await window.rapidinDB.updateStoreCategory(id, name.trim());
+  if (res.success) {
+    await loadCatalog();
+    renderCategoriesManageList();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo renombrar la categoría.');
+  }
+};
+
+window.removeCategory = async function(id) {
+  if (!confirm('¿Eliminar esta categoría? Los productos quedarán sin categoría.')) return;
+  const res = await window.rapidinDB.deleteStoreCategory(id);
+  if (res.success) {
+    await loadCatalog();
+    renderCategoriesManageList();
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo eliminar la categoría.');
+  }
+};
+
+// ==========================================
+// CATÁLOGO: PRODUCTOS
+// ==========================================
+const AVAILABILITY_LABELS = {
+  available: { text: '● Disponible', color: '#10B981' },
+  out_of_stock: { text: '○ Agotado', color: '#EF4444' },
+  paused: { text: '‖ Pausado', color: '#F59E0B' }
+};
+
+function renderCatalogGrid() {
+  const container = document.getElementById('catalog-products-grid');
+  const products = currentCatalogFilter === 'all'
+    ? currentProductsCache
+    : currentProductsCache.filter(p => p.category_id === currentCatalogFilter);
+
+  if (!products.length) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-utensils" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3>Todavía no hay productos aquí</h3>
+        <p style="color: var(--text-secondary);">Agrega tu primer producto con el botón "Nuevo producto".</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = products.map(p => {
+    const avail = AVAILABILITY_LABELS[p.availability_status] || AVAILABILITY_LABELS.available;
+    const imgStyle = p.image_url ? `background-image:url('${escapeHtml(p.image_url)}'); background-size:cover; background-position:center;` : 'display: flex; align-items: center; justify-content: center; font-size: 1.8rem;';
+    return `
+      <div class="product-card-store">
+        <div style="width: 64px; height: 64px; border-radius: 12px; background: var(--bg-main); flex-shrink: 0; ${imgStyle}">${p.image_url ? '' : '🍽️'}</div>
+        <div style="flex: 1; min-width: 0;">
+          <h4 style="font-size: 0.95rem;">${escapeHtml(p.name)}</h4>
+          <div style="font-weight: 800; color: #10B981; margin: 0.2rem 0;">${fmtMoneyStore(p.price_usd)}</div>
+          <select class="avail-select" style="color: ${avail.color};" onchange="changeProductAvailability('${p.id}', this.value)">
+            <option value="available" ${p.availability_status === 'available' ? 'selected' : ''}>● Disponible</option>
+            <option value="out_of_stock" ${p.availability_status === 'out_of_stock' ? 'selected' : ''}>○ Agotado</option>
+            <option value="paused" ${p.availability_status === 'paused' ? 'selected' : ''}>‖ Pausado</option>
+          </select>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <button class="btn-action-store outline" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" onclick="openProductModal('${p.id}')"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-action-store danger" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" onclick="removeProduct('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.changeProductAvailability = async function(id, status) {
+  const res = await window.rapidinDB.setProductAvailability(id, status);
+  if (res.success) {
+    const p = currentProductsCache.find(x => x.id === id);
+    if (p) p.availability_status = status;
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo actualizar la disponibilidad.');
+    renderCatalogGrid();
+  }
+};
+
+window.removeProduct = async function(id) {
+  if (!confirm('¿Eliminar este producto del catálogo?')) return;
+  const res = await window.rapidinDB.deleteStoreProduct(id);
+  if (res.success) await loadCatalog();
+  else window.rapidinAlert(res.message || 'No se pudo eliminar el producto.');
+};
+
+// --- Modal de producto: variantes y extras ---
+window.addOptionGroup = function(existing) {
+  currentOptionGroups.push(existing || { title: '', required: false, type: 'radio', choices: [{ name: '', extra: 0 }] });
+  renderOptionGroups();
+};
+
+function renderOptionGroups() {
+  const container = document.getElementById('product-options-editor');
+  if (!currentOptionGroups.length) {
+    container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Sin variantes ni extras. Ej: "Punto de cocción" (variante) o "Extras" (complementos).</p>';
+    return;
+  }
+  container.innerHTML = currentOptionGroups.map((g, gi) => `
+    <div class="option-group-card">
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.6rem;">
+        <input type="text" class="coupon-input" style="flex: 1;" placeholder="Ej: Tamaño" value="${escapeHtml(g.title)}" oninput="updateOptionGroup(${gi}, 'title', this.value)">
+        <select class="coupon-input" style="width: 120px;" onchange="updateOptionGroup(${gi}, 'type', this.value)">
+          <option value="radio" ${g.type === 'radio' ? 'selected' : ''}>Única</option>
+          <option value="checkbox" ${g.type === 'checkbox' ? 'selected' : ''}>Múltiple</option>
+        </select>
+        <button type="button" class="btn-action-store danger" style="padding: 0.5rem 0.7rem;" onclick="removeOptionGroup(${gi})"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; margin-bottom: 0.6rem; cursor: pointer;">
+        <input type="checkbox" ${g.required ? 'checked' : ''} onchange="updateOptionGroup(${gi}, 'required', this.checked)"> Obligatorio elegir
+      </label>
+      ${g.choices.map((c, ci) => `
+        <div class="option-choice-row">
+          <input type="text" class="coupon-input" style="flex: 1;" placeholder="Opción" value="${escapeHtml(c.name)}" oninput="updateOptionChoice(${gi}, ${ci}, 'name', this.value)">
+          <input type="number" class="coupon-input" style="width: 90px;" step="0.01" min="0" placeholder="+$" value="${c.extra}" oninput="updateOptionChoice(${gi}, ${ci}, 'extra', this.value)">
+          <button type="button" class="btn-action-store danger" style="padding: 0.4rem 0.6rem;" onclick="removeOptionChoice(${gi}, ${ci})"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      `).join('')}
+      <button type="button" class="btn-action-store outline" style="padding: 0.35rem 0.7rem; font-size: 0.75rem; margin-top: 0.3rem;" onclick="addOptionChoice(${gi})"><i class="fa-solid fa-plus"></i> Opción</button>
+    </div>
+  `).join('');
+}
+
+window.updateOptionGroup = function(gi, field, value) { currentOptionGroups[gi][field] = value; if (field === 'type') renderOptionGroups(); };
+window.removeOptionGroup = function(gi) { currentOptionGroups.splice(gi, 1); renderOptionGroups(); };
+window.addOptionChoice = function(gi) { currentOptionGroups[gi].choices.push({ name: '', extra: 0 }); renderOptionGroups(); };
+window.updateOptionChoice = function(gi, ci, field, value) { currentOptionGroups[gi].choices[ci][field] = field === 'extra' ? Number(value) || 0 : value; };
+window.removeOptionChoice = function(gi, ci) { currentOptionGroups[gi].choices.splice(ci, 1); renderOptionGroups(); };
+
+window.openProductModal = function(productId) {
+  const errorEl = document.getElementById('product-error');
+  errorEl.style.display = 'none';
+  document.getElementById('form-product').reset();
+  document.getElementById('product-id-input').value = productId || '';
+
+  const existing = productId ? currentProductsCache.find(p => p.id === productId) : null;
+  document.getElementById('product-modal-title').textContent = existing ? 'Editar producto' : 'Nuevo producto';
+  document.getElementById('product-name-input').value = existing ? existing.name : '';
+  document.getElementById('product-description-input').value = existing ? (existing.description || '') : '';
+  document.getElementById('product-price-input').value = existing ? existing.price_usd : '';
+  document.getElementById('product-image-input').value = existing ? (existing.image_url || '') : '';
+  document.getElementById('product-calories-input').value = existing ? (existing.calories || '') : '';
+  renderCategorySelectOptions();
+  document.getElementById('product-category-input').value = existing && existing.category_id ? existing.category_id : '';
+
+  currentOptionGroups = existing && existing.options ? JSON.parse(JSON.stringify(existing.options)) : [];
+  renderOptionGroups();
+
+  document.getElementById('modal-product').classList.add('active');
+};
+
+document.getElementById('form-product')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('product-error');
+  errorEl.style.display = 'none';
+
+  const id = document.getElementById('product-id-input').value;
+  const payload = {
+    name: document.getElementById('product-name-input').value.trim(),
+    description: document.getElementById('product-description-input').value.trim(),
+    price: Number(document.getElementById('product-price-input').value),
+    categoryId: document.getElementById('product-category-input').value || null,
+    image: document.getElementById('product-image-input').value.trim(),
+    calories: document.getElementById('product-calories-input').value.trim(),
+    options: currentOptionGroups.filter(g => g.title.trim())
+  };
+
+  const res = id ? await window.rapidinDB.updateStoreProduct(id, payload) : await window.rapidinDB.createStoreProduct(payload);
+  if (res.success) {
+    document.getElementById('modal-product').classList.remove('active');
+    await loadCatalog();
+  } else {
+    errorEl.textContent = res.message || 'No se pudo guardar el producto.';
+    errorEl.style.display = 'block';
   }
 });
 

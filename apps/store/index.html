@@ -90,6 +90,27 @@
     }
     .stat-card-store .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; }
     .stat-card-store .value { font-size: 1.8rem; font-weight: 900; font-family: var(--font-heading); }
+    .main-nav-tabs {
+      display: flex; gap: 0.5rem; background: var(--bg-main);
+      border-bottom: 1px solid var(--border-color); padding: 0 1.25rem;
+    }
+    .main-nav-btn {
+      padding: 0.9rem 1.1rem; font-size: 0.9rem; font-weight: 700;
+      color: var(--text-secondary); border-bottom: 2px solid transparent; background: none; cursor: pointer;
+    }
+    .main-nav-btn.active { color: #10B981; border-bottom-color: #10B981; }
+    .category-chip {
+      padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 700; white-space: nowrap;
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-full); cursor: pointer;
+    }
+    .category-chip.active { background: #10B981; border-color: #10B981; color: #fff; }
+    .product-card-store {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      padding: 1.25rem; display: flex; gap: 1rem; align-items: center;
+    }
+    .avail-select { font-size: 0.8rem; padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); font-weight: 700; }
+    .option-group-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem; }
+    .option-choice-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
     .auth-gate-screen {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: var(--bg-main); z-index: 9999;
@@ -151,48 +172,77 @@
     </div>
   </header>
 
+  <nav class="main-nav-tabs">
+    <button type="button" class="main-nav-btn active" data-view="inicio" onclick="switchMainView('inicio')"><i class="fa-solid fa-house"></i> Inicio</button>
+    <button type="button" class="main-nav-btn" data-view="pedidos" onclick="switchMainView('pedidos')"><i class="fa-solid fa-receipt"></i> Pedidos</button>
+    <button type="button" class="main-nav-btn" data-view="catalogo" onclick="switchMainView('catalogo')"><i class="fa-solid fa-utensils"></i> Catálogo</button>
+  </nav>
+
   <main class="container" style="padding: 2rem 1.25rem;">
-    <!-- DASHBOARD -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;" id="dashboard-stats-grid">
-      <div class="stat-card-store">
-        <div class="label">🔴 Pedidos nuevos</div>
-        <div class="value" style="color: var(--brand-primary);" id="stat-new-count">—</div>
-      </div>
-      <div class="stat-card-store">
-        <div class="label">🟠 Preparando</div>
-        <div class="value" style="color: #F59E0B;" id="stat-preparing-count">—</div>
-      </div>
-      <div class="stat-card-store">
-        <div class="label">🟢 Esperando repartidor</div>
-        <div class="value" style="color: #10B981;" id="stat-ready-count">—</div>
-      </div>
-      <div class="stat-card-store">
-        <div class="label">Ventas de hoy</div>
-        <div class="value" id="stat-today-sales">—</div>
-      </div>
-      <div class="stat-card-store">
-        <div class="label">Pedidos de hoy</div>
-        <div class="value" id="stat-today-orders">—</div>
+    <!-- VISTA: INICIO (Dashboard) -->
+    <div id="view-inicio">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;" id="dashboard-stats-grid">
+        <div class="stat-card-store">
+          <div class="label">🔴 Pedidos nuevos</div>
+          <div class="value" style="color: var(--brand-primary);" id="stat-new-count">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">🟠 Preparando</div>
+          <div class="value" style="color: #F59E0B;" id="stat-preparing-count">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">🟢 Esperando repartidor</div>
+          <div class="value" style="color: #10B981;" id="stat-ready-count">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Ventas de hoy</div>
+          <div class="value" id="stat-today-sales">—</div>
+        </div>
+        <div class="stat-card-store">
+          <div class="label">Pedidos de hoy</div>
+          <div class="value" id="stat-today-orders">—</div>
+        </div>
       </div>
     </div>
 
-    <!-- PEDIDOS -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-      <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
-        <i class="fa-solid fa-receipt" style="color: var(--brand-primary);"></i> Pedidos
-      </h2>
+    <!-- VISTA: PEDIDOS -->
+    <div id="view-pedidos" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-receipt" style="color: var(--brand-primary);"></i> Pedidos
+        </h2>
+      </div>
+
+      <div style="display: flex; gap: 0.6rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.3rem;">
+        <button type="button" class="order-tab-btn active" data-tab="all" onclick="switchOrdersTab('all')">Todos</button>
+        <button type="button" class="order-tab-btn" data-tab="new" onclick="switchOrdersTab('new')">Nuevos</button>
+        <button type="button" class="order-tab-btn" data-tab="preparing" onclick="switchOrdersTab('preparing')">En preparación</button>
+        <button type="button" class="order-tab-btn" data-tab="ready" onclick="switchOrdersTab('ready')">Listos</button>
+        <button type="button" class="order-tab-btn" data-tab="completed" onclick="switchOrdersTab('completed')">Completados</button>
+        <button type="button" class="order-tab-btn" data-tab="cancelled" onclick="switchOrdersTab('cancelled')">Cancelados</button>
+      </div>
+
+      <div id="store-orders-list"></div>
     </div>
 
-    <div style="display: flex; gap: 0.6rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.3rem;">
-      <button type="button" class="order-tab-btn active" data-tab="all" onclick="switchOrdersTab('all')">Todos</button>
-      <button type="button" class="order-tab-btn" data-tab="new" onclick="switchOrdersTab('new')">Nuevos</button>
-      <button type="button" class="order-tab-btn" data-tab="preparing" onclick="switchOrdersTab('preparing')">En preparación</button>
-      <button type="button" class="order-tab-btn" data-tab="ready" onclick="switchOrdersTab('ready')">Listos</button>
-      <button type="button" class="order-tab-btn" data-tab="completed" onclick="switchOrdersTab('completed')">Completados</button>
-      <button type="button" class="order-tab-btn" data-tab="cancelled" onclick="switchOrdersTab('cancelled')">Cancelados</button>
-    </div>
+    <!-- VISTA: CATÁLOGO -->
+    <div id="view-catalogo" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 style="font-size: 1.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-utensils" style="color: var(--brand-primary);"></i> Catálogo
+        </h2>
+        <div style="display: flex; gap: 0.6rem;">
+          <button type="button" class="btn-action-store outline" onclick="openCategoryModal()"><i class="fa-solid fa-tags"></i> Categorías</button>
+          <button type="button" class="btn-action-store" onclick="openProductModal()"><i class="fa-solid fa-plus"></i> Nuevo producto</button>
+        </div>
+      </div>
 
-    <div id="store-orders-list"></div>
+      <div style="display: flex; gap: 0.6rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.3rem;" id="catalog-category-filters">
+        <button type="button" class="category-chip active" data-cat="all" onclick="filterCatalogByCategory('all')">Todos</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;" id="catalog-products-grid"></div>
+    </div>
   </main>
   </div> <!-- Fin de main-app-content -->
 
@@ -265,6 +315,71 @@
           <option value="Otro motivo">Otro motivo</option>
         </select>
         <button type="submit" class="btn-action-store danger" style="width: 100%; justify-content: center;">Confirmar rechazo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL GESTIONAR CATEGORÍAS -->
+  <div class="modal-backdrop" id="modal-categories">
+    <div class="modal-card" style="max-width: 440px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;">Categorías del menú</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-categories').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-new-category" style="display: flex; gap: 0.6rem; margin-bottom: 1.25rem;">
+        <input type="text" id="new-category-name" class="coupon-input" style="flex: 1;" placeholder="Ej: Hamburguesas" required>
+        <button type="submit" class="btn-action-store" style="padding: 0.6rem 1rem;"><i class="fa-solid fa-plus"></i></button>
+      </form>
+      <div id="categories-manage-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL PRODUCTO (CREAR/EDITAR) -->
+  <div class="modal-backdrop" id="modal-product">
+    <div class="modal-card" style="max-width: 560px; padding: 2rem; max-height: 88vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem;" id="product-modal-title">Nuevo producto</h2>
+        <button class="btn-close-modal" style="position: static;" onclick="document.getElementById('modal-product').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="form-product">
+        <input type="hidden" id="product-id-input">
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Nombre</label>
+          <input type="text" id="product-name-input" class="coupon-input" style="width: 100%;" placeholder="Ej: Hamburguesa Clásica" required>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Descripción</label>
+          <textarea id="product-description-input" class="coupon-input" style="width: 100%; min-height: 60px;" placeholder="Ingredientes, tamaño, etc."></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Precio (USD)</label>
+            <input type="number" id="product-price-input" class="coupon-input" style="width: 100%;" step="0.01" min="0" required>
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Categoría</label>
+            <select id="product-category-input" class="coupon-input" style="width: 100%;">
+              <option value="">Sin categoría</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Imagen (URL, opcional)</label>
+          <input type="text" id="product-image-input" class="coupon-input" style="width: 100%;" placeholder="https://...">
+        </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 0.3rem;">Calorías (opcional)</label>
+          <input type="text" id="product-calories-input" class="coupon-input" style="width: 100%;" placeholder="Ej: 650 kcal">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <label style="font-size: 0.9rem; font-weight: 800;">Variantes y extras</label>
+          <button type="button" class="btn-action-store outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="addOptionGroup()"><i class="fa-solid fa-plus"></i> Agregar grupo</button>
+        </div>
+        <div id="product-options-editor" style="margin-bottom: 1.5rem;"></div>
+
+        <div id="product-error" style="color: #EF4444; font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+        <button type="submit" class="btn-action-store" style="width: 100%; justify-content: center;">Guardar producto</button>
       </form>
     </div>
   </div>

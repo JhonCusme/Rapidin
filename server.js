@@ -99,6 +99,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE stores ADD COLUMN description TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN paused_until TIMESTAMP", (err) => {});
+    db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
+    db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
+    db.run(`CREATE TABLE IF NOT EXISTS product_categories (
+      id VARCHAR(50) PRIMARY KEY, store_id VARCHAR(50) NOT NULL, name VARCHAR(100) NOT NULL,
+      sort_order INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
     db.run("ALTER TABLE coupons ADD COLUMN promo_type VARCHAR(20) DEFAULT 'general'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS addresses (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, label VARCHAR(50) NOT NULL DEFAULT 'Casa',
@@ -1652,6 +1658,114 @@ app.get('/api/products/:storeId', (req, res) => {
     
     res.json({ success: true, products });
   });
+});
+
+// --- Panel de comercios: gestión del catálogo (categorías y productos propios) ---
+
+app.get('/api/store/categories', authenticateToken, requireRole('store'), (req, res) => {
+  db.all('SELECT * FROM product_categories WHERE store_id = ? ORDER BY sort_order ASC, created_at ASC', [req.user.storeId], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo categorías' });
+    res.json({ success: true, categories: rows });
+  });
+});
+
+app.post('/api/store/categories', authenticateToken, requireRole('store'), (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre de la categoría es obligatorio' });
+  const id = 'cat-' + Date.now();
+  db.run('INSERT INTO product_categories (id, store_id, name) VALUES (?, ?, ?)', [id, req.user.storeId, name.trim()], (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error creando la categoría' });
+    res.json({ success: true, category: { id, store_id: req.user.storeId, name: name.trim() } });
+  });
+});
+
+app.put('/api/store/categories/:id', authenticateToken, requireRole('store'), (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'El nombre de la categoría es obligatorio' });
+  db.run('UPDATE product_categories SET name = ? WHERE id = ? AND store_id = ?', [name.trim(), req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando la categoría' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Categoría no encontrada' });
+    res.json({ success: true });
+  });
+});
+
+app.delete('/api/store/categories/:id', authenticateToken, requireRole('store'), (req, res) => {
+  db.get('SELECT id FROM product_categories WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], (err, row) => {
+    if (err || !row) return res.status(404).json({ success: false, message: 'Categoría no encontrada' });
+    db.run('UPDATE products SET category_id = NULL WHERE category_id = ?', [req.params.id], () => {
+      db.run('DELETE FROM product_categories WHERE id = ?', [req.params.id], (delErr) => {
+        if (delErr) return res.status(500).json({ success: false, message: 'Error eliminando la categoría' });
+        res.json({ success: true });
+      });
+    });
+  });
+});
+
+app.get('/api/store/products', authenticateToken, requireRole('store'), (req, res) => {
+  db.all('SELECT * FROM products WHERE store_id = ? ORDER BY created_at DESC', [req.user.storeId], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo tu catálogo' });
+    const products = rows.map(p => ({ ...p, options: p.options_json ? JSON.parse(p.options_json) : [] }));
+    res.json({ success: true, products });
+  });
+});
+
+app.post('/api/store/products', authenticateToken, requireRole('store'), (req, res) => {
+  const { name, description, price, image, categoryId, calories, options } = req.body;
+  if (!name || !name.trim() || typeof price !== 'number' || price < 0) {
+    return res.status(400).json({ success: false, message: 'Nombre y precio válido son obligatorios' });
+  }
+  const id = 'p-' + Date.now();
+  db.run(
+    `INSERT INTO products (id, store_id, category_id, name, description, price_usd, image_url, calories, options_json, is_available, availability_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'available')`,
+    [id, req.user.storeId, categoryId || null, name.trim(), description || '', price, image || '', calories || '', JSON.stringify(options || [])],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error creando el producto' });
+      res.json({ success: true, productId: id });
+    }
+  );
+});
+
+app.put('/api/store/products/:id', authenticateToken, requireRole('store'), (req, res) => {
+  const { name, description, price, image, categoryId, calories, options } = req.body;
+  if (!name || !name.trim() || typeof price !== 'number' || price < 0) {
+    return res.status(400).json({ success: false, message: 'Nombre y precio válido son obligatorios' });
+  }
+  db.run(
+    `UPDATE products SET name = ?, description = ?, price_usd = ?, image_url = ?, category_id = ?, calories = ?, options_json = ?
+     WHERE id = ? AND store_id = ?`,
+    [name.trim(), description || '', price, image || '', categoryId || null, calories || '', JSON.stringify(options || []), req.params.id, req.user.storeId],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando el producto' });
+      if (this.changes === 0) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete('/api/store/products/:id', authenticateToken, requireRole('store'), (req, res) => {
+  db.run('DELETE FROM products WHERE id = ? AND store_id = ?', [req.params.id, req.user.storeId], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error eliminando el producto' });
+    if (this.changes === 0) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+    res.json({ success: true });
+  });
+});
+
+app.put('/api/store/products/:id/availability', authenticateToken, requireRole('store'), (req, res) => {
+  const { status } = req.body;
+  if (!['available', 'out_of_stock', 'paused'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Estado de disponibilidad inválido' });
+  }
+  const isAvailable = status === 'available' ? 1 : 0;
+  db.run(
+    'UPDATE products SET availability_status = ?, is_available = ? WHERE id = ? AND store_id = ?',
+    [status, isAvailable, req.params.id, req.user.storeId],
+    function(err) {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando la disponibilidad' });
+      if (this.changes === 0) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
+      res.json({ success: true });
+    }
+  );
 });
 
 // 5.1 Catálogo: Búsqueda de negocios y productos

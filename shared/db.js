@@ -167,6 +167,106 @@ class RapidinDatabase {
     }
   }
 
+  // --- Catálogo del comercio ---
+  async getStoreCategories() {
+    try {
+      const response = await fetch(`${API_URL}/store/categories`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.categories : [];
+    } catch (e) {
+      console.error('Error obteniendo categorías:', e);
+      return [];
+    }
+  }
+
+  async createStoreCategory(name) {
+    try {
+      const response = await fetch(`${API_URL}/store/categories`, {
+        method: 'POST', headers: this.getAuthHeaders('store'), body: JSON.stringify({ name })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreCategory(id, name) {
+    try {
+      const response = await fetch(`${API_URL}/store/categories/${id}`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ name })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async deleteStoreCategory(id) {
+    try {
+      const response = await fetch(`${API_URL}/store/categories/${id}`, {
+        method: 'DELETE', headers: this.getAuthHeaders('store')
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async getStoreProducts() {
+    try {
+      const response = await fetch(`${API_URL}/store/products`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.products : [];
+    } catch (e) {
+      console.error('Error obteniendo el catálogo:', e);
+      return [];
+    }
+  }
+
+  async createStoreProduct(payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/products`, {
+        method: 'POST', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreProduct(id, payload) {
+    try {
+      const response = await fetch(`${API_URL}/store/products/${id}`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async deleteStoreProduct(id) {
+    try {
+      const response = await fetch(`${API_URL}/store/products/${id}`, {
+        method: 'DELETE', headers: this.getAuthHeaders('store')
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async setProductAvailability(id, status) {
+    try {
+      const response = await fetch(`${API_URL}/store/products/${id}/availability`, {
+        method: 'PUT', headers: this.getAuthHeaders('store'), body: JSON.stringify({ status })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   async rejectOrder(orderId, reason) {
     try {
       const response = await fetch(`${API_URL}/orders/${orderId}/reject`, {

@@ -58,16 +58,27 @@ CREATE TABLE IF NOT EXISTS stores (
     paused_until TIMESTAMP
 );
 
+-- Categorías del catálogo de cada comercio (ej. Hamburguesas, Bebidas, Postres)
+CREATE TABLE IF NOT EXISTS product_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    store_id VARCHAR(50) NOT NULL REFERENCES stores(id),
+    name VARCHAR(100) NOT NULL,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabla de Catálogo de Productos / Platillos
 CREATE TABLE IF NOT EXISTS products (
     id VARCHAR(50) PRIMARY KEY,
     store_id VARCHAR(50) REFERENCES stores(id),
+    category_id VARCHAR(50) REFERENCES product_categories(id),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price_usd DECIMAL(10, 2) NOT NULL,
     image_url TEXT,
     is_popular BOOLEAN DEFAULT FALSE,
     is_available BOOLEAN DEFAULT TRUE,
+    availability_status VARCHAR(20) DEFAULT 'available', -- 'available', 'out_of_stock', 'paused'
     calories VARCHAR(50),
     options_json TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
