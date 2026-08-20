@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS countries (
 -- Tabla de Comercios / Restaurantes
 CREATE TABLE IF NOT EXISTS stores (
     id VARCHAR(50) PRIMARY KEY,
+    owner_user_id VARCHAR(50) REFERENCES users(id),
     name VARCHAR(255) NOT NULL,
     category VARCHAR(50) NOT NULL,
     country_code VARCHAR(5) REFERENCES countries(code),

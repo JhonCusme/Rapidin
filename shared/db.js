@@ -167,6 +167,73 @@ class RapidinDatabase {
     }
   }
 
+  // --- Panel del repartidor ---
+  async getDriverDashboard() {
+    try {
+      const response = await fetch(`${API_URL}/drivers/me/dashboard`, { headers: this.getAuthHeaders('driver') });
+      const data = await response.json();
+      return data.success ? data : null;
+    } catch (e) {
+      console.error('Error obteniendo tu resumen:', e);
+      return null;
+    }
+  }
+
+  async updateDriverStatus(isOnline) {
+    try {
+      const response = await fetch(`${API_URL}/drivers/me/status`, {
+        method: 'PUT', headers: this.getAuthHeaders('driver'), body: JSON.stringify({ isOnline })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateDriverLocation(lat, lng) {
+    try {
+      const response = await fetch(`${API_URL}/drivers/me/location`, {
+        method: 'PUT', headers: this.getAuthHeaders('driver'), body: JSON.stringify({ lat, lng })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async getPendingDeliveries() {
+    try {
+      const response = await fetch(`${API_URL}/orders/pending`, { headers: this.getAuthHeaders('driver') });
+      const data = await response.json();
+      return data.success ? data.orders : [];
+    } catch (e) {
+      console.error('Error obteniendo pedidos pendientes:', e);
+      return [];
+    }
+  }
+
+  async getMyActiveDelivery() {
+    try {
+      const response = await fetch(`${API_URL}/orders/driver/active`, { headers: this.getAuthHeaders('driver') });
+      const data = await response.json();
+      return data.success ? data.order : null;
+    } catch (e) {
+      console.error('Error obteniendo tu entrega activa:', e);
+      return null;
+    }
+  }
+
+  async updateOrderStatusAsDriver(orderId, statusStep, statusText) {
+    try {
+      const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+        method: 'PUT', headers: this.getAuthHeaders('driver'), body: JSON.stringify({ statusStep, statusText })
+      });
+      return await response.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   // --- Catálogo del comercio ---
   async getStoreCategories() {
     try {

@@ -99,6 +99,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE stores ADD COLUMN description TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN paused_until TIMESTAMP", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN owner_user_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS product_categories (
@@ -263,8 +264,8 @@ app.post('/api/auth/register-store', async (req, res) => {
           return res.status(500).json({ success: false, message: 'Error interno de BD' });
         }
         
-        db.run(`INSERT INTO stores (id, name, category, address) VALUES (?, ?, ?, ?)`,
-          [storeId, name, category || 'General', address || ''], function(err2) {
+        db.run(`INSERT INTO stores (id, owner_user_id, name, category, address) VALUES (?, ?, ?, ?, ?)`,
+          [storeId, userId, name, category || 'General', address || ''], function(err2) {
             if (err2) {
               db.run('ROLLBACK');
               return res.status(500).json({ success: false, message: 'Error al crear comercio' });
@@ -466,7 +467,7 @@ app.post('/api/auth/register-admin', async (req, res) => {
 // 2. Login de Usuario (Auth)
 app.post('/api/auth/login', (req, res) => {
   const { email, password, role } = req.body;
-  
+
   const sql = `SELECT * FROM users WHERE email = ? AND role = ?`;
   db.get(sql, [email, role || 'user'], async (err, user) => {
     if (err) return res.status(500).json({ success: false, message: 'Error de servidor' });
@@ -475,8 +476,24 @@ app.post('/api/auth/login', (req, res) => {
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    // El token debe llevar storeId/driverId también al iniciar sesión (no solo al registrarse),
+    // o los endpoints que dependen de esos campos fallan para cuentas que vuelven a loguearse.
+    const finish = (extra) => {
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role, ...extra }, JWT_SECRET, { expiresIn: '7d' });
+      res.json({ success: true, token, user: { id: user.id, email: user.email, name: user.name, role: user.role, ...extra } });
+    };
+
+    if (user.role === 'store') {
+      db.get('SELECT id FROM stores WHERE owner_user_id = ?', [user.id], (storeErr, row) => {
+        finish(row ? { storeId: row.id } : {});
+      });
+    } else if (user.role === 'driver') {
+      db.get('SELECT id FROM drivers WHERE user_id = ?', [user.id], (drvErr, row) => {
+        finish(row ? { driverId: row.id } : {});
+      });
+    } else {
+      finish({});
+    }
   });
 });
 
@@ -656,13 +673,33 @@ app.get('/api/orders/pending', authenticateToken, requireRole('driver', 'admin')
   });
 });
 
+// 3.2.1 Entrega activa del repartidor autenticado (en camino, todavía no entregada)
+app.get('/api/orders/driver/active', authenticateToken, requireRole('driver'), (req, res) => {
+  db.get('SELECT id FROM drivers WHERE user_id = ?', [req.user.id], (err, driverRow) => {
+    if (err || !driverRow) return res.status(403).json({ success: false, message: 'No tienes un perfil de repartidor activo' });
+    const sql = `
+      SELECT orders.*, stores.name as storeName, users.name as customerName, users.phone as customerPhone
+      FROM orders
+      LEFT JOIN stores ON orders.store_id = stores.id
+      LEFT JOIN users ON orders.customer_id = users.id
+      WHERE orders.driver_id = ? AND orders.status_step = 3 AND orders.is_cancelled = 0
+      ORDER BY orders.created_at DESC LIMIT 1
+    `;
+    db.get(sql, [driverRow.id], (orderErr, row) => {
+      if (orderErr) return res.status(500).json({ success: false, message: 'Error obteniendo tu entrega activa' });
+      if (!row) return res.json({ success: true, order: null });
+      res.json({ success: true, order: { ...row, items: row.items_json ? JSON.parse(row.items_json) : [] } });
+    });
+  });
+});
+
 // 3.4 Obtener un pedido por ID
 app.get('/api/orders/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const sql = `
     SELECT orders.*, stores.name as storeName,
       drivers.name as driverName, drivers.vehicle_info as driverVehicle, drivers.rating as driverRating,
-      driverUser.phone as driverPhone
+      driverUser.id as driverUserId, driverUser.phone as driverPhone
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.id
     LEFT JOIN drivers ON orders.driver_id = drivers.id
@@ -676,7 +713,9 @@ app.get('/api/orders/:id', authenticateToken, (req, res) => {
     const isOwner = req.user.role === 'admin'
       || req.user.id === row.customer_id
       || (req.user.role === 'store' && req.user.storeId === row.store_id)
-      || req.user.role === 'driver';
+      // Un repartidor solo puede ver pedidos ya asignados a él, o pedidos listos/en preparación
+      // todavía sin asignar (para poder decidir si los acepta).
+      || (req.user.role === 'driver' && (row.driverUserId === req.user.id || (!row.driver_id && row.status_step >= 1 && row.status_step < 3)));
     if (!isOwner) {
       return res.status(403).json({ success: false, message: 'No autorizado para ver este pedido' });
     }
@@ -706,15 +745,38 @@ app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'drive
       const payload = { orderId: id, statusStep, statusText, ...extraData };
       io.emit('ORDER_STATUS_CHANGED', payload);
 
+      // Cuando el repartidor marca la entrega como completada, se le acredita
+      // el pago (tarifa de envío + propina) a sus ganancias totales.
+      if (driverId && statusStep === 4) {
+        db.get('SELECT shipping_fee_usd, driver_tip_usd FROM orders WHERE id = ?', [id], (payErr, order) => {
+          if (!payErr && order) {
+            const driverPay = (order.shipping_fee_usd || 0) + (order.driver_tip_usd || 0);
+            db.run('UPDATE drivers SET earnings_total = earnings_total + ? WHERE id = ?', [driverPay, driverId]);
+          }
+        });
+      }
+
       res.json({ success: true, payload });
     });
   };
 
   // Cuando un repartidor acepta/actualiza un pedido, lo asignamos como su repartidor
-  // (si todavía no tenía uno asignado).
+  // (si todavía no tenía uno asignado), y validamos que la transición de estado tenga sentido.
   if (req.user.role === 'driver') {
     db.get('SELECT id FROM drivers WHERE user_id = ?', [req.user.id], (err, driverRow) => {
-      applyUpdate(driverRow ? driverRow.id : null);
+      if (err || !driverRow) return res.status(403).json({ success: false, message: 'No tienes un perfil de repartidor activo' });
+
+      db.get('SELECT status_step, driver_id FROM orders WHERE id = ?', [id], (orderErr, order) => {
+        if (orderErr || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+        if (order.driver_id && order.driver_id !== driverRow.id) {
+          return res.status(403).json({ success: false, message: 'Este pedido ya fue tomado por otro repartidor' });
+        }
+        const validTransition = (order.status_step === 2 && statusStep === 3) || (order.status_step === 3 && statusStep === 4);
+        if (!validTransition) {
+          return res.status(400).json({ success: false, message: 'Ese cambio de estado no es válido para este pedido' });
+        }
+        applyUpdate(driverRow.id);
+      });
     });
   } else {
     applyUpdate(null);
@@ -1657,6 +1719,63 @@ app.get('/api/products/:storeId', (req, res) => {
     }));
     
     res.json({ success: true, products });
+  });
+});
+
+// --- Panel de repartidores ---
+
+app.get('/api/drivers/me/dashboard', authenticateToken, requireRole('driver'), (req, res) => {
+  db.get('SELECT * FROM drivers WHERE user_id = ?', [req.user.id], (err, driver) => {
+    if (err || !driver) return res.status(403).json({ success: false, message: 'No tienes un perfil de repartidor activo' });
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    db.all(
+      `SELECT status_step, shipping_fee_usd, driver_tip_usd, created_at FROM orders WHERE driver_id = ? AND status_step = 4`,
+      [driver.id],
+      (ordersErr, rows) => {
+        if (ordersErr) return res.status(500).json({ success: false, message: 'Error obteniendo tu resumen' });
+
+        let earningsToday = 0, tripsToday = 0;
+        (rows || []).forEach(o => {
+          if ((o.created_at || '').slice(0, 10) === todayStr) {
+            earningsToday += (o.shipping_fee_usd || 0) + (o.driver_tip_usd || 0);
+            tripsToday++;
+          }
+        });
+
+        res.json({
+          success: true,
+          name: driver.name,
+          vehicleInfo: driver.vehicle_info,
+          rating: driver.rating,
+          isOnline: !!driver.is_online,
+          earningsTotal: Math.round((driver.earnings_total || 0) * 100) / 100,
+          earningsToday: Math.round(earningsToday * 100) / 100,
+          tripsToday,
+          tripsTotal: (rows || []).length
+        });
+      }
+    );
+  });
+});
+
+app.put('/api/drivers/me/status', authenticateToken, requireRole('driver'), (req, res) => {
+  const { isOnline } = req.body;
+  db.run('UPDATE drivers SET is_online = ? WHERE user_id = ?', [isOnline ? 1 : 0, req.user.id], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando tu estado' });
+    if (this.changes === 0) return res.status(403).json({ success: false, message: 'No tienes un perfil de repartidor activo' });
+    res.json({ success: true, isOnline: !!isOnline });
+  });
+});
+
+app.put('/api/drivers/me/location', authenticateToken, requireRole('driver'), (req, res) => {
+  const { lat, lng } = req.body;
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    return res.status(400).json({ success: false, message: 'Coordenadas inválidas' });
+  }
+  db.run('UPDATE drivers SET current_lat = ?, current_lng = ? WHERE user_id = ?', [lat, lng, req.user.id], function(err) {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando tu ubicación' });
+    res.json({ success: true });
   });
 });
 
