@@ -5373,7 +5373,6 @@
   <script src="../../shared/i18n.js"></script>
   <script src="../../shared/db.js"></script>
   <script src="../../shared/sync.js"></script>
-  <script src="../../shared/payments.js"></script>
   <script src="../../shared/ui-core.js"></script>
   <script src="../../app.js"></script>
   <script>
@@ -5886,6 +5885,8 @@
          profLastName.addEventListener('input', validateProfileForm);
          profEmail.addEventListener('input', validateProfileForm);
       }
+
+      handlePayphoneReturn();
     });
 
     window.openSearchScreen = function() {
@@ -6849,6 +6850,9 @@
       if (payment && payment.cash) {
         iconEl.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i>';
         textEl.textContent = 'Efectivo al repartidor';
+      } else if (payment && payment.payphone) {
+        iconEl.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i>';
+        textEl.textContent = 'Pagar con Payphone 🅿️';
       } else if (payment) {
         const brandIcon = { visa: 'fa-cc-visa', mastercard: 'fa-cc-mastercard', amex: 'fa-cc-amex' };
         iconEl.innerHTML = `<i class="fa-brands ${brandIcon[payment.brand] || 'fa-credit-card'}"></i>`;
@@ -6942,9 +6946,29 @@
         discount: discount,
         couponCode: window.checkoutCoupon ? window.checkoutCoupon.code : null,
         total: total,
-        paymentMethodId: (payment && !payment.cash) ? payment.id : 'cash',
+        paymentMethodId: (payment && !payment.cash && !payment.payphone) ? payment.id : 'cash',
         statusText: 'Pedido confirmado y enviado al comercio 🚀'
       };
+
+      // Payphone es un pago con redirección: el usuario paga en la página de Payphone y
+      // vuelve a esta app, así que no podemos crear el pedido todavía. Guardamos el pedido
+      // pendiente en localStorage y redirigimos; al volver, handlePayphoneReturn() lo retoma.
+      if (payment && payment.payphone) {
+        const returnUrl = window.location.origin + window.location.pathname + '?payphoneReturn=1';
+        const prep = await window.rapidinDB.preparePayphonePayment(total, `Pedido ${orderId} - Rapidín`, returnUrl, returnUrl);
+        if (!prep.success) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          if (window.rapidinAlert) window.rapidinAlert(prep.message || 'No se pudo iniciar el pago con Payphone.');
+          return;
+        }
+        localStorage.setItem('rapidin_pending_payphone_order', JSON.stringify({
+          orderPayload, cart, total, clientTransactionId: prep.clientTransactionId
+        }));
+        const payUrl = prep.payWithCardUrl || prep.payWithPayPhoneUrl;
+        window.location.href = payUrl;
+        return;
+      }
 
       openPaymentProcessingScreen();
       const result = await window.rapidinDB.createOrder(orderPayload);
@@ -6953,6 +6977,12 @@
       btn.innerHTML = originalHtml;
       closePaymentProcessingScreen();
 
+      handleOrderCreationResult(result, orderPayload, cart, total, address);
+    };
+
+    // Reutilizado por confirmRealOrder() (flujo normal) y handlePayphoneReturn()
+    // (el pedido se crea recién cuando el usuario vuelve de pagar en Payphone).
+    function handleOrderCreationResult(result, orderPayload, cart, total, address) {
       if (!result.success) {
         if (result.code === 'STORE_CLOSED') {
           openStoreClosedScreen(result.message);
@@ -6971,16 +7001,44 @@
       window.checkoutCoupon = null;
       persistCart();
       updateFloatingCartBadge();
-      window.currentViewedOrderId = orderId;
+      window.currentViewedOrderId = orderPayload.id;
 
-      document.getElementById('success-order-num').textContent = 'Pedido #' + orderId;
+      document.getElementById('success-order-num').textContent = 'Pedido #' + orderPayload.id;
       document.getElementById('success-store-name').textContent = '🍽️ ' + (orderPayload.storeName || '');
       document.getElementById('success-order-total').textContent = fmtMoney(total);
       document.getElementById('success-item-count').textContent = cart.reduce((s, i) => s + i.qty, 0) + ' productos';
       document.getElementById('success-order-address').textContent = '📍 ' + address;
 
       openSuccessScreen();
-    };
+    }
+
+    // Al volver de pagar en Payphone, Payphone agrega ?id=...&clientTransactionId=... a la URL.
+    // Retomamos el pedido pendiente guardado en localStorage y lo creamos ya con el pago verificado.
+    async function handlePayphoneReturn() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('payphoneReturn')) return;
+
+      const ppId = params.get('id');
+      const ppClientTxId = params.get('clientTransactionId');
+      history.replaceState({}, '', window.location.pathname);
+
+      const pendingRaw = localStorage.getItem('rapidin_pending_payphone_order');
+      localStorage.removeItem('rapidin_pending_payphone_order');
+      if (!pendingRaw || !ppId || !ppClientTxId) return;
+
+      const pending = JSON.parse(pendingRaw);
+      openPaymentProcessingScreen();
+      const orderPayload = {
+        ...pending.orderPayload,
+        paymentMethod: 'payphone',
+        payphoneId: ppId,
+        payphoneClientTransactionId: ppClientTxId
+      };
+      const result = await window.rapidinDB.createOrder(orderPayload);
+      closePaymentProcessingScreen();
+      const address = pending.orderPayload.customerAddress;
+      handleOrderCreationResult(result, orderPayload, pending.cart, pending.total, address);
+    }
 
     window.openSuccessScreen = function() {
       document.getElementById('app-checkout-screen').style.display = 'none';
@@ -7577,23 +7635,28 @@
     async function loadPaymentMethodsList() {
       const config = await window.rapidinDB.getConfig();
       window.rapidinStripePublishableKey = config ? config.stripePublishableKey : null;
+      window.rapidinActivePaymentProvider = config ? config.activePaymentProvider : 'stripe';
+      window.rapidinPayphoneConfigured = !!(config && config.payphoneConfigured);
 
       const disabledNotice = document.getElementById('payment-methods-disabled-notice');
       const addBtn = document.getElementById('btn-add-payment-method');
+      const usesStripe = window.rapidinActivePaymentProvider === 'stripe';
 
-      if (!window.rapidinStripePublishableKey) {
-        disabledNotice.style.display = 'block';
+      if (!window.rapidinStripePublishableKey || !usesStripe) {
+        disabledNotice.style.display = usesStripe ? 'block' : 'none';
+        addBtn.style.display = usesStripe ? '' : 'none';
         addBtn.disabled = true;
         addBtn.style.opacity = '0.5';
       } else {
         disabledNotice.style.display = 'none';
+        addBtn.style.display = '';
         addBtn.disabled = false;
         addBtn.style.opacity = '1';
       }
 
       const listEl = document.getElementById('payment-methods-list');
       const emptyEl = document.getElementById('payment-methods-empty');
-      const methods = await window.rapidinDB.getPaymentMethods();
+      const methods = usesStripe ? await window.rapidinDB.getPaymentMethods() : [];
       window.rapidinPaymentMethodsCache = {};
       methods.forEach(m => { window.rapidinPaymentMethodsCache[m.id] = m; });
       const brandIcon = { visa: 'fa-cc-visa', mastercard: 'fa-cc-mastercard', amex: 'fa-cc-amex' };
@@ -7608,14 +7671,23 @@
         </div>
       ` : '';
 
+      const payphoneCard = (picking && window.rapidinActivePaymentProvider === 'payphone' && window.rapidinPayphoneConfigured) ? `
+        <div class="payment-card" style="cursor: pointer;" onclick="chooseCheckoutPayment('payphone')">
+          <div class="payment-card-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.95rem;">Pagar con Payphone 🅿️</div>
+          </div>
+        </div>
+      ` : '';
+
       if (!methods.length) {
-        listEl.innerHTML = cashCard;
-        emptyEl.style.display = picking ? 'none' : 'flex';
+        listEl.innerHTML = cashCard + payphoneCard;
+        emptyEl.style.display = (picking || !usesStripe) ? 'none' : 'flex';
         return;
       }
       emptyEl.style.display = 'none';
 
-      listEl.innerHTML = cashCard + methods.map(m => `
+      listEl.innerHTML = cashCard + payphoneCard + methods.map(m => `
         <div class="payment-card${m.is_default ? ' is-default' : ''}"${picking ? ` style="cursor: pointer;" onclick="chooseCheckoutPayment('${m.id}')"` : ''}>
           <div class="payment-card-icon"><i class="fa-brands ${brandIcon[m.brand] || 'fa-credit-card'}"></i></div>
           <div style="flex: 1; min-width: 0;">
@@ -7646,7 +7718,13 @@
     };
 
     window.chooseCheckoutPayment = function(paymentMethodId) {
-      window.checkoutPayment = paymentMethodId === 'cash' ? { cash: true } : window.rapidinPaymentMethodsCache[paymentMethodId];
+      if (paymentMethodId === 'cash') {
+        window.checkoutPayment = { cash: true };
+      } else if (paymentMethodId === 'payphone') {
+        window.checkoutPayment = { payphone: true };
+      } else {
+        window.checkoutPayment = window.rapidinPaymentMethodsCache[paymentMethodId];
+      }
       window.paymentPickerForCheckout = false;
       closeAccountSubScreen();
       renderCheckoutScreen();

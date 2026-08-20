@@ -877,6 +877,21 @@ class RapidinDatabase {
     }
   }
 
+  async preparePayphonePayment(amount, reference, responseUrl, cancellationUrl) {
+    try {
+      const response = await fetch(`${API_URL}/payments/payphone/prepare`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify({ amount, reference, responseUrl, cancellationUrl })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error preparando pago Payphone:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   async getMyOrders() {
     try {
       const response = await fetch(`${API_URL}/orders/mine`, {
@@ -1157,6 +1172,19 @@ class RapidinDatabase {
         method: 'PUT',
         headers: this.getAuthHeaders('admin'),
         body: JSON.stringify({ commissionRate })
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateActivePaymentProvider(activePaymentProvider) {
+    try {
+      const res = await fetch(`${API_URL}/admin/settings`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('admin'),
+        body: JSON.stringify({ activePaymentProvider })
       });
       return await res.json();
     } catch (e) {

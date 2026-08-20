@@ -216,7 +216,7 @@
 
     <!-- TAB 5: INTEGRACIONES -->
     <div id="atab-content-integrations" style="display: none;">
-      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px;">
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px; margin-bottom: 1.5rem;">
         <h2 style="margin-bottom: 1rem;">Estado de las integraciones 🔌</h2>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Estas credenciales se configuran directamente en el archivo <code>.env</code> del servidor, no desde aquí — es la forma segura de manejar secretos de producción. Esta pantalla solo te muestra si ya están activas.</p>
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 1rem;">
@@ -226,6 +226,13 @@
           </div>
           <span class="badge" id="status-stripe">—</span>
         </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 700;">🅿️ Payphone (botón de pago)</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">PAYPHONE_TOKEN / PAYPHONE_STORE_ID</div>
+          </div>
+          <span class="badge" id="status-payphone">—</span>
+        </div>
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md);">
           <div>
             <div style="font-weight: 700;">📱 Twilio (verificación SMS)</div>
@@ -233,6 +240,25 @@
           </div>
           <span class="badge" id="status-twilio">—</span>
         </div>
+      </div>
+
+      <div style="background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); max-width: 600px;">
+        <h2 style="margin-bottom: 1rem;">Pasarela de pago activa 🔀</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Elige con cuál de las pasarelas configuradas se procesarán los cobros con tarjeta de los clientes. Solo puedes activar una pasarela que ya tenga sus credenciales configuradas en <code>.env</code>.</p>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <label id="provider-option-stripe" style="flex: 1; display: flex; align-items: center; gap: 0.6rem; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); border: 2px solid transparent; cursor: pointer;">
+            <input type="radio" name="payment-provider" value="stripe" id="provider-radio-stripe">
+            <span style="font-weight: 700;">💳 Stripe</span>
+          </label>
+          <label id="provider-option-payphone" style="flex: 1; display: flex; align-items: center; gap: 0.6rem; padding: 1rem; background: var(--bg-main); border-radius: var(--radius-md); border: 2px solid transparent; cursor: pointer;">
+            <input type="radio" name="payment-provider" value="payphone" id="provider-radio-payphone">
+            <span style="font-weight: 700;">🅿️ Payphone</span>
+          </label>
+        </div>
+        <button class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem 1.5rem; font-size: 0.9rem; width: 100%; justify-content: center;" onclick="savePaymentProvider()">
+          Guardar Pasarela Activa 🔀
+        </button>
+        <p id="provider-save-msg" style="margin-top: 0.75rem; font-size: 0.85rem;"></p>
       </div>
     </div>
   </div>

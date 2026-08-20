@@ -57,6 +57,16 @@ if (!twilioClient || !TWILIO_VERIFY_SERVICE_SID) {
   console.warn('⚠️  Twilio no configurado: la verificación por SMS usará el código de prueba 123456 (solo desarrollo).');
 }
 
+// Payphone (Botón de Pago) - pasarela alternativa a Stripe, usada sobre todo en Ecuador.
+// Token y StoreId se generan en el panel de Payphone (Aplicaciones > Credenciales).
+const PAYPHONE_TOKEN = process.env.PAYPHONE_TOKEN || null;
+const PAYPHONE_STORE_ID = process.env.PAYPHONE_STORE_ID || null;
+const payphoneConfigured = !!(PAYPHONE_TOKEN && PAYPHONE_STORE_ID);
+if (!payphoneConfigured) {
+  console.warn('⚠️  PAYPHONE_TOKEN/PAYPHONE_STORE_ID no configurados: la pasarela Payphone quedará deshabilitada.');
+}
+const PAYPHONE_API_BASE = 'https://pay.payphonetodoesposible.com/api';
+
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,capacitor://localhost,http://localhost')
   .split(',')
   .map(o => o.trim())
@@ -113,6 +123,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
       id INTEGER PRIMARY KEY CHECK (id = 1), commission_rate DECIMAL(5,4) NOT NULL DEFAULT 0.15
     )`, () => {
       db.run(`INSERT OR IGNORE INTO platform_settings (id, commission_rate) VALUES (1, 0.15)`);
+      db.run("ALTER TABLE platform_settings ADD COLUMN active_payment_provider VARCHAR(20) NOT NULL DEFAULT 'stripe'", (err) => {});
     });
     db.run("ALTER TABLE products ADD COLUMN category_id VARCHAR(50)", (err) => {});
     db.run("ALTER TABLE products ADD COLUMN availability_status VARCHAR(20) DEFAULT 'available'", (err) => {});
@@ -204,6 +215,15 @@ function getPlatformCommissionRate() {
   return new Promise((resolve) => {
     db.get('SELECT commission_rate FROM platform_settings WHERE id = 1', [], (err, row) => {
       resolve(row ? row.commission_rate : 0.15);
+    });
+  });
+}
+
+// Pasarela de pago activa ('stripe' o 'payphone'), elegida en vivo por el Super Admin.
+function getActivePaymentProvider() {
+  return new Promise((resolve) => {
+    db.get('SELECT active_payment_provider FROM platform_settings WHERE id = 1', [], (err, row) => {
+      resolve((row && row.active_payment_provider) || 'stripe');
     });
   });
 }
@@ -575,6 +595,32 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
       const total = newOrder.total || (subtotal + shipping + tip - discount);
       const commissionRate = await getPlatformCommissionRate();
       const commission = total * commissionRate;
+
+      // Cobro real con Payphone: el cliente ya pagó y volvió con un id/clientTransactionId de Payphone;
+      // lo re-confirmamos aquí (no confiamos en el resultado que reporte el cliente) antes de crear el pedido.
+      if (newOrder.paymentMethod === 'payphone') {
+        if (!payphoneConfigured) {
+          return res.status(400).json({ success: false, code: 'PAYPHONE_NOT_CONFIGURED', message: 'Payphone no está configurado en el servidor.' });
+        }
+        const { payphoneId, payphoneClientTransactionId } = newOrder;
+        if (!payphoneId || !payphoneClientTransactionId) {
+          return res.status(400).json({ success: false, code: 'PAYPHONE_DATA_MISSING', message: 'Faltan datos de la transacción de Payphone.' });
+        }
+        try {
+          const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/V2/Confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+            body: JSON.stringify({ id: Number(payphoneId), clientTxId: payphoneClientTransactionId })
+          });
+          const ppData = await ppRes.json();
+          if (!ppRes.ok || ppData.transactionStatus !== 'Approved') {
+            return res.status(402).json({ success: false, code: 'PAYMENT_DECLINED', message: 'El pago con Payphone no fue aprobado.' });
+          }
+        } catch (ppErr) {
+          console.error('Error confirmando Payphone al crear pedido:', ppErr.message);
+          return res.status(502).json({ success: false, code: 'PAYPHONE_ERROR', message: 'No se pudo verificar el pago con Payphone.' });
+        }
+      }
 
       // Cobro real con Stripe si el cliente eligió una tarjeta guardada
       if (newOrder.paymentMethodId && newOrder.paymentMethodId !== 'cash' && stripe) {
@@ -1263,6 +1309,97 @@ app.put('/api/payment-methods/:id/default', authenticateToken, requireRole('user
       res.json({ success: true });
     });
   });
+});
+
+// --- Payphone (Botón de Pago) ---
+// Flujo real: 1) el cliente pide "Prepare" con el monto -> Payphone devuelve una URL de pago.
+// 2) el cliente paga en esa página de Payphone y vuelve a nuestra app con ?id=...&clientTransactionId=...
+// 3) el backend llama "Confirm" con esos dos valores para verificar y capturar el cobro antes de crear el pedido.
+function requirePayphone(req, res, next) {
+  if (!payphoneConfigured) return res.status(503).json({ success: false, message: 'El pago con Payphone no está configurado todavía.' });
+  next();
+}
+
+app.post('/api/payments/payphone/prepare', authenticateToken, requireRole('user'), requirePayphone, async (req, res) => {
+  const { amount, reference, responseUrl, cancellationUrl } = req.body;
+  if (typeof amount !== 'number' || amount <= 0) {
+    return res.status(400).json({ success: false, message: 'Monto inválido' });
+  }
+  // El responseUrl/cancellationUrl los arma el cliente con su propio origin, pero solo confiamos
+  // en un origin que ya esté en la lista blanca de CORS (evita que se use esto como open-redirect).
+  const isAllowedRedirect = (u) => {
+    if (typeof u !== 'string') return false;
+    try {
+      const parsed = new URL(u);
+      return ALLOWED_ORIGINS.includes(parsed.origin);
+    } catch (e) {
+      return false;
+    }
+  };
+  const clientTransactionId = `RPD-PP-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  const amountCents = Math.round(amount * 100);
+  try {
+    const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/Prepare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+      body: JSON.stringify({
+        amount: amountCents,
+        amountWithoutTax: amountCents,
+        tax: 0,
+        service: 0,
+        tip: 0,
+        currency: 'USD',
+        reference: reference || 'Pedido Rapidín',
+        clientTransactionId,
+        storeId: PAYPHONE_STORE_ID,
+        ...(isAllowedRedirect(responseUrl) ? { responseUrl } : {}),
+        ...(isAllowedRedirect(cancellationUrl) ? { cancellationUrl } : {})
+      })
+    });
+    const ppData = await ppRes.json();
+    if (!ppRes.ok || !ppData.paymentId) {
+      return res.status(502).json({ success: false, message: ppData.message || 'Payphone rechazó la preparación del pago.' });
+    }
+    res.json({
+      success: true,
+      clientTransactionId,
+      paymentId: ppData.paymentId,
+      payWithCardUrl: ppData.payWithCard,
+      payWithPayPhoneUrl: ppData.payWithPayPhone
+    });
+  } catch (e) {
+    console.error('Error preparando pago Payphone:', e.message);
+    res.status(502).json({ success: false, message: 'No se pudo conectar con Payphone. Intenta de nuevo.' });
+  }
+});
+
+app.post('/api/payments/payphone/confirm', authenticateToken, requireRole('user'), requirePayphone, async (req, res) => {
+  const { id, clientTransactionId } = req.body;
+  if (!id || !clientTransactionId) {
+    return res.status(400).json({ success: false, message: 'Faltan datos de la transacción de Payphone' });
+  }
+  try {
+    const ppRes = await fetch(`${PAYPHONE_API_BASE}/button/V2/Confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PAYPHONE_TOKEN}` },
+      body: JSON.stringify({ id: Number(id), clientTxId: clientTransactionId })
+    });
+    const ppData = await ppRes.json();
+    if (!ppRes.ok) {
+      return res.status(502).json({ success: false, message: ppData.message || 'No se pudo confirmar el pago con Payphone.' });
+    }
+    const approved = ppData.transactionStatus === 'Approved';
+    res.json({
+      success: approved,
+      transactionStatus: ppData.transactionStatus,
+      transactionId: ppData.transactionId,
+      authorizationCode: ppData.authorizationCode,
+      message: approved ? 'Pago aprobado' : `El pago no fue aprobado (${ppData.transactionStatus || 'desconocido'})`
+    });
+  } catch (e) {
+    console.error('Error confirmando pago Payphone:', e.message);
+    res.status(502).json({ success: false, message: 'No se pudo confirmar el pago con Payphone.' });
+  }
 });
 
 // --- Fidelización: Rapidín Club ---
@@ -2370,10 +2507,13 @@ app.get('/api/search', (req, res) => {
 });
 
 // 6. Configuración global (Categorías, Ofertas)
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
+  const activePaymentProvider = await getActivePaymentProvider();
   res.json({
     success: true,
     stripePublishableKey: STRIPE_PUBLISHABLE_KEY,
+    activePaymentProvider,
+    payphoneConfigured,
     categories: [
       { id: 'all', name: 'Todo', icon: 'fa-border-all', badge: null },
       { id: 'turbo', name: 'Turbo 15m', icon: 'fa-bolt', badge: '15 MIN' },
@@ -2454,22 +2594,49 @@ app.put('/api/admin/users/:id/toggle', (req, res) => {
 
 app.get('/api/admin/settings', async (req, res) => {
   const commissionRate = await getPlatformCommissionRate();
+  const activePaymentProvider = await getActivePaymentProvider();
   res.json({
     success: true,
     commissionRate,
     stripeConfigured: !!stripe,
-    twilioConfigured: !!(twilioClient && TWILIO_VERIFY_SERVICE_SID)
+    twilioConfigured: !!(twilioClient && TWILIO_VERIFY_SERVICE_SID),
+    payphoneConfigured,
+    activePaymentProvider
   });
 });
 
 app.put('/api/admin/settings', (req, res) => {
-  const { commissionRate } = req.body;
-  if (typeof commissionRate !== 'number' || commissionRate < 0.05 || commissionRate > 0.30) {
-    return res.status(400).json({ success: false, message: 'La comisión debe estar entre 5% y 30%' });
+  const { commissionRate, activePaymentProvider } = req.body;
+
+  const updates = [];
+  if (commissionRate !== undefined) {
+    if (typeof commissionRate !== 'number' || commissionRate < 0.05 || commissionRate > 0.30) {
+      return res.status(400).json({ success: false, message: 'La comisión debe estar entre 5% y 30%' });
+    }
+    updates.push({ sql: 'UPDATE platform_settings SET commission_rate = ? WHERE id = 1', params: [commissionRate] });
   }
-  db.run('UPDATE platform_settings SET commission_rate = ? WHERE id = 1', [commissionRate], (err) => {
-    if (err) return res.status(500).json({ success: false, message: 'Error actualizando la comisión' });
-    res.json({ success: true, commissionRate });
+  if (activePaymentProvider !== undefined) {
+    if (!['stripe', 'payphone'].includes(activePaymentProvider)) {
+      return res.status(400).json({ success: false, message: 'Pasarela de pago inválida' });
+    }
+    if (activePaymentProvider === 'stripe' && !stripe) {
+      return res.status(400).json({ success: false, message: 'No puedes activar Stripe: STRIPE_SECRET_KEY no está configurado en el servidor.' });
+    }
+    if (activePaymentProvider === 'payphone' && !payphoneConfigured) {
+      return res.status(400).json({ success: false, message: 'No puedes activar Payphone: PAYPHONE_TOKEN/PAYPHONE_STORE_ID no están configurados en el servidor.' });
+    }
+    updates.push({ sql: 'UPDATE platform_settings SET active_payment_provider = ? WHERE id = 1', params: [activePaymentProvider] });
+  }
+  if (!updates.length) {
+    return res.status(400).json({ success: false, message: 'No se envió ningún cambio' });
+  }
+
+  db.serialize(() => {
+    updates.forEach(u => db.run(u.sql, u.params));
+    db.get('SELECT commission_rate, active_payment_provider FROM platform_settings WHERE id = 1', [], (err, row) => {
+      if (err) return res.status(500).json({ success: false, message: 'Error actualizando la configuración' });
+      res.json({ success: true, commissionRate: row.commission_rate, activePaymentProvider: row.active_payment_provider });
+    });
   });
 });
 

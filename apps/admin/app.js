@@ -32,8 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('fee-range-input').value = Math.round(settings.commissionRate * 100);
       document.getElementById('status-stripe').innerHTML = settings.stripeConfigured
         ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #EF4444;">○ No configurado</span>';
+      document.getElementById('status-payphone').innerHTML = settings.payphoneConfigured
+        ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #EF4444;">○ No configurado</span>';
       document.getElementById('status-twilio').innerHTML = settings.twilioConfigured
         ? '<span style="color: #10B981;">● Configurado</span>' : '<span style="color: #F59E0B;">○ Modo de prueba (código 123456)</span>';
+
+      const radioStripe = document.getElementById('provider-radio-stripe');
+      const radioPayphone = document.getElementById('provider-radio-payphone');
+      const optStripe = document.getElementById('provider-option-stripe');
+      const optPayphone = document.getElementById('provider-option-payphone');
+      if (radioStripe && radioPayphone) {
+        radioStripe.checked = settings.activePaymentProvider === 'stripe';
+        radioPayphone.checked = settings.activePaymentProvider === 'payphone';
+        radioStripe.disabled = !settings.stripeConfigured;
+        radioPayphone.disabled = !settings.payphoneConfigured;
+        optStripe.style.opacity = settings.stripeConfigured ? '1' : '0.5';
+        optPayphone.style.opacity = settings.payphoneConfigured ? '1' : '0.5';
+        optStripe.style.borderColor = settings.activePaymentProvider === 'stripe' ? '#8B5CF6' : 'transparent';
+        optPayphone.style.borderColor = settings.activePaymentProvider === 'payphone' ? '#8B5CF6' : 'transparent';
+      }
     }
 
     if (!orders.length) {
@@ -141,6 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminOverview();
     } else {
       window.rapidinAlert(res.message || 'No se pudo actualizar la comisión.');
+    }
+  };
+
+  window.savePaymentProvider = async function() {
+    const selected = document.querySelector('input[name="payment-provider"]:checked');
+    const msgEl = document.getElementById('provider-save-msg');
+    if (!selected) {
+      if (msgEl) { msgEl.style.color = '#EF4444'; msgEl.textContent = 'Elige una pasarela primero.'; }
+      return;
+    }
+    const res = await window.rapidinDB.updateActivePaymentProvider(selected.value);
+    if (res.success) {
+      if (msgEl) { msgEl.style.color = '#10B981'; msgEl.textContent = `✅ Pasarela activa: ${selected.value === 'stripe' ? 'Stripe' : 'Payphone'}.`; }
+      renderAdminOverview();
+    } else {
+      if (msgEl) { msgEl.style.color = '#EF4444'; msgEl.textContent = res.message || 'No se pudo actualizar la pasarela.'; }
     }
   };
 
