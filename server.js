@@ -98,6 +98,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run("ALTER TABLE orders ADD COLUMN customer_lng DECIMAL(10,6)", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN description TEXT", (err) => {});
     db.run("ALTER TABLE stores ADD COLUMN hours TEXT", (err) => {});
+    db.run("ALTER TABLE stores ADD COLUMN paused_until TIMESTAMP", (err) => {});
     db.run("ALTER TABLE coupons ADD COLUMN promo_type VARCHAR(20) DEFAULT 'general'", (err) => {});
     db.run(`CREATE TABLE IF NOT EXISTS addresses (
       id VARCHAR(50) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, label VARCHAR(50) NOT NULL DEFAULT 'Casa',
@@ -479,11 +480,14 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
   const orderId = newOrder.id; // 'RPD-12345'
   const items = newOrder.items || [];
 
-  db.get('SELECT id, name, is_open FROM stores WHERE id = ?', [newOrder.storeId], (storeErr, store) => {
+  db.get('SELECT id, name, is_open, paused_until FROM stores WHERE id = ?', [newOrder.storeId], (storeErr, store) => {
     if (storeErr) return res.status(500).json({ success: false, message: 'Error de servidor' });
     if (!store) return res.status(404).json({ success: false, code: 'STORE_NOT_FOUND', message: 'El negocio no existe.' });
     if (!store.is_open) {
       return res.status(409).json({ success: false, code: 'STORE_CLOSED', message: `${store.name} está cerrado en este momento.` });
+    }
+    if (store.paused_until && new Date(store.paused_until + 'Z') > new Date()) {
+      return res.status(409).json({ success: false, code: 'STORE_CLOSED', message: `${store.name} pausó temporalmente la recepción de pedidos.` });
     }
 
     const productIds = items.map(i => i.productId).filter(Boolean);
@@ -587,15 +591,16 @@ app.get('/api/orders/store/:storeId', authenticateToken, requireRole('store', 'a
     return res.status(403).json({ success: false, message: 'No puedes ver pedidos de otro comercio' });
   }
   const sql = `
-    SELECT orders.*, stores.name as storeName 
-    FROM orders 
-    LEFT JOIN stores ON orders.store_id = stores.id 
-    WHERE orders.store_id = ? 
+    SELECT orders.*, stores.name as storeName, users.name as customerName, users.phone as customerPhone
+    FROM orders
+    LEFT JOIN stores ON orders.store_id = stores.id
+    LEFT JOIN users ON orders.customer_id = users.id
+    WHERE orders.store_id = ?
     ORDER BY orders.created_at DESC
   `;
   db.all(sql, [storeId], (err, rows) => {
     if (err) return res.status(500).json({ success: false, message: 'Error fetching orders' });
-    
+
     const orders = rows.map(r => ({
       ...r,
       items: r.items_json ? JSON.parse(r.items_json) : []
@@ -710,6 +715,94 @@ app.put('/api/orders/:id/status', authenticateToken, requireRole('store', 'drive
   }
 });
 
+// 3.3.1 El comercio rechaza un pedido nuevo (solo mientras está pendiente de aceptación)
+app.put('/api/orders/:id/reject', authenticateToken, requireRole('store', 'admin'), (req, res) => {
+  const { reason } = req.body;
+  db.get('SELECT * FROM orders WHERE id = ?', [req.params.id], (err, order) => {
+    if (err || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
+    if (req.user.role === 'store' && req.user.storeId !== order.store_id) {
+      return res.status(403).json({ success: false, message: 'No puedes rechazar pedidos de otro comercio' });
+    }
+    if (order.status_step !== 0 || order.is_cancelled) {
+      return res.status(400).json({ success: false, message: 'Este pedido ya no se puede rechazar' });
+    }
+    db.run(
+      `UPDATE orders SET is_cancelled = 1, cancel_reason = ?, status_text = 'El comercio rechazó tu pedido' WHERE id = ?`,
+      [reason || 'Rechazado por el comercio', req.params.id],
+      (updErr) => {
+        if (updErr) return res.status(500).json({ success: false, message: 'Error rechazando el pedido' });
+        io.emit('ORDER_STATUS_CHANGED', { orderId: req.params.id, statusStep: order.status_step, statusText: 'El comercio rechazó tu pedido', isCancelled: true });
+        res.json({ success: true });
+      }
+    );
+  });
+});
+
+// 3.3.2 Resumen del panel del comercio: pedidos por estado, ventas y pedidos de hoy
+app.get('/api/stores/me/dashboard', authenticateToken, requireRole('store'), (req, res) => {
+  const storeId = req.user.storeId;
+  const sql = `
+    SELECT status_step, is_cancelled, total_amount_usd, created_at
+    FROM orders WHERE store_id = ?
+  `;
+  db.all(sql, [storeId], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error obteniendo el resumen del negocio' });
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    let newCount = 0, preparingCount = 0, readyCount = 0;
+    let todaySales = 0, todayOrders = 0, completedTotal = 0;
+
+    rows.forEach(o => {
+      if (!o.is_cancelled) {
+        if (o.status_step === 0) newCount++;
+        else if (o.status_step === 1) preparingCount++;
+        else if (o.status_step === 2) readyCount++;
+        if (o.status_step >= 4) completedTotal++;
+      }
+      const isToday = (o.created_at || '').slice(0, 10) === todayStr;
+      if (isToday && !o.is_cancelled) {
+        todaySales += o.total_amount_usd || 0;
+        todayOrders++;
+      }
+    });
+
+    db.get('SELECT is_open, paused_until, rating FROM stores WHERE id = ?', [storeId], (storeErr, store) => {
+      res.json({
+        success: true,
+        newCount, preparingCount, readyCount,
+        todaySales: Math.round(todaySales * 100) / 100,
+        todayOrders, completedTotal,
+        isOpen: store ? !!store.is_open : false,
+        pausedUntil: store ? store.paused_until : null,
+        rating: store ? store.rating : null
+      });
+    });
+  });
+});
+
+// 3.3.3 Abrir/cerrar el negocio, o pausar la recepción de pedidos por un rato
+app.put('/api/stores/me/status', authenticateToken, requireRole('store'), (req, res) => {
+  const { isOpen, pauseMinutes, resume } = req.body;
+  const storeId = req.user.storeId;
+
+  const updates = [];
+  const params = [];
+  if (typeof isOpen === 'boolean') { updates.push('is_open = ?'); params.push(isOpen ? 1 : 0); }
+  if (resume) { updates.push('paused_until = NULL'); }
+  else if (typeof pauseMinutes === 'number' && pauseMinutes > 0) {
+    updates.push(`paused_until = datetime('now', '+${Math.floor(pauseMinutes)} minutes')`);
+  }
+  if (!updates.length) return res.status(400).json({ success: false, message: 'Nada que actualizar' });
+
+  params.push(storeId);
+  db.run(`UPDATE stores SET ${updates.join(', ')} WHERE id = ?`, params, (err) => {
+    if (err) return res.status(500).json({ success: false, message: 'Error actualizando el estado del negocio' });
+    db.get('SELECT is_open, paused_until FROM stores WHERE id = ?', [storeId], (getErr, store) => {
+      res.json({ success: true, isOpen: store ? !!store.is_open : false, pausedUntil: store ? store.paused_until : null });
+    });
+  });
+});
+
 // Verifica que el usuario autenticado sea el cliente, el repartidor asignado o un admin del pedido.
 function checkOrderAccess(orderId, user, callback) {
   db.get('SELECT orders.*, drivers.user_id as driverUserId FROM orders LEFT JOIN drivers ON orders.driver_id = drivers.id WHERE orders.id = ?', [orderId], (err, order) => {
@@ -754,13 +847,13 @@ app.post('/api/orders/:id/messages', authenticateToken, (req, res) => {
   });
 });
 
-// 3.6 Cancelar pedido (solo el cliente, mientras no esté en camino)
+// 3.6 Cancelar pedido (solo el cliente, mientras el comercio no lo haya marcado listo)
 app.put('/api/orders/:id/cancel', authenticateToken, requireRole('user'), (req, res) => {
   const { reason } = req.body;
   db.get('SELECT * FROM orders WHERE id = ? AND customer_id = ?', [req.params.id, req.user.id], (err, order) => {
     if (err || !order) return res.status(404).json({ success: false, message: 'Pedido no encontrado' });
     if (order.status_step >= 2) {
-      return res.status(400).json({ success: false, message: 'Tu pedido ya está en camino y no se puede cancelar. Contacta a soporte.' });
+      return res.status(400).json({ success: false, message: 'Tu pedido ya está listo o en camino y no se puede cancelar. Contacta a soporte.' });
     }
     db.run(
       `UPDATE orders SET is_cancelled = 1, cancel_reason = ?, status_text = 'Pedido cancelado' WHERE id = ?`,

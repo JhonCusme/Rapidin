@@ -54,7 +54,8 @@ CREATE TABLE IF NOT EXISTS stores (
     logo_url TEXT,
     tags TEXT,
     description TEXT,
-    hours TEXT
+    hours TEXT,
+    paused_until TIMESTAMP
 );
 
 -- Tabla de Catálogo de Productos / Platillos
@@ -92,7 +93,7 @@ CREATE TABLE IF NOT EXISTS orders (
     store_id VARCHAR(50) REFERENCES stores(id),
     driver_id VARCHAR(50) REFERENCES drivers(id),
     country_code VARCHAR(5) REFERENCES countries(code),
-    status_step INT DEFAULT 0, -- 0: Creado, 1: En Preparación, 2: En Camino/Listo, 3: Entregado
+    status_step INT DEFAULT 0, -- 0: Creado, 1: Aceptado/Preparando, 2: Listo/esperando repartidor, 3: En camino, 4: Entregado
     status_text VARCHAR(255),
     customer_address TEXT,
     items_json TEXT,

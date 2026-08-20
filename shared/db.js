@@ -126,6 +126,77 @@ class RapidinDatabase {
     return data ? JSON.parse(data) : null;
   }
 
+  // ==========================================
+  // PANEL DE COMERCIOS (Rapidín Comercios)
+  // ==========================================
+
+  async getStoreOrders(storeId) {
+    try {
+      const response = await fetch(`${API_URL}/orders/store/${storeId}`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data.orders : [];
+    } catch (e) {
+      console.error('Error obteniendo pedidos del comercio:', e);
+      return [];
+    }
+  }
+
+  async getStoreDashboard() {
+    try {
+      const response = await fetch(`${API_URL}/stores/me/dashboard`, { headers: this.getAuthHeaders('store') });
+      const data = await response.json();
+      return data.success ? data : null;
+    } catch (e) {
+      console.error('Error obteniendo el resumen del comercio:', e);
+      return null;
+    }
+  }
+
+  async updateOrderStatusAsStore(orderId, statusStep, statusText) {
+    try {
+      const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('store'),
+        body: JSON.stringify({ statusStep, statusText })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error actualizando el pedido:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async rejectOrder(orderId, reason) {
+    try {
+      const response = await fetch(`${API_URL}/orders/${orderId}/reject`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('store'),
+        body: JSON.stringify({ reason })
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error rechazando el pedido:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async updateStoreStatus(payload) {
+    try {
+      const response = await fetch(`${API_URL}/stores/me/status`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders('store'),
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      return data;
+    } catch (e) {
+      console.error('Error actualizando el estado del comercio:', e);
+      return { success: false, message: 'Error de conexión con el servidor.' };
+    }
+  }
+
   getAuthHeaders(role = 'user') {
     const headers = { 'Content-Type': 'application/json' };
     const user = this.getCurrentUser(role);

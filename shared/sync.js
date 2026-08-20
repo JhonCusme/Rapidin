@@ -32,7 +32,7 @@ class RapidinSyncEngine {
         });
 
         this.socket.on('ORDER_STATUS_CHANGED', (data) => {
-          if (data.statusStep === 3) this.playAudioAlert('cash');
+          if (data.statusStep === 4) this.playAudioAlert('cash');
           else this.playAudioAlert('bell');
           this._notifyListeners({ eventType: 'ORDER_STATUS_CHANGED', payload: data });
         });

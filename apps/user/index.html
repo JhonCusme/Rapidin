@@ -3574,6 +3574,10 @@
       </div>
       <div class="tracker-step">
         <div class="tracker-icon"></div>
+        <div class="tracker-text">Listo, esperando repartidor</div>
+      </div>
+      <div class="tracker-step">
+        <div class="tracker-icon"></div>
         <div class="tracker-text">En camino</div>
       </div>
       <div class="tracker-step">
@@ -3684,6 +3688,10 @@
         </div>
         <div class="tracker-step">
           <div class="tracker-icon"></div>
+          <div class="tracker-text">Listo, esperando repartidor</div>
+        </div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
           <div class="tracker-text">Repartidor en camino</div>
         </div>
         <div class="tracker-step">
@@ -3779,6 +3787,10 @@
         <div class="tracker-step">
           <div class="tracker-icon"></div>
           <div class="tracker-text">Preparando pedido</div>
+        </div>
+        <div class="tracker-step">
+          <div class="tracker-icon"></div>
+          <div class="tracker-text">Listo, esperando repartidor</div>
         </div>
         <div class="tracker-step">
           <div class="tracker-icon"></div>
@@ -7204,8 +7216,8 @@
       }
       emptyState.style.display = 'none';
 
-      const active = orders.filter(o => o.status_step < 3);
-      const delivered = orders.filter(o => o.status_step >= 3);
+      const active = orders.filter(o => o.status_step < 4);
+      const delivered = orders.filter(o => o.status_step >= 4);
 
       if (active.length) {
         activeSection.style.display = 'block';
@@ -8411,7 +8423,7 @@
 
     // === PANTALLAS 34-44: DELIVERY EN VIVO ===
 
-    const TRACKER_STEP_LABELS = ['Pedido recibido', 'Preparando', 'Repartidor en camino', 'Entregado'];
+    const TRACKER_STEP_LABELS = ['Pedido recibido', 'Preparando', 'Listo, esperando repartidor', 'Repartidor en camino', 'Entregado'];
 
     async function fetchCurrentOrder() {
       if (!window.currentViewedOrderId) return null;
@@ -8433,7 +8445,7 @@
           icon.innerHTML = '<i class="fa-solid fa-check"></i>';
         } else if (i === statusStep) {
           stepEl.classList.add('active');
-          icon.innerHTML = i === 2 ? '<i class="fa-solid fa-person-biking"></i>' : '<i class="fa-solid fa-check"></i>';
+          icon.innerHTML = i === 3 ? '<i class="fa-solid fa-person-biking"></i>' : '<i class="fa-solid fa-check"></i>';
         }
       });
     }
@@ -8467,17 +8479,18 @@
       if (order.is_cancelled) {
         titleEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: var(--brand-primary);"></i> Pedido cancelado';
         subtitleEl.textContent = order.cancel_reason || 'Este pedido fue cancelado.';
-      } else if (order.status_step >= 3) {
+      } else if (order.status_step >= 4) {
         titleEl.innerHTML = '<i class="fa-solid fa-check-circle" style="color: #10B981;"></i> ¡Pedido entregado!';
         subtitleEl.textContent = 'Esperamos que lo hayas disfrutado.';
       } else {
         titleEl.innerHTML = '<i class="fa-solid fa-person-biking" style="color: var(--brand-primary);"></i> ' + (order.status_text || 'Tu pedido está en proceso');
-        subtitleEl.textContent = order.status_step === 0 ? 'El comercio todavía no confirma tu pedido.' : order.status_step === 1 ? 'El comercio está preparando tu pedido.' : 'El repartidor está llevando tu pedido.';
+        const subtitles = ['El comercio todavía no confirma tu pedido.', 'El comercio está preparando tu pedido.', 'Tu pedido está listo, esperando repartidor.', 'El repartidor está llevando tu pedido.'];
+        subtitleEl.textContent = subtitles[order.status_step] || 'Tu pedido está en proceso.';
       }
 
       document.getElementById('tracking-delayed-banner').style.display = (order.is_delayed && !order.is_cancelled) ? 'block' : 'none';
       document.getElementById('tracking-cancelled-banner').style.display = order.is_cancelled ? 'block' : 'none';
-      document.getElementById('tracking-rate-banner').style.display = (order.status_step >= 3 && !order.rating_order && !order.is_cancelled) ? 'flex' : 'none';
+      document.getElementById('tracking-rate-banner').style.display = (order.status_step >= 4 && !order.rating_order && !order.is_cancelled) ? 'flex' : 'none';
       document.getElementById('tracking-cancel-btn').style.display = (order.status_step < 2 && !order.is_cancelled) ? 'flex' : 'none';
     }
 
@@ -8490,7 +8503,7 @@
 
       const statusBadge = document.getElementById('orderdetail-status-badge');
       if (order.is_cancelled) { statusBadge.textContent = '🚫 Cancelado'; }
-      else if (order.status_step >= 3) { statusBadge.textContent = '✓ Entregado'; }
+      else if (order.status_step >= 4) { statusBadge.textContent = '✓ Entregado'; }
       else { statusBadge.textContent = '🟢 ' + (order.status_text || 'En proceso'); }
 
       renderTrackerSteps(document.getElementById('orderdetail-tracker-list'), order.status_step, order.is_cancelled);
@@ -8537,7 +8550,7 @@
 
       const rateCta = document.getElementById('orderdetail-rate-cta');
       const rateSummary = document.getElementById('orderdetail-rate-summary');
-      if (order.status_step >= 3 && !order.is_cancelled) {
+      if (order.status_step >= 4 && !order.is_cancelled) {
         if (order.rating_order) {
           rateCta.style.display = 'none';
           rateSummary.style.display = 'block';
