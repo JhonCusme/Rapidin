@@ -24,7 +24,13 @@ class RapidinSyncEngine {
     script.src = `${window.RAPIDIN_API_BASE}/socket.io/socket.io.js`;
     script.onload = () => {
       if (window.io) {
-        this.socket = window.io(window.RAPIDIN_API_BASE);
+        // El servidor solo entrega eventos a las salas del usuario autenticado (su token se lee en cada conexión).
+        this.socket = window.io(window.RAPIDIN_API_BASE, {
+          auth: (cb) => {
+            const h = rapidinSyncAuthHeaders();
+            cb({ token: (h.Authorization || '').replace('Bearer ', '') || null });
+          }
+        });
         
         this.socket.on('ORDER_CREATED', (orderData) => {
           this.playAudioAlert('bell');
@@ -37,6 +43,13 @@ class RapidinSyncEngine {
           this._notifyListeners({ eventType: 'ORDER_STATUS_CHANGED', payload: data });
         });
 
+        ['SHIPMENT_CREATED', 'SHIPMENT_STATUS_CHANGED'].forEach((eventType) => {
+          this.socket.on(eventType, (data) => {
+            this.playAudioAlert('bell');
+            this._notifyListeners({ eventType, payload: data });
+          });
+        });
+
         this.socket.on('CHAT_MESSAGE_SENT', (data) => {
           this.playAudioAlert('bell');
           this._notifyListeners({ eventType: 'CHAT_MESSAGE_SENT', payload: data });
@@ -47,6 +60,11 @@ class RapidinSyncEngine {
     };
     script.onerror = () => console.error('❌ Error al cargar Socket.IO. ¿El servidor está corriendo en el puerto 3000?');
     document.head.appendChild(script);
+  }
+
+  // Tras iniciar o cerrar sesión hay que reconectar para que el servidor nos asigne las salas correctas.
+  refreshAuth() {
+    if (this.socket) { this.socket.disconnect(); this.socket.connect(); }
   }
 
   // Sintetizador de audio sin necesidad de archivos externos MP3

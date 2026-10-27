@@ -625,7 +625,20 @@ class RapidinDatabase {
   // CATÁLOGO DINÁMICO (SQLite via API)
   // ==========================================
   
+  // Ubicación de entrega guardada por el cliente (la elige al registrarse); se usa por defecto
+  // para que todo listado de comercios respete a quiénes entregan realmente a su dirección.
+  savedDeliveryCoords() {
+    try {
+      const c = JSON.parse(localStorage.getItem('rapidin_delivery_coords') || 'null');
+      return c && typeof c.lat === 'number' && typeof c.lng === 'number' ? c : null;
+    } catch (e) { return null; }
+  }
+
   async getStores(lat = null, lng = null, { category = null, sortBy = null } = {}) {
+    if (lat === null || lng === null) {
+      const saved = this.savedDeliveryCoords();
+      if (saved) { lat = saved.lat; lng = saved.lng; }
+    }
     try {
       let url = `${window.RAPIDIN_API_BASE}/api/stores`;
       const params = new URLSearchParams();
@@ -661,7 +674,9 @@ class RapidinDatabase {
 
   async search(query) {
     try {
-      const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+      const saved = this.savedDeliveryCoords();
+      const loc = saved ? `&lat=${saved.lat}&lng=${saved.lng}` : '';
+      const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}${loc}`);
       const data = await response.json();
       return data.success ? { stores: data.stores, products: data.products } : { stores: [], products: [] };
     } catch (e) {
@@ -812,6 +827,10 @@ class RapidinDatabase {
   }
 
   async getStoresWithPromos(lat = null, lng = null) {
+    if (lat === null || lng === null) {
+      const saved = this.savedDeliveryCoords();
+      if (saved) { lat = saved.lat; lng = saved.lng; }
+    }
     try {
       let url = `${API_URL}/stores/with-promos`;
       if (lat !== null && lng !== null) url += `?lat=${lat}&lng=${lng}`;
@@ -873,6 +892,62 @@ class RapidinDatabase {
       return { success: false, code: data.code || null, message: data.message || 'No se pudo confirmar el pedido.', unavailableItems: data.unavailableItems || [] };
     } catch (e) {
       console.error('Error creando pedido:', e);
+      return { success: false, code: 'NETWORK_ERROR', message: 'Error de conexión con el servidor.' };
+    }
+  }
+
+  // --- Envíos "Mándame algo": lado del repartidor ---
+  async _driverCall(method, path, body) {
+    try {
+      const res = await fetch(`${API_URL}${path}`, { method, headers: this.getAuthHeaders('driver'), body: body ? JSON.stringify(body) : undefined });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+  async getPendingShipments() { const r = await this._driverCall('GET', '/shipments/pending'); return r.success ? r.shipments : []; }
+  async getMyActiveShipment() { const r = await this._driverCall('GET', '/shipments/driver/active'); return r.success ? r.shipment : null; }
+  async updateShipmentStatus(id, statusStep) { return this._driverCall('PUT', `/shipments/${encodeURIComponent(id)}/status`, { statusStep }); }
+
+  // --- Panel de administración: soporte y cupones de la plataforma ---
+  async _adminCall(method, path, body) {
+    try {
+      const res = await fetch(`${API_URL}${path}`, { method, headers: this.getAuthHeaders('admin'), body: body ? JSON.stringify(body) : undefined });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+  async getAdminSupportTickets(status = 'open') { const r = await this._adminCall('GET', `/admin/support/tickets?status=${status}`); return r.success ? r.tickets : []; }
+  async getAdminSupportMessages(ticketId) { const r = await this._adminCall('GET', `/admin/support/tickets/${encodeURIComponent(ticketId)}/messages`); return r.success ? r.messages : []; }
+  async replyAdminSupportTicket(ticketId, text) { return this._adminCall('POST', `/admin/support/tickets/${encodeURIComponent(ticketId)}/messages`, { text }); }
+  async closeAdminSupportTicket(ticketId) { return this._adminCall('PUT', `/admin/support/tickets/${encodeURIComponent(ticketId)}/close`); }
+  async getAdminCoupons() { const r = await this._adminCall('GET', '/admin/coupons'); return r.success ? r.coupons : []; }
+  async createAdminCoupon(data) { return this._adminCall('POST', '/admin/coupons', data); }
+  async toggleAdminCoupon(id) { return this._adminCall('PUT', `/admin/coupons/${encodeURIComponent(id)}/toggle`); }
+
+  // --- Favoritos (negocios y productos), guardados por usuario en el servidor ---
+  async getFavorites() {
+    try {
+      const res = await fetch(`${API_URL}/favorites`, { headers: this.getAuthHeaders('user') });
+      const data = await res.json();
+      return data.success ? data : { stores: [], products: [] };
+    } catch (e) { return { stores: [], products: [] }; }
+  }
+
+  async setFavorite(kind, refId, on) {
+    try {
+      const res = await fetch(`${API_URL}/favorites/${kind}/${encodeURIComponent(refId)}`, { method: on ? 'PUT' : 'DELETE', headers: this.getAuthHeaders('user') });
+      return await res.json();
+    } catch (e) { return { success: false, message: 'Error de conexión con el servidor.' }; }
+  }
+
+  // Pide al servidor el desglose exacto que va a cobrar (precios reales, envío del comercio, cupón verificado).
+  async quoteOrder(storeId, items, couponCode) {
+    try {
+      const response = await fetch(`${API_URL}/orders/quote`, {
+        method: 'POST',
+        headers: this.getAuthHeaders('user'),
+        body: JSON.stringify({ storeId, items, couponCode: couponCode || null })
+      });
+      return await response.json();
+    } catch (e) {
       return { success: false, code: 'NETWORK_ERROR', message: 'Error de conexión con el servidor.' };
     }
   }
