@@ -34,6 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
   async function init() {
     registerServiceWorker();
     setupPwaPrompt();
+
+    // La interfaz actual vive en las pantallas app-*-screen. Si el contenedor de la interfaz antigua está
+    // oculto, no cargamos sus datos ni pedimos permiso de ubicación al abrir la app (eso era confuso y
+    // ocurría antes de que el usuario siquiera iniciara sesión).
+    const legacyUi = document.getElementById('main-app-content');
+    if (legacyUi && getComputedStyle(legacyUi).display === 'none') return;
+
     setupEventListeners();
     
     // Fetch global config from DB API
@@ -152,20 +159,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('deals-carousel-container');
     if (!container) return;
 
+    // Sin ofertas vigentes no mostramos la sección (en vez de inventar una)
+    const section = container.closest('.hero-section') || container;
+    if (!state.flashDeals.length) {
+      container.innerHTML = '';
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+
+    const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const fmt = (secs) => `${Math.floor(secs / 3600).toString().padStart(2, '0')}:${Math.floor((secs % 3600) / 60).toString().padStart(2, '0')}:${(secs % 60).toString().padStart(2, '0')}`;
+
     container.innerHTML = state.flashDeals.map(deal => `
       <div class="deal-card" style="background: ${deal.gradient};">
         <div>
-          <span class="deal-tag">${deal.tag}</span>
-          <h3 class="deal-title">${deal.title}</h3>
-          <p class="deal-subtitle">${deal.subtitle}</p>
+          <span class="deal-tag">${esc(deal.tag)}</span>
+          <h3 class="deal-title">${esc(deal.title)}</h3>
+          <p class="deal-subtitle">${esc(deal.subtitle)}</p>
         </div>
         <div class="deal-footer">
-          <div class="deal-timer" data-timer-id="${deal.id}">
+          <div class="deal-timer" data-timer-id="${esc(deal.id)}">
             <i class="fa-solid fa-clock"></i>
-            <span class="timer-countdown" id="timer-${deal.id}">00:59:59</span>
+            <span class="timer-countdown" id="timer-${esc(deal.id)}">${deal.endsInSeconds == null ? 'Por tiempo limitado' : fmt(deal.endsInSeconds)}</span>
           </div>
-          <button class="btn-claim-deal" onclick="applyFlashCoupon('${deal.code}')">
-            Usar Código <strong>${deal.code}</strong>
+          <button class="btn-claim-deal" onclick="applyFlashCoupon('${esc(deal.code)}')">
+            Usar Código <strong>${esc(deal.code)}</strong>
           </button>
         </div>
       </div>
@@ -567,8 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.map) {
       state.map = L.map('map-container', { zoomControl: false }).setView([order.courier.lat, order.courier.lng], 14);
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CARTO',
+      L.tileLayer(window.RAPIDIN_TILE_URL, {
+        attribution: window.RAPIDIN_TILE_ATTRIBUTION,
         maxZoom: 19
       }).addTo(state.map);
 

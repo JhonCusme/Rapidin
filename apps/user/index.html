@@ -1317,9 +1317,14 @@
     }
     .store-cover {
       height: 200px;
-      background: linear-gradient(to bottom, rgba(11,15,25,0.2), var(--bg-main)), url('https://images.unsplash.com/photo-1550547660-d9450f859349?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80') center/cover;
+      /* Portada neutra: la foto real del comercio se aplica desde JS; sin foto, un degradado con el ícono de su categoría */
+      background: linear-gradient(135deg, #1E293B 0%, #0B0F19 100%);
       position: relative;
       flex-shrink: 0;
+    }
+    .store-cover-emoji {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 4.5rem; opacity: 0.35; pointer-events: none;
     }
     .store-cover-actions {
       position: absolute;
@@ -2326,6 +2331,7 @@
       flex-direction: column;
     }
     .tracking-map-mock {
+      flex-shrink: 0; /* sin esto el contenedor flex lo encogía a 1px y el mapa no se veía */
       height: 250px;
       background: #1E293B; /* Dark map tone */
       position: relative;
@@ -2580,24 +2586,25 @@
       </div>
 
       <div class="welcome-actions">
-        <button class="btn-auth-social" type="button" onclick="prepareGoogleAuth()">
+        <!-- Google/Apple ocultos hasta integrarlos de verdad (requieren credenciales OAuth); antes solo mostraban "en desarrollo". -->
+        <button class="btn-auth-social" type="button" onclick="prepareGoogleAuth()" hidden>
           <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px; height: 20px;">
           Continuar con Google
         </button>
         
-        <button class="btn-auth-social" type="button" onclick="prepareAppleAuth()">
+        <button class="btn-auth-social" type="button" onclick="prepareAppleAuth()" hidden>
           <i class="fa-brands fa-apple" style="font-size: 1.3rem;"></i>
           Continuar con Apple
         </button>
 
-        <div class="auth-separator">o</div>
+        <div class="auth-separator" hidden>o</div>
 
         <button class="btn-auth-primary" type="button" onclick="continueWithPhone()">
           📱 Continuar con mi número
         </button>
 
         <p class="welcome-legal">
-          Al continuar aceptas nuestros <a href="#">Términos y condiciones</a> y <a href="#">Política de privacidad</a>.
+          Al continuar aceptas nuestros <a href="../../legal/terminos.html" target="_blank" rel="noopener">Términos y condiciones</a> y <a href="../../legal/privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>.
         </p>
       </div>
 
@@ -2616,10 +2623,9 @@
         <p class="auth-subtitle">Te enviaremos un código para verificar tu número.</p>
 
         <div class="phone-input-group">
-          <button class="btn-country-selector" type="button" onclick="openCountrySelector()">
+          <button class="btn-country-selector" type="button" tabindex="-1" style="cursor: default; pointer-events: none;">
             <span id="selected-country-flag">🇪🇨</span>
             <span id="selected-country-code">+593</span>
-            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: var(--text-muted);"></i>
           </button>
           <input type="tel" id="input-phone-number" class="phone-input" placeholder="98 123 4567" inputmode="numeric" autocomplete="tel-national">
         </div>
@@ -2653,7 +2659,7 @@
         </button>
 
         <div class="sms-code-container" id="sms-code-inputs">
-          <input type="tel" class="sms-box" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+          <input type="tel" class="sms-box" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
           <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
           <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
           <input type="tel" class="sms-box" maxlength="1" inputmode="numeric">
@@ -2768,9 +2774,9 @@
   <div class="app-main-screen" id="app-main-screen" style="display: none;">
     
     <div class="home-header">
-      <div class="home-location-selector" onclick="alert('Seleccionar ubicación')">
+      <div class="home-location-selector" onclick="openAddressesScreen()" style="cursor: pointer;">
         <span class="home-location-label">📍 Entregar en</span>
-        <span class="home-location-address" id="home-display-address">Guayaquil, Ecuador <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i></span>
+        <span class="home-location-address" id="home-display-address">Elige tu ubicación <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i></span>
       </div>
       <div class="home-avatar" onclick="openProfileScreen()">
         <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Rapidin" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">
@@ -2832,48 +2838,17 @@
         </div>
       </div>
 
-      <div class="promo-banner">
-        <h3>🔥 OFERTAS CERCA DE TI</h3>
-        <p>Hasta 40% OFF</p>
+      <div class="promo-banner" id="home-promo-banner" style="display: none;">
+        <h3>🔥 PROMOCIONES ACTIVAS</h3>
+        <p id="home-promo-banner-text"></p>
         <button type="button" onclick="openPromotionsScreen()">Ver promociones &rarr;</button>
       </div>
 
-      <h2 class="section-title">⭐ Para ti</h2>
-      <div class="horizontal-scroll" id="home-foryou-list">
-        <div class="store-card" onclick="openStoreScreen('Burger House', '4.8')">
-          <div class="store-img">🍔</div>
-          <div class="store-info">
-            <div class="store-header">
-              <span class="store-name">Burger House</span>
-              <span class="store-rating"><i class="fa-solid fa-star"></i> 4.8</span>
-            </div>
-            <div class="store-category">Hamburguesas</div>
-            <div class="store-details">
-              <span>⚡ 20-30 min</span>
-              <span>🚴 $1.50 envío</span>
-            </div>
-            <div class="store-promo">20% OFF</div>
-          </div>
-        </div>
-      </div>
+      <h2 class="section-title" id="home-foryou-title">⭐ Para ti</h2>
+      <div class="horizontal-scroll" id="home-foryou-list"><div style="color: var(--text-muted); font-size: 0.9rem; padding: 0.5rem 0;">Buscando comercios para ti…</div></div>
 
       <h2 class="section-title" style="margin-top: 1rem;">📍 Cerca de ti</h2>
-      <div class="vertical-list" id="home-nearby-list">
-        <div class="vertical-store-card" onclick="openStoreScreen('Mercado Sano', '4.9')">
-          <div class="vertical-store-img">🥑</div>
-          <div class="vertical-store-info">
-            <div class="store-header" style="margin-bottom: 0;">
-              <span class="store-name" style="font-size: 1rem;">Mercado Sano</span>
-              <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.9</span>
-            </div>
-            <div class="store-category" style="margin-bottom: 0.4rem; font-size: 0.8rem;">Supermercado, Frescos</div>
-            <div class="store-details" style="font-size: 0.8rem;">
-              <span>⚡ 10-20 min</span>
-              <span>🚴 Gratis</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="vertical-list" id="home-nearby-list"><div style="color: var(--text-muted); font-size: 0.9rem; padding: 0.5rem 0;">Buscando comercios cerca de ti…</div></div>
 
     </div> <!-- End home-content -->
 
@@ -2918,37 +2893,8 @@
     </div>
 
     <div class="search-content" id="search-content-idle">
-      <h3 class="search-section-title">Búsquedas recientes</h3>
-      <div class="recent-search-item" onclick="searchFor('Hamburguesa')">
-        <div class="recent-search-left">
-          <i class="fa-regular fa-clock"></i>
-          <span>Hamburguesa</span>
-        </div>
-        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
-      </div>
-      <div class="recent-search-item" onclick="searchFor('Farmacia')">
-        <div class="recent-search-left">
-          <i class="fa-regular fa-clock"></i>
-          <span>Farmacia</span>
-        </div>
-        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
-      </div>
-      <div class="recent-search-item" onclick="searchFor('Coca-Cola')">
-        <div class="recent-search-left">
-          <i class="fa-regular fa-clock"></i>
-          <span>Coca-Cola</span>
-        </div>
-        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
-      </div>
-      <div class="recent-search-item" onclick="searchFor('Pizza')">
-        <div class="recent-search-left">
-          <i class="fa-regular fa-clock"></i>
-          <span>Pizza</span>
-        </div>
-        <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick="event.stopPropagation(); this.parentElement.style.display='none';"></i>
-      </div>
-
-      <h3 class="search-section-title" style="margin-top: 2rem;">🔥 Lo más buscado</h3>
+      <div id="recent-searches-block"><h3 class="search-section-title">Búsquedas recientes</h3><div id="recent-searches-list"></div></div>
+      <h3 class="search-section-title" style="margin-top: 2rem;">💡 Prueba buscando</h3>
       <div class="popular-tags">
         <div class="popular-tag" onclick="searchFor('Hamburguesas')">Hamburguesas</div>
         <div class="popular-tag" onclick="searchFor('Pizza')">Pizza</div>
@@ -2996,7 +2942,7 @@
         <i class="fa-solid fa-magnifying-glass nav-icon"></i>
         <span class="nav-label">Buscar</span>
       </div>
-      <div class="nav-item" onclick="alert('Pantalla de pedidos en desarrollo')">
+      <div class="nav-item" onclick="openOrdersScreen()">
         <i class="fa-solid fa-receipt nav-icon"></i>
         <span class="nav-label">Pedidos</span>
       </div>
@@ -3013,12 +2959,13 @@
 
   <!-- PANTALLA 9: DETALLE DEL NEGOCIO -->
   <div class="app-store-screen" id="app-store-screen" style="display: none;">
-    <div class="store-cover">
+    <div class="store-cover" id="store-cover">
+      <div class="store-cover-emoji" id="store-cover-emoji"></div>
       <div class="store-cover-actions">
         <button type="button" class="btn-circle-action" onclick="closeStoreScreen()">
           <i class="fa-solid fa-arrow-left"></i>
         </button>
-        <button type="button" class="btn-circle-action" onclick="alert('Añadido a favoritos')">
+        <button type="button" class="btn-circle-action" id="store-fav-btn" onclick="toggleFavoriteItem('store', window.currentStore && window.currentStore.id)">
           <i class="fa-regular fa-heart"></i>
         </button>
       </div>
@@ -3037,6 +2984,7 @@
           <span id="store-address-text">📍 1.2 km</span>
         </div>
         <div id="store-description-text" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; display: none;"></div>
+        <div id="store-closed-banner" style="display: none; margin-top: 0.8rem; padding: 0.7rem 0.9rem; border-radius: var(--radius-md); background: rgba(239,68,68,0.12); border: 1px solid #EF4444; color: #EF4444; font-weight: 700; font-size: 0.85rem;"></div>
       </div>
 
       <!-- Delivery Info -->
@@ -3227,12 +3175,12 @@
   <!-- PANTALLA 10: DETALLE DEL PRODUCTO -->
   <div class="app-product-screen" id="app-product-screen" style="display: none;">
     <div class="product-cover" id="product-cover-emoji">
-      🍔
+      <span id="product-cover-glyph">🍽️</span>
       <div class="product-cover-actions">
         <button type="button" class="btn-circle-action" onclick="closeProductScreen()">
           <i class="fa-solid fa-arrow-left"></i>
         </button>
-        <button type="button" class="btn-circle-action" onclick="toggleFavorite(this)">
+        <button type="button" class="btn-circle-action" id="product-fav-btn" onclick="toggleFavoriteItem('product', window.currentProduct && window.currentProduct.id)">
           <i class="fa-regular fa-heart"></i>
         </button>
       </div>
@@ -3394,9 +3342,10 @@
       <div class="cart-promo-section">
         <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.8rem;">🎁 ¿Tienes un código promocional?</h3>
         <div class="promo-input-group">
-          <input type="text" class="promo-code-input" placeholder="Ingresa tu código">
-          <button class="btn-apply-promo" onclick="alert('Código aplicado')">Aplicar</button>
+          <input type="text" class="promo-code-input" id="cart-promo-input" placeholder="Ingresa tu código" autocapitalize="characters">
+          <button class="btn-apply-promo" id="btn-cart-promo" onclick="applyCartPromo()">Aplicar</button>
         </div>
+        <div id="cart-promo-msg" style="display: none; font-size: 0.85rem; margin-top: 0.6rem;"></div>
       </div>
 
       <!-- Order Summary -->
@@ -3410,11 +3359,16 @@
           <span>Envío</span>
           <span id="cart-sum-shipping">$1.99</span>
         </div>
+        <div class="summary-row" id="cart-sum-discount-row" style="display: none; color: #10B981;">
+          <span>Descuento</span>
+          <span id="cart-sum-discount">-$0.00</span>
+        </div>
         <div class="summary-divider"></div>
         <div class="summary-row total">
           <span>Total</span>
           <span id="cart-sum-total">$0.00</span>
         </div>
+        <div id="cart-minorder-msg" style="display: none; margin-top: 0.8rem; font-size: 0.85rem; color: #F59E0B; font-weight: 700;"></div>
       </div>
 
       <!-- Delivery Location -->
@@ -3429,7 +3383,7 @@
       <!-- Estimated Time -->
       <div class="cart-time-card">
         <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-bolt" style="color: #10B981;"></i> Llegará aproximadamente en</h3>
-        <div style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary);">20-30 min</div>
+        <div style="font-weight: 800; font-size: 1.2rem; color: var(--text-primary);" id="cart-eta-text">—</div>
       </div>
 
       <div style="height: 100px;"></div>
@@ -3475,7 +3429,7 @@
       <!-- Estimated Time -->
       <div class="cart-time-card">
         <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;"><i class="fa-solid fa-bolt" style="color: #10B981;"></i> Entrega estimada</h3>
-        <div style="font-weight: 800; font-size: 1.4rem; color: var(--text-primary); margin-bottom: 0.3rem;">20-30 min</div>
+        <div style="font-weight: 800; font-size: 1.4rem; color: var(--text-primary); margin-bottom: 0.3rem;" id="checkout-eta-text">—</div>
         <div style="font-size: 0.85rem; color: var(--text-secondary);">Llegará aproximadamente en 20-30 min</div>
       </div>
 
@@ -3982,62 +3936,8 @@
       <div class="menu-nav-item" id="fav-tab-products" onclick="switchFavoritesTab('products')">🛍️ Productos</div>
     </div>
 
-    <div style="padding: 0 1.5rem;">
-      <div class="search-sort">
-        <button type="button" class="search-sort-btn">Ordenar ▾</button>
-      </div>
-    </div>
-
     <!-- TAB: NEGOCIOS FAVORITOS -->
-    <div id="fav-content-businesses" style="padding: 0 1.5rem 2rem 1.5rem;">
-      <div class="vertical-store-card" id="fav-business-1" style="align-items: center; margin-bottom: 0.8rem; cursor: pointer;" onclick="openStoreScreen('Burger House', '4.8')">
-        <div class="vertical-store-img">🍔</div>
-        <div class="vertical-store-info">
-          <div class="store-header" style="margin-bottom: 0;">
-            <span class="store-name" style="font-size: 1rem;">Burger House</span>
-            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.8</span>
-          </div>
-          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">🍔 Hamburguesas</div>
-          <div class="store-details" style="font-size: 0.8rem; justify-content: flex-start; gap: 0.8rem;">
-            <span>⚡ 20-30 min</span>
-            <span>🚴 $1.50 envío</span>
-          </div>
-        </div>
-        <button type="button" class="btn-fav-toggle" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-business-1')"><i class="fa-solid fa-heart"></i></button>
-      </div>
-
-      <div class="vertical-store-card" id="fav-business-2" style="align-items: center; margin-bottom: 0.8rem; cursor: pointer;" onclick="openStoreScreen('Pizza House', '4.9')">
-        <div class="vertical-store-img">🍕</div>
-        <div class="vertical-store-info">
-          <div class="store-header" style="margin-bottom: 0;">
-            <span class="store-name" style="font-size: 1rem;">Pizza House</span>
-            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.9</span>
-          </div>
-          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">🍕 Italiana</div>
-          <div class="store-details" style="font-size: 0.8rem; justify-content: flex-start; gap: 0.8rem;">
-            <span>⚡ 25-35 min</span>
-            <span>🚴 $0.99 envío</span>
-          </div>
-        </div>
-        <button type="button" class="btn-fav-toggle" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-business-2')"><i class="fa-solid fa-heart"></i></button>
-      </div>
-
-      <div class="vertical-store-card" id="fav-business-3" style="align-items: center; margin-bottom: 0.8rem; cursor: pointer;" onclick="openStoreScreen('Farmacia Central', '4.7')">
-        <div class="vertical-store-img">💊</div>
-        <div class="vertical-store-info">
-          <div class="store-header" style="margin-bottom: 0;">
-            <span class="store-name" style="font-size: 1rem;">Farmacia Central</span>
-            <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> 4.7</span>
-          </div>
-          <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">💊 Farmacia</div>
-          <div class="store-details" style="font-size: 0.8rem; justify-content: flex-start; gap: 0.8rem;">
-            <span>⚡ 15-25 min</span>
-            <span>🚴 $1.50 envío</span>
-          </div>
-        </div>
-        <button type="button" class="btn-fav-toggle" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-business-3')"><i class="fa-solid fa-heart"></i></button>
-      </div>
-    </div>
+    <div id="fav-content-businesses" style="padding: 0 1.5rem 2rem 1.5rem;"></div>
 
     <!-- ESTADO VACÍO: NEGOCIOS -->
     <div class="empty-state" id="fav-empty-businesses" style="display: none;">
@@ -4048,44 +3948,7 @@
     </div>
 
     <!-- TAB: PRODUCTOS FAVORITOS -->
-    <div id="fav-content-products" style="display: none; padding: 0 1.5rem 2rem 1.5rem;">
-      <div class="search-product-item" id="fav-product-1" style="cursor: pointer;" onclick="openProductScreen()">
-        <div style="flex: 1;">
-          <div class="product-info-title">Hamburguesa Clásica</div>
-          <div class="product-info-store">Burger House</div>
-          <div class="product-info-price">$7.99</div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍔</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-1')"><i class="fa-solid fa-heart"></i></button>
-        </div>
-      </div>
-
-      <div class="search-product-item" id="fav-product-2" style="cursor: pointer;" onclick="openProductScreen()">
-        <div style="flex: 1;">
-          <div class="product-info-title">Pizza Pepperoni</div>
-          <div class="product-info-store">Pizza House</div>
-          <div class="product-info-price">$9.99</div>
-          <div class="product-info-promo">🔥 20% OFF</div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🍕</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-2')"><i class="fa-solid fa-heart"></i></button>
-        </div>
-      </div>
-
-      <div class="search-product-item" id="fav-product-3" style="cursor: pointer;" onclick="openProductScreen()">
-        <div style="flex: 1;">
-          <div class="product-info-title">Coca-Cola 1.5L</div>
-          <div class="product-info-store">Supermercado Express</div>
-          <div class="product-info-price">$2.50</div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 0.5rem;">🥤</div>
-          <button type="button" class="btn-fav-toggle" style="margin: 0;" onclick="event.stopPropagation(); toggleFavoriteCard(this, 'fav-product-3')"><i class="fa-solid fa-heart"></i></button>
-        </div>
-      </div>
-    </div>
+    <div id="fav-content-products" style="display: none; padding: 0 1.5rem 2rem 1.5rem;"></div>
 
     <!-- ESTADO VACÍO: PRODUCTOS -->
     <div class="empty-state" id="fav-empty-products" style="display: none;">
@@ -4646,6 +4509,9 @@
         <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary);" id="envios-tracking-status">Buscando repartidor</div>
       </div>
       <div class="tracker-container" id="envios-tracking-steps" style="margin-bottom: 1.5rem;"></div>
+      <div class="cart-summary-card" id="envios-tracking-driver-card" style="display: none; margin-bottom: 1.25rem;">
+        <div class="summary-row"><span>🛵 Tu repartidor</span><span id="envios-tracking-driver" style="font-weight: 700;"></span></div>
+      </div>
       <div class="cart-summary-card" style="margin-bottom: 1.25rem;">
         <div class="summary-row"><span>🟢 Origen</span></div>
         <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;" id="envios-tracking-origin"></div>
@@ -5435,6 +5301,13 @@
       const btnLogout = document.getElementById('btn-user-logout');
       const btnAuth = document.getElementById('btn-user-auth');
 
+      // Un usuario nuevo no entra a la app hasta confirmar dónde recibirá sus pedidos.
+      if (user && window.onboardingLocationPending) {
+        if (authGate) authGate.style.display = 'flex';
+        if (homeScreen) homeScreen.style.display = 'none';
+        return;
+      }
+
       if (user) {
         if (authGate) authGate.style.display = 'none';
         document.querySelectorAll('.app-search-screen, .app-store-screen, .app-product-screen, .app-cart-screen, .app-checkout-screen, .app-success-screen, .app-tracking-screen, .app-order-detail-screen, #app-orders-screen, #app-favorites-screen, #app-profile-screen').forEach(el => el.style.display = 'none');
@@ -5443,6 +5316,9 @@
         if (btnAuth) btnAuth.style.display = 'none';
         if (window.loadHomeStores) window.loadHomeStores();
         if (window.loadHomeRapidinAhora) window.loadHomeRapidinAhora();
+        if (window.loadHomePromoBanner) window.loadHomePromoBanner();
+        loadFavorites();
+        syncDeliveryLocationFromAccount();
       } else {
         if (authGate) authGate.style.display = 'flex';
         if (homeScreen) homeScreen.style.display = 'none';
@@ -5722,6 +5598,7 @@
       }
 
       document.getElementById('step-complete-profile').style.display = 'none';
+      window.onboardingLocationPending = true;
       document.getElementById('step-location').style.display = 'flex';
     };
 
@@ -5739,11 +5616,49 @@
       el.style.display = msg ? 'block' : 'none';
     }
 
-    function showPendingLocation(address, lat, lng) {
+    // Mapa real de la ubicación elegida; el pin se puede arrastrar para afinar el punto exacto de entrega.
+    let locationMap = null;
+    let locationMarker = null;
+    function renderLocationMap(lat, lng) {
+      if (typeof L === 'undefined') return false;
+      const box = document.getElementById('mock-map');
+      let el = document.getElementById('location-leaflet');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'location-leaflet';
+        el.style.cssText = 'position:absolute;inset:0;border-radius:inherit;z-index:0;';
+        box.prepend(el);
+      }
+      if (!locationMap) {
+        locationMap = L.map(el, { zoomControl: false, attributionControl: false }).setView([lat, lng], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(locationMap);
+        locationMarker = L.marker([lat, lng], { draggable: true }).addTo(locationMap);
+        locationMarker.on('dragend', async () => {
+          const pos = locationMarker.getLatLng();
+          let address = '';
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=es&lat=${pos.lat}&lon=${pos.lng}`);
+            address = formatNominatimAddress(await res.json());
+          } catch (e) { /* sin red hacia el geocodificador */ }
+          showPendingLocation(address || `Ubicación marcada (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`, pos.lat, pos.lng, true);
+        });
+      } else {
+        locationMarker.setLatLng([lat, lng]);
+        locationMap.setView([lat, lng], 16);
+      }
+      setTimeout(() => locationMap.invalidateSize(), 60);
+      return true;
+    }
+
+    function showPendingLocation(address, lat, lng, fromDrag) {
       window.pendingDeliveryLocation = { address, lat, lng };
       document.getElementById('mock-map').style.opacity = '1';
-      document.getElementById('mock-map-pin-icon').style.display = 'block';
-      document.getElementById('mock-map-info').style.display = 'block';
+      const hasRealMap = fromDrag ? true : renderLocationMap(lat, lng);
+      // Con mapa real se oculta el pin decorativo
+      document.getElementById('mock-map-pin-icon').style.display = hasRealMap ? 'none' : 'block';
+      const info = document.getElementById('mock-map-info');
+      info.style.display = 'block';
+      info.style.zIndex = '600';
       document.getElementById('mock-map-address').textContent = address;
       document.getElementById('btn-confirm-location').disabled = false;
       setLocationStatus('');
@@ -5817,17 +5732,54 @@
       showPendingLocation(formatNominatimAddress(r) || r.display_name, parseFloat(r.lat), parseFloat(r.lon));
     };
 
-    window.confirmLocation = function() {
-      const pending = window.pendingDeliveryLocation;
-      if (!pending) return;
-      const address = pending.address;
+    // Guarda la ubicación de entrega en este dispositivo y actualiza la cabecera del inicio.
+    function applyDeliveryLocation(address, lat, lng) {
       window.rapidinDeliveryAddress = address;
       localStorage.setItem('rapidin_delivery_address', address);
-      localStorage.setItem('rapidin_delivery_coords', JSON.stringify({ lat: pending.lat, lng: pending.lng }));
-      let displayAddress = address.length > 25 ? address.substring(0, 22) + '...' : address;
-      document.getElementById('home-display-address').innerHTML = `${displayAddress} <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i>`;
+      if (typeof lat === 'number' && typeof lng === 'number') {
+        localStorage.setItem('rapidin_delivery_coords', JSON.stringify({ lat, lng }));
+      }
+      const shown = address.length > 25 ? address.substring(0, 22) + '...' : address;
+      document.getElementById('home-display-address').innerHTML = `${escapeHtml(shown)} <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i>`;
+    }
 
+    window.confirmLocation = async function() {
+      const pending = window.pendingDeliveryLocation;
+      if (!pending) return;
+      const btn = document.getElementById('btn-confirm-location');
+      btn.disabled = true;
+      applyDeliveryLocation(pending.address, pending.lat, pending.lng);
+      window.onboardingLocationPending = false;
+      // También queda guardada en la cuenta como dirección principal (la usa el pago y otros dispositivos)
+      try {
+        await window.rapidinDB.createAddress({ label: 'Casa', addressText: pending.address, lat: pending.lat, lng: pending.lng, isDefault: true });
+      } catch (e) { /* si falla, la ubicación igual queda en este dispositivo */ }
+      btn.disabled = false;
       checkAuthGate();
+    };
+
+    // En un dispositivo nuevo (sin ubicación guardada) recuperamos la dirección principal de la cuenta.
+    async function syncDeliveryLocationFromAccount() {
+      if (window.rapidinDB.savedDeliveryCoords()) return;
+      const list = await window.rapidinDB.getAddresses();
+      const main = list.find(a => a.is_default) || list[0];
+      if (main && main.lat != null && main.lng != null) {
+        applyDeliveryLocation(main.address_text, Number(main.lat), Number(main.lng));
+        if (window.loadHomeStores) window.loadHomeStores();
+        if (window.loadHomeRapidinAhora) window.loadHomeRapidinAhora();
+      }
+    }
+
+    // Elegir una dirección guardada como la de entrega actual (desde la cabecera del inicio)
+    window.useAddressAsDelivery = async function(id) {
+      const a = window.rapidinAddressesCache[id];
+      if (!a) return;
+      await window.rapidinDB.setDefaultAddress(id);
+      applyDeliveryLocation(a.address_text, a.lat != null ? Number(a.lat) : undefined, a.lng != null ? Number(a.lng) : undefined);
+      closeAccountSubScreen();
+      if (window.loadHomeStores) window.loadHomeStores();
+      if (window.loadHomeRapidinAhora) window.loadHomeRapidinAhora();
+      if (window.rapidinAlert) window.rapidinAlert('📍 Entregaremos en ' + a.address_text);
     };
 
     window.submitPhoneAuth = async function() {
@@ -5906,6 +5858,16 @@
       smsBoxes.forEach((box, index) => {
         box.addEventListener('input', function(e) {
           this.value = this.value.replace(/\D/g, '');
+          // Autocompletado del SMS (iOS/Android): llega el código completo en la primera casilla; lo repartimos.
+          if (this.value.length > 1) {
+            const digits = this.value.split('').slice(0, smsBoxes.length - index);
+            digits.forEach((d, i) => { smsBoxes[index + i].value = d; });
+            document.getElementById('sms-error-msg').textContent = '';
+            const filled = Array.from(smsBoxes).every(b => b.value.length === 1);
+            if (filled) { smsBoxes[smsBoxes.length - 1].blur(); verifySmsCode(); }
+            else smsBoxes[Math.min(index + digits.length, smsBoxes.length - 1)].focus();
+            return;
+          }
           if (this.value.length === 1) {
             document.getElementById('sms-error-msg').textContent = ''; 
             if (index < smsBoxes.length - 1) smsBoxes[index + 1].focus();
@@ -5972,6 +5934,7 @@
     });
 
     window.openSearchScreen = function() {
+      renderRecentSearches();
       document.getElementById('app-main-screen').style.display = 'none';
       document.getElementById('app-search-screen').style.display = 'flex';
       setTimeout(() => document.getElementById('main-search-input').focus(), 100);
@@ -6066,6 +6029,7 @@
 
         searchDebounceTimer = setTimeout(async () => {
           const { stores, products } = await window.rapidinDB.search(val);
+          rememberSearch(val);
           window.currentSearchResults = { stores, products };
           window.currentSearchFilter = 'all';
           document.querySelectorAll('#search-filters-row .search-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
@@ -6085,6 +6049,33 @@
       input.focus();
       handleSearchInput({target: input});
     };
+
+    // Búsquedas recientes reales (por dispositivo)
+    function getRecentSearches() {
+      try { return JSON.parse(localStorage.getItem('rapidin_recent_searches') || '[]'); } catch (e) { return []; }
+    }
+    function rememberSearch(term) {
+      const t = String(term || '').trim();
+      if (t.length < 2) return;
+      const list = [t, ...getRecentSearches().filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, 6);
+      localStorage.setItem('rapidin_recent_searches', JSON.stringify(list));
+    }
+    window.removeRecentSearch = function(term) {
+      localStorage.setItem('rapidin_recent_searches', JSON.stringify(getRecentSearches().filter(x => x !== term)));
+      renderRecentSearches();
+    };
+    function renderRecentSearches() {
+      const block = document.getElementById('recent-searches-block');
+      const list = document.getElementById('recent-searches-list');
+      if (!block || !list) return;
+      const items = getRecentSearches();
+      block.style.display = items.length ? '' : 'none';
+      list.innerHTML = items.map(t => `
+        <div class="recent-search-item" onclick='searchFor(${JSON.stringify(t).replace(/'/g, "&#39;")})'>
+          <div class="recent-search-left"><i class="fa-regular fa-clock"></i><span>${escapeHtml(t)}</span></div>
+          <i class="fa-solid fa-xmark" style="color: var(--text-muted);" onclick='event.stopPropagation(); removeRecentSearch(${JSON.stringify(t).replace(/'/g, "&#39;")})'></i>
+        </div>`).join('');
+    }
 
     window.searchFor = function(term) {
       openSearchScreen();
@@ -6150,6 +6141,7 @@
               <span>⚡ ${escapeHtml(s.deliveryTime || '')}</span>
               <span>🚴 ${s.deliveryFee ? fmtMoney(s.deliveryFee) + ' envío' : 'Envío gratis'}</span>
             </div>
+            ${s.openNow === false ? `<div class="store-promo" style="background: rgba(239,68,68,0.15); color: #EF4444;">${escapeHtml(s.closedMessage || 'Cerrado ahora')}</div>` : ''}
           </div>
         </div>
       `;
@@ -6175,14 +6167,54 @@
       `;
     }
 
+    function savedDeliveryCoords() {
+      try {
+        const c = JSON.parse(localStorage.getItem('rapidin_delivery_coords') || 'null');
+        return c && typeof c.lat === 'number' && typeof c.lng === 'number' ? c : null;
+      } catch (e) { return null; }
+    }
+
+    // Inicio con datos reales: comercios que entregan a tu dirección, del más cercano al más lejano.
+    // "Para ti": tus favoritos primero y luego los mejor calificados. Sin comercios = estado vacío honesto.
     window.loadHomeStores = async function() {
-      const stores = await window.rapidinDB.getStores();
-      if (!stores.length) return;
+      const coords = savedDeliveryCoords();
+      const stores = await window.rapidinDB.getStores(coords ? coords.lat : null, coords ? coords.lng : null);
       cacheStores(stores);
       const foryou = document.getElementById('home-foryou-list');
       const nearby = document.getElementById('home-nearby-list');
-      if (foryou) foryou.innerHTML = stores.map(storeCardHtml).join('');
+      const foryouTitle = document.getElementById('home-foryou-title');
+      if (!stores.length) {
+        if (foryou) foryou.innerHTML = '';
+        if (foryouTitle) foryouTitle.style.display = 'none';
+        if (nearby) nearby.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🛵</div>
+            <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem;">Todavía no llegamos a tu zona</div>
+            <div style="font-size: 0.85rem;">No encontramos comercios que entreguen en tu dirección. Prueba con otra ubicación desde el botón de arriba.</div>
+          </div>`;
+        return;
+      }
+      if (foryouTitle) foryouTitle.style.display = '';
+      const favs = window.rapidinFavorites ? window.rapidinFavorites.store : new Set();
+      const ranked = [...stores].sort((a, b) => (favs.has(b.id) - favs.has(a.id)) || ((b.rating || 0) - (a.rating || 0))).slice(0, 10);
+      if (foryou) foryou.innerHTML = ranked.map(storeCardHtml).join('');
       if (nearby) nearby.innerHTML = stores.map(verticalStoreCardHtml).join('');
+    };
+
+    // Banner de promociones: solo si hay promociones vigentes de verdad
+    window.loadHomePromoBanner = async function() {
+      const banner = document.getElementById('home-promo-banner');
+      if (!banner) return;
+      try {
+        const res = await fetch(`${window.RAPIDIN_API_BASE}/api/coupons/active`, { headers: window.rapidinDB.getAuthHeaders('user') });
+        const data = await res.json();
+        const coupons = ((data.success && data.coupons) || []).filter(c => !c.store_id || window.rapidinStoreCache[c.store_id]);
+        if (!coupons.length) { banner.style.display = 'none'; return; }
+        const percents = coupons.filter(c => c.discount_type === 'percent').map(c => Math.round(c.discount_value * 100));
+        const text = percents.length ? `Hasta ${Math.max(...percents)}% de descuento` : (coupons.length === 1 ? '1 promoción disponible' : `${coupons.length} promociones disponibles`);
+        document.getElementById('home-promo-banner-text').textContent = text;
+        banner.style.display = '';
+      } catch (e) { banner.style.display = 'none'; }
     };
 
     window.openStoreScreen = function(storeIdOrName, rating) {
@@ -6215,6 +6247,21 @@
         document.getElementById('store-info-address-text').textContent = store.address || '';
         document.getElementById('menu-nav-all').classList.add('active');
         document.getElementById('menu-nav-popular').classList.remove('active');
+        const cover = document.getElementById('store-cover');
+        if (store.image) {
+          cover.style.background = `linear-gradient(to bottom, rgba(11,15,25,0.2), var(--bg-main)), url('${String(store.image).replace(/'/g, '%27')}') center/cover`;
+          document.getElementById('store-cover-emoji').textContent = '';
+        } else {
+          cover.style.background = '';
+          document.getElementById('store-cover-emoji').textContent = categoryIcon(store.category);
+        }
+        const closedBanner = document.getElementById('store-closed-banner');
+        if (store.openNow === false) {
+          closedBanner.textContent = `🔒 ${store.closedMessage || 'Cerrado ahora'}. Puedes ver el menú, pero no hacer pedidos todavía.`;
+          closedBanner.style.display = 'block';
+        } else {
+          closedBanner.style.display = 'none';
+        }
         loadStoreProducts(store.id);
         loadStorePromos();
       } else {
@@ -6225,6 +6272,7 @@
 
       document.getElementById('app-store-screen').style.display = 'flex';
       updateFloatingCartBadge();
+      refreshFavoriteHearts();
     };
 
     window.closeStoreScreen = function() {
@@ -6259,9 +6307,16 @@
         container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No hay productos en esta categoría.</div>';
         return;
       }
+      // El menú se agrupa por las categorías que armó el comercio (si las usa)
+      const hasCategories = products.some(p => p.categoryName);
+      let lastCategory = null;
       container.innerHTML = products.map(p => {
         const imgStyle = p.image ? `background-image:url('${escapeHtml(p.image)}'); background-size:cover; background-position:center; font-size:0;` : '';
-        return `
+        const category = hasCategories ? (p.categoryName || 'Otros') : null;
+        const heading = (category && category !== lastCategory)
+          ? `<h4 style="margin: 1.2rem 0 0.6rem; font-size: 1.05rem; color: var(--text-primary);">${escapeHtml(category)}</h4>` : '';
+        lastCategory = category;
+        return heading + `
           <div class="store-product-card" onclick="openProductScreen('${p.id}')">
             <div class="product-card-info">
               <div class="product-title">${escapeHtml(p.name)}</div>
@@ -6546,6 +6601,7 @@
 
       renderProductScreen();
       document.getElementById('app-product-screen').style.display = 'flex';
+      refreshFavoriteHearts();
     };
 
     function renderProductScreen() {
@@ -6556,6 +6612,17 @@
       if (p) {
         document.getElementById('product-header-title').textContent = p.name;
         document.getElementById('product-header-storename').textContent = p.storeName || '';
+        // Portada: la foto real del producto si existe; si no, un ícono neutro (no una hamburguesa fija)
+        const cover = document.getElementById('product-cover-emoji');
+        if (p.image) {
+          cover.style.backgroundImage = `linear-gradient(to bottom, rgba(11,15,25,0.1), rgba(11,15,25,0.5)), url('${String(p.image).replace(/'/g, '%27')}')`;
+          cover.style.backgroundSize = 'cover';
+          cover.style.backgroundPosition = 'center';
+          document.getElementById('product-cover-glyph').style.display = 'none';
+        } else {
+          cover.style.backgroundImage = '';
+          document.getElementById('product-cover-glyph').style.display = '';
+        }
         const store = window.rapidinStoreCache[p.storeId];
         document.getElementById('product-header-rating').textContent = store ? `| ⭐ ${store.rating}` : '';
         document.getElementById('product-header-desc').textContent = p.description || '';
@@ -6700,6 +6767,11 @@
     }
 
     function addToRealCart(item) {
+      const current = window.rapidinRealCart;
+      if (current.length && current[0].storeId !== item.storeId) {
+        if (!confirm(`Tu carrito tiene productos de ${current[0].storeName || 'otro comercio'}. ¿Vaciarlo para pedir en ${item.storeName || 'este comercio'}?`)) return false;
+        window.rapidinRealCart = [];
+      }
       const existing = window.rapidinRealCart.find(i => i.productId === item.productId && i.unitPrice === item.unitPrice);
       if (existing) {
         existing.qty += item.qty;
@@ -6723,15 +6795,28 @@
       floatingCart.style.display = count > 0 ? 'flex' : 'none';
     }
 
+    function storeClosedFor(storeId) {
+      const st = window.rapidinStoreCache[storeId];
+      if (st && st.openNow === false) {
+        if (window.rapidinAlert) window.rapidinAlert(`🔒 ${st.name}: ${st.closedMessage || 'cerrado ahora'}. Vuelve más tarde para pedir.`);
+        return true;
+      }
+      return false;
+    }
+
     window.quickAddToCart = function(productId) {
       const p = window.rapidinProductCache[productId];
       if (!p) return;
-      addToRealCart({ productId: p.id, name: p.name, unitPrice: Number(p.price), qty: 1, storeId: p.storeId, storeName: p.storeName, image: p.image });
+      if (storeClosedFor(p.storeId)) return;
+      // Si el producto tiene opciones (tamaño, extras…), hay que elegirlas en su pantalla
+      if (p.options && p.options.length) { openProductScreen(productId); return; }
+      if (addToRealCart({ productId: p.id, name: p.name, unitPrice: Number(p.price), qty: 1, storeId: p.storeId, storeName: p.storeName, image: p.image }) === false) return;
       if (window.rapidinAlert) window.rapidinAlert(`✅ ${p.name} agregado al pedido`);
     };
 
     window.addProductToCartMock = function() {
       const p = window.currentProduct;
+      if (p && storeClosedFor(p.storeId)) return;
       if (p) {
         let optionsText = '';
         if (p.options && p.options.length) {
@@ -6739,7 +6824,7 @@
           Object.values(window.currentProductSelections || {}).forEach(list => list.forEach(c => chosen.push(c.name)));
           optionsText = chosen.join(', ');
         }
-        addToRealCart({
+        const added = addToRealCart({
           productId: p.id,
           name: p.name,
           unitPrice: Number(p.price) + (window.currentProductExtraPrice || 0),
@@ -6749,6 +6834,7 @@
           image: p.image,
           optionsText: optionsText
         });
+        if (added === false) return;
         if (window.rapidinAlert) window.rapidinAlert(`✅ ${p.name} agregado al pedido`);
       }
       openCartScreen();
@@ -6798,13 +6884,27 @@
 
       document.getElementById('cart-store-name').textContent = '🍽️ ' + (cart[0].storeName || 'Tu pedido');
 
-      const productsTotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-      const shipping = 1.99;
-      const total = productsTotal + shipping;
+      // Totales: los del servidor (precios reales, envío del comercio, cupón verificado) cuando ya llegaron
+      const { productsTotal, shipping, discount, total } = computeOrderTotals();
       document.getElementById('cart-sum-products').textContent = fmtMoney(productsTotal);
-      document.getElementById('cart-sum-shipping').textContent = fmtMoney(shipping);
+      document.getElementById('cart-sum-shipping').textContent = shipping === 0 ? 'GRATIS' : fmtMoney(shipping);
       document.getElementById('cart-sum-total').textContent = fmtMoney(total);
-      document.getElementById('cart-floating-total-text').textContent = `Continuar con el pedido · ${fmtMoney(total)}`;
+      const discountRow = document.getElementById('cart-sum-discount-row');
+      discountRow.style.display = discount > 0 ? 'flex' : 'none';
+      document.getElementById('cart-sum-discount').textContent = '-' + fmtMoney(discount);
+      const storeInfo = window.rapidinStoreCache[cart[0].storeId];
+      document.getElementById('cart-eta-text').textContent = (storeInfo && storeInfo.deliveryTime) || '—';
+
+      const quoteOk = window.checkoutQuote && window.checkoutQuoteKey === checkoutQuoteKey();
+      const belowMin = quoteOk && window.checkoutQuote.belowMinimum;
+      const minMsg = document.getElementById('cart-minorder-msg');
+      minMsg.style.display = belowMin ? 'block' : 'none';
+      if (belowMin) minMsg.textContent = `Te faltan ${fmtMoney(window.checkoutQuote.minOrder - window.checkoutQuote.subtotal)} para llegar al pedido mínimo de ${fmtMoney(window.checkoutQuote.minOrder)}.`;
+      const cartCta = document.getElementById('cart-floating-total-text');
+      cartCta.textContent = belowMin ? `Pedido mínimo ${fmtMoney(window.checkoutQuote.minOrder)}` : `Continuar con el pedido · ${fmtMoney(total)}`;
+      const cartCtaBtn = cartCta.closest('button');
+      if (cartCtaBtn) { cartCtaBtn.disabled = !!belowMin; cartCtaBtn.style.opacity = belowMin ? '0.55' : '1'; }
+      if (!quoteOk) refreshCheckoutQuote();
 
       const addrEl = document.getElementById('cart-delivery-address');
       if (addrEl) addrEl.textContent = window.checkoutAddress ? window.checkoutAddress.address_text : 'Selecciona una dirección';
@@ -6884,10 +6984,21 @@
       renderCheckoutScreen();
     };
 
+    // Clave que identifica el contenido del carrito + cupón; la cotización del servidor solo vale para esa clave.
+    function checkoutQuoteKey() {
+      const cart = window.rapidinRealCart;
+      return JSON.stringify([cart.map(i => [i.productId, i.qty, i.optionsText || '']), window.checkoutCoupon ? window.checkoutCoupon.code : null]);
+    }
+
     function computeOrderTotals() {
+      const q = window.checkoutQuote;
+      if (q && window.checkoutQuoteKey === checkoutQuoteKey()) {
+        return { productsTotal: q.subtotal, shipping: q.shippingFee, discount: q.discount, total: q.total };
+      }
       const cart = window.rapidinRealCart;
       const productsTotal = cart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-      let shipping = 1.99;
+      const cartStore = cart[0] && window.rapidinStoreCache[cart[0].storeId];
+      let shipping = cartStore && cartStore.deliveryFee != null ? Number(cartStore.deliveryFee) : 1.99;
       let discount = 0;
       const coupon = window.checkoutCoupon;
       if (coupon) {
@@ -6914,12 +7025,22 @@
       `).join('');
 
       document.getElementById('checkout-store-name').textContent = cart[0] ? cart[0].storeName : '';
+      const etaStore = cart[0] && window.rapidinStoreCache[cart[0].storeId];
+      const etaEl = document.getElementById('checkout-eta-text');
+      if (etaEl) etaEl.textContent = (etaStore && etaStore.deliveryTime) || '—';
 
       const { productsTotal, shipping, discount, total } = computeOrderTotals();
       document.getElementById('checkout-sum-products').textContent = fmtMoney(productsTotal);
       document.getElementById('checkout-sum-shipping').textContent = shipping === 0 ? 'GRATIS' : fmtMoney(shipping);
       document.getElementById('checkout-sum-total').textContent = fmtMoney(total);
-      document.getElementById('checkout-floating-total-text').textContent = `Confirmar pedido · ${fmtMoney(total)}`;
+      const quoteOk = window.checkoutQuote && window.checkoutQuoteKey === checkoutQuoteKey();
+      const belowMin = quoteOk && window.checkoutQuote.belowMinimum;
+      document.getElementById('checkout-floating-total-text').textContent = belowMin
+        ? `Pedido mínimo ${fmtMoney(window.checkoutQuote.minOrder)}`
+        : `Confirmar pedido · ${fmtMoney(total)}`;
+      const confirmBtn = document.getElementById('btn-confirm-order');
+      if (confirmBtn) { confirmBtn.disabled = !!belowMin; confirmBtn.style.opacity = belowMin ? '0.55' : '1'; }
+      if (!quoteOk) refreshCheckoutQuote();
 
       const addrEl = document.getElementById('checkout-delivery-address');
       const labelEl = document.getElementById('checkout-delivery-label');
@@ -6958,6 +7079,66 @@
         `;
       }
     }
+
+    let checkoutQuoteInFlight = null;
+    async function refreshCheckoutQuote() {
+      const cart = window.rapidinRealCart;
+      if (!cart.length || !window.rapidinDB.quoteOrder) return;
+      const key = checkoutQuoteKey();
+      if (checkoutQuoteInFlight === key) return;
+      checkoutQuoteInFlight = key;
+      const res = await window.rapidinDB.quoteOrder(
+        cart[0].storeId,
+        cart.map(i => ({ productId: i.productId, quantity: i.qty, options: i.optionsText || '' })),
+        window.checkoutCoupon ? window.checkoutCoupon.code : null
+      );
+      checkoutQuoteInFlight = null;
+      if (key !== checkoutQuoteKey()) return; // el carrito cambió mientras esperábamos
+      if (res.success) {
+        window.checkoutQuote = res;
+        window.checkoutQuoteKey = key;
+        renderCheckoutScreen();
+        if (document.getElementById('app-cart-screen').style.display === 'flex') renderRealCart();
+      } else if (res.code === 'COUPON_INVALID' && window.checkoutCoupon) {
+        window.checkoutCoupon = null;
+        if (window.rapidinAlert) window.rapidinAlert(res.message || 'El cupón ya no es válido.');
+        renderCheckoutScreen();
+      } else if (res.code === 'INVALID_ITEMS' || res.code === 'PRODUCT_UNAVAILABLE') {
+        if (window.rapidinAlert) window.rapidinAlert(res.message || 'Revisa los productos de tu carrito.');
+      }
+    }
+
+    // Código promocional desde el carrito: se canjea de verdad y queda aplicado al confirmar el pedido.
+    window.applyCartPromo = async function() {
+      const input = document.getElementById('cart-promo-input');
+      const msg = document.getElementById('cart-promo-msg');
+      const btn = document.getElementById('btn-cart-promo');
+      const show = (text, isError) => { msg.style.display = 'block'; msg.style.color = isError ? '#EF4444' : '#10B981'; msg.textContent = text; };
+      const code = input.value.trim().toUpperCase();
+      if (!code) { show('Escribe un código.', true); return; }
+      const cart = window.rapidinRealCart;
+      btn.disabled = true;
+      try {
+        const mine = await window.rapidinDB.getCoupons();
+        let coupon = (mine.available || []).find(c => c.code === code);
+        if (!coupon) {
+          const res = await window.rapidinDB.redeemCoupon(code);
+          if (!res.success) { show(res.message || 'Ese código no es válido.', true); return; }
+          coupon = res.coupon;
+        }
+        if (coupon.store_id && cart[0] && coupon.store_id !== cart[0].storeId) {
+          show('Este cupón es de otro comercio.', true);
+          return;
+        }
+        window.checkoutCoupon = coupon;
+        window.checkoutQuote = null;
+        input.value = '';
+        renderRealCart(); // el resumen se recalcula con el descuento del servidor
+        show(`✅ Cupón ${code} aplicado.`, false);
+      } finally {
+        btn.disabled = false;
+      }
+    };
 
     window.toggleCheckoutCouponPicker = async function() {
       const picker = document.getElementById('checkout-coupon-picker');
@@ -7075,21 +7256,30 @@
         } else if (result.code === 'PAYMENT_DECLINED') {
           openPaymentDeclinedScreen(result.message);
         } else {
+          if (result.code === 'COUPON_INVALID') { window.checkoutCoupon = null; window.checkoutQuote = null; }
+          if (result.code === 'MIN_ORDER' || result.code === 'COUPON_INVALID') renderCheckoutScreen();
           document.getElementById('app-checkout-screen').style.display = 'flex';
           if (window.rapidinAlert) window.rapidinAlert(result.message || 'No se pudo confirmar el pedido. Intenta de nuevo.');
         }
         return;
       }
 
+      // El servidor genera el id y calcula el total definitivo: mostramos esos, no los estimados del cliente.
+      const serverOrder = result.order || {};
+      const finalId = serverOrder.id || orderPayload.id;
+      const finalTotal = typeof serverOrder.total === 'number' ? serverOrder.total : total;
+      orderPayload.id = finalId;
+
       window.rapidinRealCart = [];
       window.checkoutCoupon = null;
+      window.checkoutQuote = null;
       persistCart();
       updateFloatingCartBadge();
-      window.currentViewedOrderId = orderPayload.id;
+      window.currentViewedOrderId = finalId;
 
-      document.getElementById('success-order-num').textContent = 'Pedido #' + orderPayload.id;
+      document.getElementById('success-order-num').textContent = 'Pedido #' + finalId;
       document.getElementById('success-store-name').textContent = '🍽️ ' + (orderPayload.storeName || '');
-      document.getElementById('success-order-total').textContent = fmtMoney(total);
+      document.getElementById('success-order-total').textContent = fmtMoney(finalTotal);
       document.getElementById('success-item-count').textContent = cart.reduce((s, i) => s + i.qty, 0) + ' productos';
       document.getElementById('success-order-address').textContent = '📍 ' + address;
 
@@ -7290,6 +7480,7 @@
       document.querySelectorAll('.app-main-screen, .app-search-screen, .app-store-screen, .app-product-screen, .app-cart-screen, .app-checkout-screen, .app-success-screen, .app-tracking-screen, .app-order-detail-screen, #app-orders-screen, #app-profile-screen').forEach(el => el.style.display = 'none');
       document.getElementById('app-favorites-screen').style.display = 'flex';
       switchFavoritesTab('businesses');
+      loadFavorites();
     };
 
     window.closeFavoritesScreenToHome = function() {
@@ -7309,83 +7500,106 @@
       loadMyOrders();
     };
 
+    // --- Favoritos reales (guardados en el servidor por usuario) ---
+    window.rapidinFavorites = { store: new Set(), product: new Set() };
+    window.rapidinFavoritesData = { stores: [], products: [] };
+
     window.switchFavoritesTab = function(tab) {
       document.getElementById('fav-tab-businesses').classList.toggle('active', tab === 'businesses');
       document.getElementById('fav-tab-products').classList.toggle('active', tab === 'products');
-
-      document.getElementById('fav-content-businesses').style.display = 'none';
-      document.getElementById('fav-empty-businesses').style.display = 'none';
-      document.getElementById('fav-content-products').style.display = 'none';
-      document.getElementById('fav-empty-products').style.display = 'none';
-
-      updateFavoritesEmptyState(tab, true);
+      window.currentFavoritesTab = tab;
+      renderFavoritesLists();
     };
 
-    function updateFavoritesEmptyState(type, forceActive) {
-      const listEl = document.getElementById('fav-content-' + type);
-      const emptyEl = document.getElementById('fav-empty-' + type);
-      if (!listEl || !emptyEl) return;
-
-      const activeTabId = type === 'businesses' ? 'fav-tab-businesses' : 'fav-tab-products';
-      const isActiveTab = forceActive || document.getElementById(activeTabId).classList.contains('active');
-      if (!isActiveTab) return;
-
-      const stillFavorited = Array.from(listEl.querySelectorAll('.btn-fav-toggle')).some(b => !b.classList.contains('not-favorite'));
-      listEl.style.display = stillFavorited ? 'block' : 'none';
-      emptyEl.style.display = stillFavorited ? 'none' : 'flex';
+    async function loadFavorites() {
+      const data = await window.rapidinDB.getFavorites();
+      window.rapidinFavoritesData = data;
+      window.rapidinFavorites.store = new Set((data.stores || []).map(s => s.id));
+      window.rapidinFavorites.product = new Set((data.products || []).map(p => p.id));
+      (data.stores || []).forEach(s => { window.rapidinStoreCache[s.id] = { ...(window.rapidinStoreCache[s.id] || {}), ...s }; });
+      (data.products || []).forEach(p => { window.rapidinProductCache[p.id] = { ...p, storeId: p.storeId, storeName: p.storeName }; });
+      renderFavoritesLists();
+      refreshFavoriteHearts();
     }
 
-    window.toggleFavoriteCard = function(btn, cardId) {
-      const card = document.getElementById(cardId);
-      const icon = btn.querySelector('i');
-      const isFavorite = icon.classList.contains('fa-solid');
+    function renderFavoritesLists() {
+      const tab = window.currentFavoritesTab || 'businesses';
+      const storesEl = document.getElementById('fav-content-businesses');
+      const productsEl = document.getElementById('fav-content-products');
+      const emptyStores = document.getElementById('fav-empty-businesses');
+      const emptyProducts = document.getElementById('fav-empty-products');
+      if (!storesEl || !productsEl) return;
+      const { stores = [], products = [] } = window.rapidinFavoritesData || {};
 
-      if (isFavorite) {
-        icon.classList.remove('fa-solid');
-        icon.classList.add('fa-regular');
-        btn.classList.add('not-favorite');
-        if (card) card.classList.add('favorite-card-fading');
-      } else {
-        icon.classList.remove('fa-regular');
-        icon.classList.add('fa-solid');
-        btn.classList.remove('not-favorite');
-        if (card) card.classList.remove('favorite-card-fading');
+      storesEl.innerHTML = stores.map(s => `
+        <div class="vertical-store-card" style="align-items: center; margin-bottom: 0.8rem; cursor: pointer;" onclick="openStoreScreen('${escapeHtml(s.id)}')">
+          <div class="vertical-store-img">${s.logo || s.image ? `<img src="${escapeHtml(s.logo || s.image)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">` : '🏪'}</div>
+          <div class="vertical-store-info">
+            <div class="store-header" style="margin-bottom: 0;">
+              <span class="store-name" style="font-size: 1rem;">${escapeHtml(s.name)}</span>
+              <span class="store-rating" style="font-size: 0.85rem;"><i class="fa-solid fa-star"></i> ${Number(s.rating || 0).toFixed(1)}</span>
+            </div>
+            <div class="store-category" style="font-size: 0.8rem; margin-bottom: 0.3rem;">${escapeHtml((s.tags || []).join(', ') || s.category || '')}</div>
+            <div class="store-details" style="font-size: 0.8rem; justify-content: flex-start; gap: 0.8rem;">
+              <span>⚡ ${escapeHtml(s.deliveryTime || '')}</span>
+              <span>🚴 ${s.deliveryFee ? fmtMoney(s.deliveryFee) + ' envío' : 'Envío gratis'}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-fav-toggle" aria-label="Quitar de favoritos" onclick="event.stopPropagation(); toggleFavoriteItem('store', '${escapeHtml(s.id)}')"><i class="fa-solid fa-heart"></i></button>
+        </div>`).join('');
+
+      productsEl.innerHTML = products.map(p => `
+        <div class="search-product-item" style="cursor: pointer;" onclick="openProductScreen('${escapeHtml(p.id)}')">
+          <div style="flex: 1;">
+            <div class="product-info-title">${escapeHtml(p.name)}</div>
+            <div class="product-info-store">${escapeHtml(p.storeName || '')}</div>
+            <div class="product-info-price">${fmtMoney(p.price)}</div>
+            ${p.is_available ? '' : '<div class="product-info-promo" style="color:#EF4444;">No disponible por ahora</div>'}
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <div style="width: 70px; height: 70px; background: #2a2a35; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; overflow: hidden; margin-bottom: 0.5rem;">${p.image ? `<img src="${escapeHtml(p.image)}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '🍽️'}</div>
+            <button type="button" class="btn-fav-toggle" style="margin: 0;" aria-label="Quitar de favoritos" onclick="event.stopPropagation(); toggleFavoriteItem('product', '${escapeHtml(p.id)}')"><i class="fa-solid fa-heart"></i></button>
+          </div>
+        </div>`).join('');
+
+      const showStores = tab === 'businesses';
+      storesEl.style.display = showStores && stores.length ? 'block' : 'none';
+      emptyStores.style.display = showStores && !stores.length ? 'flex' : 'none';
+      productsEl.style.display = !showStores && products.length ? 'block' : 'none';
+      emptyProducts.style.display = !showStores && !products.length ? 'flex' : 'none';
+    }
+
+    function refreshFavoriteHearts() {
+      const paint = (btnId, isFav) => {
+        const icon = document.querySelector('#' + btnId + ' i');
+        if (!icon) return;
+        icon.classList.toggle('fa-solid', isFav);
+        icon.classList.toggle('fa-regular', !isFav);
+        icon.style.color = isFav ? '#FF3366' : '';
+      };
+      paint('store-fav-btn', !!(window.currentStore && window.rapidinFavorites.store.has(window.currentStore.id)));
+      paint('product-fav-btn', !!(window.currentProduct && window.rapidinFavorites.product.has(window.currentProduct.id)));
+    }
+
+    window.toggleFavoriteItem = async function(kind, id) {
+      if (!id) return;
+      const set = window.rapidinFavorites[kind];
+      const turnOn = !set.has(id);
+      // Cambio inmediato en pantalla; si el servidor falla, se revierte
+      if (turnOn) set.add(id); else set.delete(id);
+      refreshFavoriteHearts();
+      const res = await window.rapidinDB.setFavorite(kind, id, turnOn);
+      if (!res.success) {
+        if (turnOn) set.delete(id); else set.add(id);
+        refreshFavoriteHearts();
+        if (window.rapidinAlert) window.rapidinAlert(res.message || 'No se pudo actualizar tus favoritos.');
+        return;
       }
-
-      const type = cardId.indexOf('business') !== -1 ? 'businesses' : 'products';
-      updateFavoritesEmptyState(type);
-
-      const state = loadFavoritesState();
-      state[cardId] = !btn.classList.contains('not-favorite');
-      saveFavoritesState(state);
+      loadFavorites();
     };
 
-    // Favoritos persistentes (localStorage) — el toggle es visual/local, sin backend todavía.
-    function loadFavoritesState() {
-      try { return JSON.parse(localStorage.getItem('rapidin_favorites') || '{}'); }
-      catch (e) { return {}; }
-    }
-
-    function saveFavoritesState(state) {
-      localStorage.setItem('rapidin_favorites', JSON.stringify(state));
-    }
-
-    function applyFavoritesState() {
-      const state = loadFavoritesState();
-      Object.keys(state).forEach(cardId => {
-        if (state[cardId]) return; // favorito sigue activo, nada que cambiar
-        const card = document.getElementById(cardId);
-        const btn = card ? card.querySelector('.btn-fav-toggle') : null;
-        if (!btn) return;
-        const icon = btn.querySelector('i');
-        icon.classList.remove('fa-solid');
-        icon.classList.add('fa-regular');
-        btn.classList.add('not-favorite');
-        card.classList.add('favorite-card-fading');
-      });
-      updateFavoritesEmptyState('businesses');
-      updateFavoritesEmptyState('products');
-    }
+    // Compatibilidad: el estado antiguo (maqueta con tarjetas fijas) ya no existe.
+    function applyFavoritesState() {}
 
     // === PANTALLA 18: PERFIL ===
 
@@ -7632,7 +7846,7 @@
       const picking = window.addressPickerForCheckout;
       const iconFor = (label) => label === 'Casa' ? '🏠' : label === 'Trabajo' ? '💼' : '📍';
       listEl.innerHTML = addresses.map(a => `
-        <div class="address-card${a.is_default ? ' is-default' : ''}"${picking ? ` style="cursor: pointer;" onclick="chooseCheckoutAddress('${a.id}')"` : ''}>
+        <div class="address-card${a.is_default ? ' is-default' : ''}"${picking ? ` style="cursor: pointer;" onclick="chooseCheckoutAddress('${a.id}')"` : ` style="cursor: pointer;" onclick="useAddressAsDelivery('${a.id}')"`}>
           <div class="address-card-icon">${iconFor(a.label)}</div>
           <div style="flex: 1; min-width: 0;">
             <div style="font-weight: 700; font-size: 0.95rem;">
@@ -7643,8 +7857,8 @@
           </div>
           ${picking ? '' : `
           <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="openAddAddressScreen('${a.id}')"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="deleteAddressRow('${a.id}')"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="event.stopPropagation(); openAddAddressScreen('${a.id}')"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="btn-fav-toggle" style="font-size: 1rem;" onclick="event.stopPropagation(); deleteAddressRow('${a.id}')"><i class="fa-solid fa-trash"></i></button>
           </div>`}
         </div>
       `).join('');
@@ -7702,7 +7916,7 @@
     function initAddressMap(lat, lng) {
       if (addressMapInstance) { addressMapInstance.remove(); addressMapInstance = null; }
       addressMapInstance = L.map('address-map').setView([lat, lng], 15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(addressMapInstance);
+      L.tileLayer(window.RAPIDIN_TILE_URL, { attribution: window.RAPIDIN_TILE_ATTRIBUTION, maxZoom: 19 }).addTo(addressMapInstance);
       addressMapMarker = L.marker([lat, lng], { draggable: true }).addTo(addressMapInstance);
       addressMapMarker.on('dragend', () => {
         const pos = addressMapMarker.getLatLng();
@@ -8097,7 +8311,7 @@
     function initEnviosMap(lat, lng) {
       if (enviosMapInstance) { enviosMapInstance.remove(); enviosMapInstance = null; enviosOriginMarker = null; enviosDestMarker = null; }
       enviosMapInstance = L.map('envios-map').setView([lat, lng], 13);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(enviosMapInstance);
+      L.tileLayer(window.RAPIDIN_TILE_URL, { attribution: window.RAPIDIN_TILE_ATTRIBUTION, maxZoom: 19 }).addTo(enviosMapInstance);
       enviosMapInstance.on('click', (e) => placeEnvioPoint(e.latlng.lat, e.latlng.lng));
     }
 
@@ -8262,15 +8476,49 @@
       if (!shipment) return;
       window.currentViewedEnvio = shipment;
 
-      document.getElementById('envios-tracking-status').textContent = shipment.status_text || '';
+      document.getElementById('envios-tracking-status').textContent = shipment.is_cancelled ? 'Envío cancelado' : (shipment.status_text || '');
+      const driverCard = document.getElementById('envios-tracking-driver-card');
+      if (shipment.driverName && !shipment.is_cancelled) {
+        driverCard.style.display = 'block';
+        document.getElementById('envios-tracking-driver').textContent = `${shipment.driverName}${shipment.driverVehicle ? ' · ' + shipment.driverVehicle : ''}`;
+      } else {
+        driverCard.style.display = 'none';
+      }
+      startEnvioTrackingPolling();
       document.getElementById('envios-tracking-steps').innerHTML = envioStatusSteps(shipment.status_step, shipment.is_cancelled);
       document.getElementById('envios-tracking-origin').textContent = shipment.origin_address;
       document.getElementById('envios-tracking-dest').textContent = shipment.destination_address;
       document.getElementById('envios-tracking-recipient').textContent = `${shipment.recipient_name} · ${shipment.recipient_phone}`;
       document.getElementById('envios-tracking-price').textContent = fmtMoney(shipment.price_usd);
       const cancelBtn = document.getElementById('btn-cancel-envio');
-      cancelBtn.style.display = (shipment.is_cancelled || shipment.status_step >= 3) ? 'none' : 'block';
+      cancelBtn.style.display = (shipment.is_cancelled || shipment.status_step >= 2) ? 'none' : 'block';
     };
+
+    // Mientras el cliente mira el envío, se actualiza solo (asignación, recogida, entrega)
+    let envioTrackingTimer = null;
+    function startEnvioTrackingPolling() {
+      if (envioTrackingTimer) return;
+      envioTrackingTimer = setInterval(() => {
+        const screen = document.getElementById('app-envios-tracking-screen');
+        if (!screen || screen.style.display !== 'flex') { clearInterval(envioTrackingTimer); envioTrackingTimer = null; return; }
+        openEnviosTrackingScreenSilent();
+      }, 8000);
+    }
+    async function openEnviosTrackingScreenSilent() {
+      const id = window.currentViewedEnvioId;
+      if (!id) return;
+      const shipment = await window.rapidinDB.getShipment(id);
+      if (!shipment) return;
+      window.currentViewedEnvio = shipment;
+      document.getElementById('envios-tracking-status').textContent = shipment.is_cancelled ? 'Envío cancelado' : (shipment.status_text || '');
+      document.getElementById('envios-tracking-steps').innerHTML = envioStatusSteps(shipment.status_step, shipment.is_cancelled);
+      const driverCard = document.getElementById('envios-tracking-driver-card');
+      if (shipment.driverName && !shipment.is_cancelled) {
+        driverCard.style.display = 'block';
+        document.getElementById('envios-tracking-driver').textContent = `${shipment.driverName}${shipment.driverVehicle ? ' · ' + shipment.driverVehicle : ''}`;
+      }
+      document.getElementById('btn-cancel-envio').style.display = (shipment.is_cancelled || shipment.status_step >= 2) ? 'none' : 'block';
+    }
     window.closeEnviosTrackingScreen = closeAccountSubScreen;
 
     window.cancelCurrentEnvio = async function() {
@@ -8935,7 +9183,7 @@
       setTimeout(() => {
         if (deliveryInstructionsMap) { deliveryInstructionsMap.remove(); deliveryInstructionsMap = null; }
         deliveryInstructionsMap = L.map('delivery-instructions-map', { zoomControl: false }).setView([lat, lng], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(deliveryInstructionsMap);
+        L.tileLayer(window.RAPIDIN_TILE_URL, { attribution: window.RAPIDIN_TILE_ATTRIBUTION, maxZoom: 19 }).addTo(deliveryInstructionsMap);
         L.marker([lat, lng]).addTo(deliveryInstructionsMap);
       }, 50);
     };
@@ -9058,6 +9306,10 @@
     updateFloatingCartBadge();
     applyFavoritesState();
     window.rapidinDeliveryAddress = localStorage.getItem('rapidin_delivery_address') || null;
+    if (window.rapidinDeliveryAddress) {
+      const shown = window.rapidinDeliveryAddress.length > 25 ? window.rapidinDeliveryAddress.substring(0, 22) + '...' : window.rapidinDeliveryAddress;
+      document.getElementById('home-display-address').innerHTML = `${escapeHtml(shown)} <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i>`;
+    }
     checkAuthGate();
 
   </script>
