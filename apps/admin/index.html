@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Rapidin - Super Admin 🛡️</title>
   
   <meta name="theme-color" content="#8B5CF6">
@@ -112,12 +112,12 @@
 
   <div id="main-app-content" style="display: none;">
   <header class="admin-header">
-    <div class="container" style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="container panel-header-row" style="display: flex; align-items: center; justify-content: space-between;">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
         <img src="../../assets/logo.png" style="width: 44px; height: 44px; border-radius: 12px; object-fit: cover;">
         <div>
-          <h2 style="font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
-            Rapidin Admin Dashboard <span class="badge" style="background: #8B5CF6; color: #fff;">PROPIETARIO PLATAFORMA</span>
+          <h2 style="font-size: 1.3rem; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            Rapidin Admin Dashboard <span class="badge"  style="background: #8B5CF6; color: #fff;">PROPIETARIO PLATAFORMA</span>
           </h2>
           <span style="font-size: 0.8rem; color: var(--text-secondary);">Control Central de Negocios, Repartidores y Comisiones</span>
         </div>
@@ -133,7 +133,7 @@
 
   <!-- Pestañas de Navegación del Admin -->
   <div style="background: var(--bg-main); border-bottom: 1px solid var(--border-color);">
-    <div class="container" style="display: flex; gap: 1rem;">
+    <div class="container tab-scroll-row" style="display: flex; gap: 1rem;">
       <button class="tab-admin-btn active" id="atab-btn-overview"><i class="fa-solid fa-chart-line"></i> Monitoreo Global</button>
       <button class="tab-admin-btn" id="atab-btn-stores"><i class="fa-solid fa-store"></i> Gestión de Comercios (<span id="tab-store-count">—</span>)</button>
       <button class="tab-admin-btn" id="atab-btn-drivers"><i class="fa-solid fa-motorcycle"></i> Gestión de Repartidores (<span id="tab-driver-count">—</span>)</button>
@@ -177,7 +177,7 @@
         </h2>
       </div>
 
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto; -webkit-overflow-scrolling: touch;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
           <thead>
             <tr style="background: var(--bg-main); border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">

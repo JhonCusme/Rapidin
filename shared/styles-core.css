@@ -77,6 +77,92 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
 }
 
+/* ==========================================
+   ADAPTABLE A TODAS LAS PANTALLAS (iPhone, Android, tablet, PC)
+   Estas reglas son compartidas por las cuatro apps.
+   ========================================== */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+img, video, canvas, svg {
+  max-width: 100%;
+}
+/* Sin esto, un campo de texto dentro de una fila flex no se encoge por debajo de su ancho
+   intrínseco y empuja el botón de al lado fuera de la pantalla en móviles angostos. */
+input, select, textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+/* Antes vivía solo en styles.css (que únicamente carga la app cliente), por eso en
+   admin, comercios y repartidor el contenido quedaba pegado a los bordes. */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+/* Respeta el notch y la barra inferior del iPhone */
+@supports (padding: max(0px)) {
+  .container {
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+}
+
+@media (max-width: 720px) {
+  /* iOS hace zoom automático al enfocar un campo con letra menor a 16px y deja la página "cortada" */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  /* Las tablas anchas se desplazan dentro de su propio recuadro en vez de ensanchar toda la página */
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+  .modal-card {
+    max-height: 92vh;
+    max-height: 92dvh;
+  }
+  /* Filas de pestañas: deslizan en horizontal en vez de salirse de la pantalla */
+  .tab-scroll-row,
+  .main-nav-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .tab-scroll-row::-webkit-scrollbar,
+  .main-nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-scroll-row > *,
+  .main-nav-tabs > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  /* Encabezados de panel: que se acomoden en varias líneas en vez de empujar el ancho */
+  .panel-header-row {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
 button {
   cursor: pointer;
   border: none;
