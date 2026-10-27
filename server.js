@@ -690,9 +690,12 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
         INSERT INTO orders (
           id, customer_id, store_id, customer_address, items_json,
           subtotal_usd, shipping_fee_usd, driver_tip_usd, total_amount_usd, platform_commission_usd,
-          status_step, status_text, coupon_code, discount_usd
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          status_step, status_text, coupon_code, discount_usd, customer_lat, customer_lng
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
+      const isCoord = (n, max) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= max;
+      const customerLat = isCoord(newOrder.customerLat, 90) ? newOrder.customerLat : null;
+      const customerLng = isCoord(newOrder.customerLng, 180) ? newOrder.customerLng : null;
 
       db.run(sql, [
         orderId,
@@ -708,7 +711,9 @@ app.post('/api/orders', authenticateToken, requireRole('user'), (req, res) => {
         0,
         newOrder.statusText || 'Pedido creado',
         newOrder.couponCode || null,
-        discount
+        discount,
+        customerLat,
+        customerLng
       ], async (err) => {
         if (err) {
           console.error('Error al guardar pedido:', err);
@@ -826,8 +831,9 @@ app.get('/api/orders/driver/active', authenticateToken, requireRole('driver'), (
 app.get('/api/orders/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   const sql = `
-    SELECT orders.*, stores.name as storeName,
+    SELECT orders.*, stores.name as storeName, stores.lat as storeLat, stores.lng as storeLng,
       drivers.name as driverName, drivers.vehicle_info as driverVehicle, drivers.rating as driverRating,
+      drivers.current_lat as driverLat, drivers.current_lng as driverLng,
       driverUser.id as driverUserId, driverUser.phone as driverPhone
     FROM orders
     LEFT JOIN stores ON orders.store_id = stores.id
@@ -853,6 +859,14 @@ app.get('/api/orders/:id', authenticateToken, (req, res) => {
       ...row,
       items: row.items_json ? JSON.parse(row.items_json) : []
     };
+    // La posición del repartidor solo se comparte mientras lleva el pedido (en camino), y solo con
+    // el cliente dueño del pedido o con un admin — nunca antes ni después, ni con terceros.
+    const canSeeDriverPosition = !row.is_cancelled && row.status_step === 3
+      && (req.user.role === 'admin' || req.user.id === row.customer_id);
+    if (!canSeeDriverPosition) {
+      order.driverLat = null;
+      order.driverLng = null;
+    }
     res.json({ success: true, order });
   });
 });

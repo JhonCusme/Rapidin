@@ -59,7 +59,7 @@ class RapidinI18nEngine {
       if (timeZone.includes('Madrid') || timeZone.includes('Canary')) return 'ES';
       if (timeZone.includes('New_York') || timeZone.includes('Los_Angeles') || timeZone.includes('Chicago')) return 'US';
     } catch (e) {
-      console.log('Error auto-detecting country timezone:', e);
+      console.error('Error auto-detecting country timezone:', e);
     }
     return 'PE'; // Fallback por defecto
   }

@@ -2715,7 +2715,7 @@
         <h2 class="auth-title" style="font-size: 1.8rem;">¿Dónde estás?</h2>
         <p class="auth-subtitle" style="margin-bottom: 1.5rem;">Usaremos tu ubicación para mostrarte opciones disponibles cerca de ti.</p>
 
-        <button type="button" class="location-btn-auto" onclick="selectMockLocation()">
+        <button type="button" class="location-btn-auto" onclick="useCurrentLocation()">
           <div class="location-btn-icon"><i class="fa-solid fa-location-crosshairs"></i></div>
           <div>
             <span class="location-btn-title">Usar mi ubicación actual</span>
@@ -2727,8 +2727,10 @@
 
         <div class="location-search-wrapper">
           <i class="fa-solid fa-magnifying-glass location-search-icon"></i>
-          <input type="text" class="location-search-input" placeholder="Ingresa una dirección" oninput="handleLocationSearch(event)">
+          <input type="text" class="location-search-input" id="location-search-input" placeholder="Ingresa una dirección" autocomplete="off" oninput="handleLocationSearch(event)">
         </div>
+        <div id="location-search-results" style="display: none; margin: 0.5rem 0 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;"></div>
+        <div id="location-status-msg" style="display: none; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary);"></div>
 
         <div class="mock-map-container" id="mock-map" style="opacity: 0.5; transition: var(--transition);">
           <i class="fa-solid fa-location-dot mock-map-pin" style="display: none;" id="mock-map-pin-icon"></i>
@@ -3652,12 +3654,9 @@
       <div style="font-size: 0.85rem; color: var(--text-secondary);" id="tracking-order-num">Pedido #RPD-1048</div>
     </div>
 
-    <!-- Mock Map -->
-    <div class="tracking-map-mock">
-      <div class="map-route-line"></div>
-      <div class="map-pin store">🏪</div>
-      <div class="map-pin courier">🚴</div>
-      <div class="map-pin user">📍</div>
+    <!-- Mapa real: comercio, destino y (mientras va en camino) el repartidor en vivo -->
+    <div class="tracking-map-mock" id="tracking-live-map" style="position: relative;">
+      <div id="tracking-map-empty" style="position: absolute; inset: 0; z-index: 500; display: flex; align-items: center; justify-content: center; text-align: center; padding: 1rem; color: #CBD5E1; font-size: 0.85rem; pointer-events: none;">Cargando mapa…</div>
     </div>
 
     <!-- Delayed / Cancelled banners -->
@@ -5715,33 +5714,100 @@
       document.getElementById('step-complete-profile').style.display = 'flex';
     };
 
-    window.selectMockLocation = function() {
+    // --- Paso "¿Dónde estás?": ubicación y direcciones reales (GPS + OpenStreetMap/Nominatim) ---
+    window.pendingDeliveryLocation = null;
+
+    function setLocationStatus(msg) {
+      const el = document.getElementById('location-status-msg');
+      el.textContent = msg || '';
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    function showPendingLocation(address, lat, lng) {
+      window.pendingDeliveryLocation = { address, lat, lng };
       document.getElementById('mock-map').style.opacity = '1';
       document.getElementById('mock-map-pin-icon').style.display = 'block';
       document.getElementById('mock-map-info').style.display = 'block';
-      document.getElementById('mock-map-address').textContent = 'Av. León Febres Cordero, Guayaquil';
+      document.getElementById('mock-map-address').textContent = address;
       document.getElementById('btn-confirm-location').disabled = false;
+      setLocationStatus('');
+    }
+
+    function formatNominatimAddress(data) {
+      const a = data.address || {};
+      const street = a.road || a.pedestrian || a.footway || '';
+      const num = a.house_number ? ` ${a.house_number}` : '';
+      const area = a.suburb || a.neighbourhood || a.city_district || '';
+      const city = a.city || a.town || a.village || a.county || '';
+      const parts = [street ? street + num : '', area, city].filter(Boolean);
+      return parts.length ? parts.join(', ') : (data.display_name || '').split(',').slice(0, 3).join(',').trim();
+    }
+
+    window.useCurrentLocation = function() {
+      if (!('geolocation' in navigator)) {
+        setLocationStatus('Tu navegador no soporta geolocalización. Escribe tu dirección abajo.');
+        return;
+      }
+      setLocationStatus('Detectando tu ubicación…');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        let address = '';
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=es&lat=${lat}&lon=${lng}`);
+          address = formatNominatimAddress(await res.json());
+        } catch (e) { /* sin red hacia el geocodificador: usamos las coordenadas */ }
+        showPendingLocation(address || `Mi ubicación actual (${lat.toFixed(4)}, ${lng.toFixed(4)})`, lat, lng);
+      }, () => {
+        setLocationStatus('No pudimos acceder a tu ubicación. Permite el acceso o escribe tu dirección abajo.');
+      }, { enableHighAccuracy: true, timeout: 10000 });
     };
 
+    let locationSearchTimer = null;
     window.handleLocationSearch = function(e) {
-      if(e.target.value.length > 3) {
-        document.getElementById('mock-map').style.opacity = '1';
-        document.getElementById('mock-map-pin-icon').style.display = 'block';
-        document.getElementById('mock-map-info').style.display = 'block';
-        document.getElementById('mock-map-address').textContent = e.target.value;
-        document.getElementById('btn-confirm-location').disabled = false;
-      } else {
-        document.getElementById('mock-map').style.opacity = '0.5';
-        document.getElementById('mock-map-pin-icon').style.display = 'none';
-        document.getElementById('mock-map-info').style.display = 'none';
-        document.getElementById('btn-confirm-location').disabled = true;
+      const query = e.target.value.trim();
+      const resultsEl = document.getElementById('location-search-results');
+      clearTimeout(locationSearchTimer);
+      if (query.length < 4) {
+        resultsEl.style.display = 'none';
+        return;
       }
+      locationSearchTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&accept-language=es&limit=5&countrycodes=ec,pe&q=${encodeURIComponent(query)}`);
+          const results = await res.json();
+          if (!results.length) {
+            resultsEl.innerHTML = '<div style="padding: 0.9rem; font-size: 0.85rem; color: var(--text-secondary);">No encontramos esa dirección. Prueba con más detalle (calle, sector y ciudad).</div>';
+          } else {
+            window.locationSearchResults = results;
+            resultsEl.innerHTML = results.map((r, i) => `
+              <button type="button" onclick="pickSearchedLocation(${i})" style="display: block; width: 100%; text-align: left; padding: 0.9rem; background: var(--bg-card); border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.85rem; cursor: pointer;">
+                <i class="fa-solid fa-location-dot" style="color: var(--brand-primary); margin-right: 0.5rem;"></i>${escapeHtml(r.display_name)}
+              </button>`).join('');
+          }
+          resultsEl.style.display = 'block';
+        } catch (err) {
+          resultsEl.innerHTML = '<div style="padding: 0.9rem; font-size: 0.85rem; color: var(--text-secondary);">No pudimos buscar direcciones ahora. Intenta de nuevo o usa tu ubicación actual.</div>';
+          resultsEl.style.display = 'block';
+        }
+      }, 450);
+    };
+
+    window.pickSearchedLocation = function(index) {
+      const r = (window.locationSearchResults || [])[index];
+      if (!r) return;
+      document.getElementById('location-search-results').style.display = 'none';
+      document.getElementById('location-search-input').value = '';
+      showPendingLocation(formatNominatimAddress(r) || r.display_name, parseFloat(r.lat), parseFloat(r.lon));
     };
 
     window.confirmLocation = function() {
-      const address = document.getElementById('mock-map-address').textContent;
+      const pending = window.pendingDeliveryLocation;
+      if (!pending) return;
+      const address = pending.address;
       window.rapidinDeliveryAddress = address;
       localStorage.setItem('rapidin_delivery_address', address);
+      localStorage.setItem('rapidin_delivery_coords', JSON.stringify({ lat: pending.lat, lng: pending.lng }));
       let displayAddress = address.length > 25 ? address.substring(0, 22) + '...' : address;
       document.getElementById('home-display-address').innerHTML = `${displayAddress} <i class="fa-solid fa-chevron-down" style="font-size: 0.9rem; color: var(--brand-primary);"></i>`;
 
@@ -6939,6 +7005,8 @@
         storeId: cart[0].storeId,
         storeName: cart[0].storeName,
         customerAddress: address,
+        customerLat: window.checkoutAddress.lat != null ? Number(window.checkoutAddress.lat) : undefined,
+        customerLng: window.checkoutAddress.lng != null ? Number(window.checkoutAddress.lng) : undefined,
         items: cart.map(i => ({ productId: i.productId, name: i.name, quantity: i.qty, price: i.unitPrice, options: i.optionsText || '' })),
         subtotal: productsTotal,
         shippingFee: shipping,
@@ -7094,9 +7162,77 @@
       if (activeScreen) activeScreen.style.display = 'none';
       document.getElementById('app-tracking-screen').style.display = 'flex';
       loadTrackingOrder();
+      startTrackingPolling();
     };
 
+    // --- Mapa de seguimiento en vivo ---
+    let trackingMap = null;
+    let trackingMarkers = {};
+    let trackingPollTimer = null;
+
+    function trackingEmoji(emoji) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,.4);">${emoji}</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+    }
+
+    function updateTrackingMap(order) {
+      const container = document.getElementById('tracking-live-map');
+      const emptyEl = document.getElementById('tracking-map-empty');
+      if (!container || typeof L === 'undefined') return;
+
+      const points = {
+        store: order.storeLat != null && order.storeLng != null ? [order.storeLat, order.storeLng] : null,
+        user: order.customer_lat != null && order.customer_lng != null ? [order.customer_lat, order.customer_lng] : null,
+        courier: order.driverLat != null && order.driverLng != null ? [order.driverLat, order.driverLng] : null
+      };
+      const icons = { store: '🏪', user: '📍', courier: '🛵' };
+      const known = Object.values(points).filter(Boolean);
+
+      if (!known.length) {
+        emptyEl.style.display = 'flex';
+        emptyEl.textContent = 'El mapa se mostrará cuando el comercio y tu dirección tengan ubicación.';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      if (!trackingMap) {
+        trackingMap = L.map(container, { zoomControl: false, attributionControl: false }).setView(known[0], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackingMap);
+      }
+
+      Object.keys(points).forEach((key) => {
+        const pos = points[key];
+        if (!pos) {
+          if (trackingMarkers[key]) { trackingMap.removeLayer(trackingMarkers[key]); delete trackingMarkers[key]; }
+          return;
+        }
+        if (trackingMarkers[key]) trackingMarkers[key].setLatLng(pos);
+        else trackingMarkers[key] = L.marker(pos, { icon: trackingEmoji(icons[key]) }).addTo(trackingMap);
+      });
+
+      trackingMap.invalidateSize();
+      if (known.length > 1) trackingMap.fitBounds(L.latLngBounds(known), { padding: [40, 40], maxZoom: 17 });
+      else trackingMap.setView(known[0], 15);
+    }
+
+    function startTrackingPolling() {
+      stopTrackingPolling();
+      trackingPollTimer = setInterval(() => {
+        if (document.getElementById('app-tracking-screen').style.display !== 'flex') return stopTrackingPolling();
+        loadTrackingOrder();
+      }, 8000);
+    }
+
+    function stopTrackingPolling() {
+      if (trackingPollTimer) { clearInterval(trackingPollTimer); trackingPollTimer = null; }
+    }
+
     window.closeTrackingScreen = function() {
+      stopTrackingPolling();
       document.getElementById('app-tracking-screen').style.display = 'none';
       document.getElementById(window.previousScreenForTracking || 'app-success-screen').style.display = 'flex';
     };
@@ -8582,6 +8718,7 @@
       document.getElementById('tracking-courier-meta').innerHTML = courier.meta;
 
       renderTrackerSteps(document.getElementById('tracking-tracker-list'), order.status_step, order.is_cancelled);
+      updateTrackingMap(order);
 
       const titleEl = document.getElementById('tracking-status-title');
       const subtitleEl = document.getElementById('tracking-status-subtitle');
