@@ -721,7 +721,8 @@ window.openPromotionModal = function(promotionId) {
   document.getElementById('promotion-title-input').value = existing ? existing.title : '';
   document.getElementById('promotion-description-input').value = existing ? (existing.description || '') : '';
   document.getElementById('promotion-discount-type-input').value = existing ? existing.discount_type : 'percent';
-  document.getElementById('promotion-value-input').value = existing ? existing.discount_value : 0;
+  // En la base el porcentaje se guarda como fracción (0.2 = 20%); el formulario trabaja en porcentaje entero.
+  document.getElementById('promotion-value-input').value = existing ? (existing.discount_type === 'percent' ? Math.round(existing.discount_value * 100) : existing.discount_value) : 0;
   document.getElementById('promotion-minorder-input').value = existing ? existing.min_order_usd : 0;
   document.getElementById('promotion-type-input').value = existing ? existing.promo_type : 'general';
   document.getElementById('promotion-expires-input').value = existing && existing.expires_at ? existing.expires_at.slice(0, 10) : '';
@@ -895,7 +896,7 @@ async function loadConfig() {
 function initSettingsMap(lat, lng) {
   if (settingsMapInstance) { settingsMapInstance.remove(); settingsMapInstance = null; }
   settingsMapInstance = L.map('settings-map').setView([lat, lng], 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(settingsMapInstance);
+  L.tileLayer(window.RAPIDIN_TILE_URL, { attribution: window.RAPIDIN_TILE_ATTRIBUTION, maxZoom: 19 }).addTo(settingsMapInstance);
   settingsMapMarker = L.marker([lat, lng], { draggable: true }).addTo(settingsMapInstance);
   settingsMapMarker.on('dragend', () => {
     const pos = settingsMapMarker.getLatLng();

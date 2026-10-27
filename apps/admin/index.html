@@ -139,6 +139,8 @@
       <button class="tab-admin-btn" id="atab-btn-drivers"><i class="fa-solid fa-motorcycle"></i> Gestión de Repartidores (<span id="tab-driver-count">—</span>)</button>
       <button class="tab-admin-btn" id="atab-btn-fees"><i class="fa-solid fa-percent"></i> Configurar Comisiones</button>
       <button class="tab-admin-btn" id="atab-btn-integrations"><i class="fa-solid fa-plug"></i> Integraciones</button>
+      <button class="tab-admin-btn" id="atab-btn-support"><i class="fa-solid fa-headset"></i> Soporte <span id="tab-support-count"></span></button>
+      <button class="tab-admin-btn" id="atab-btn-coupons"><i class="fa-solid fa-ticket"></i> Cupones</button>
     </div>
   </div>
 
@@ -284,7 +286,48 @@
         <p id="provider-save-msg" style="margin-top: 0.75rem; font-size: 0.85rem;"></p>
       </div>
     </div>
-  </div>
+
+    <!-- TAB 6: SOPORTE -->
+    <div id="atab-content-support" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <h2>Casos de soporte 🎧</h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="badge" id="support-filter-open" style="background: #8B5CF6; color: #fff; padding: 0.5rem 1rem; cursor: pointer;" onclick="loadSupportTickets('open')">Abiertos</button>
+          <button class="badge" id="support-filter-closed" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.5rem 1rem; cursor: pointer;" onclick="loadSupportTickets('closed')">Cerrados</button>
+        </div>
+      </div>
+      <div id="admin-support-list"></div>
+    </div>
+
+    <!-- TAB 7: CUPONES -->
+    <div id="atab-content-coupons" style="display: none;">
+      <div style="background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-bottom: 1.5rem; max-width: 720px;">
+        <h2 style="margin-bottom: 0.5rem;">Nuevo cupón de la plataforma 🎟️</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">Los clientes lo canjean con su código y se aplica al pedido. Los cupones propios de cada comercio los gestiona el comercio.</p>
+        <form id="form-admin-coupon" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
+          <input class="coupon-input" id="cpn-code" placeholder="CÓDIGO" required style="text-transform: uppercase;">
+          <input class="coupon-input" id="cpn-title" placeholder="Título visible" required>
+          <select class="coupon-input" id="cpn-type">
+            <option value="percent">% de descuento</option>
+            <option value="fixed">Monto fijo ($)</option>
+            <option value="shipping">Envío gratis</option>
+          </select>
+          <input class="coupon-input" id="cpn-value" type="number" step="0.01" min="0" placeholder="Valor (ej. 15 = 15%)">
+          <input class="coupon-input" id="cpn-min" type="number" step="0.01" min="0" placeholder="Pedido mínimo ($)">
+          <select class="coupon-input" id="cpn-promo-type">
+            <option value="general">General</option>
+            <option value="flash">Oferta flash (portada)</option>
+            <option value="2x1">2x1 (portada)</option>
+            <option value="envio_gratis">Envío gratis (portada)</option>
+          </select>
+          <input class="coupon-input" id="cpn-expires" type="date" title="Vence (opcional)">
+          <input class="coupon-input" id="cpn-desc" placeholder="Descripción corta (opcional)" style="grid-column: 1 / -1;">
+          <button type="submit" class="badge" style="background: #8B5CF6; color: #fff; padding: 0.85rem; justify-content: center; grid-column: 1 / -1; cursor: pointer;">Crear cupón</button>
+        </form>
+        <p id="coupon-form-msg" style="margin-top: 0.6rem; font-size: 0.85rem;"></p>
+      </div>
+      <div id="admin-coupons-list"></div>
+    </div>
   </main>
   </div> <!-- Fin de main-app-content -->
 
@@ -358,50 +401,6 @@
     // (si no, la primera carga de la pantalla se queda vacía porque loadAdminApp
     // todavía no existe cuando este script corre).
     document.addEventListener('DOMContentLoaded', checkAuthGate);
-
-    // Lógica para pestañas del Admin
-    const tabOverview = document.getElementById('atab-btn-overview');
-    const tabStores = document.getElementById('atab-btn-stores');
-    const tabDrivers = document.getElementById('atab-btn-drivers');
-    const tabFees = document.getElementById('atab-btn-fees');
-    const tabIntegrations = document.getElementById('atab-btn-integrations');
-
-    const contentOverview = document.getElementById('atab-content-overview');
-    const contentStores = document.getElementById('atab-content-stores');
-    const contentDrivers = document.getElementById('atab-content-drivers');
-    const contentFees = document.getElementById('atab-content-fees');
-    const contentIntegrations = document.getElementById('atab-content-integrations');
-
-    function switchAdminTab(activeBtn, activeTab) {
-      [tabOverview, tabStores, tabDrivers, tabFees, tabIntegrations].forEach(b => b?.classList.remove('active'));
-      [contentOverview, contentStores, contentDrivers, contentFees, contentIntegrations].forEach(t => { if (t) t.style.display = 'none'; });
-      if (activeBtn) activeBtn.classList.add('active');
-      if (activeTab) activeTab.style.display = 'block';
-    }
-
-    tabOverview?.addEventListener('click', () => switchAdminTab(tabOverview, contentOverview));
-    tabStores?.addEventListener('click', () => switchAdminTab(tabStores, contentStores));
-    tabDrivers?.addEventListener('click', () => switchAdminTab(tabDrivers, contentDrivers));
-    tabFees?.addEventListener('click', () => switchAdminTab(tabFees, contentFees));
-    tabIntegrations?.addEventListener('click', () => switchAdminTab(tabIntegrations, contentIntegrations));
-
-    // Payphone Token Save
-    const tokenInput = document.getElementById('admin-payphone-token');
-    const appIdInput = document.getElementById('admin-payphone-appid');
-    if (tokenInput) {
-      tokenInput.value = localStorage.getItem('RAPIDIN_PAYPHONE_TOKEN') || '';
-    }
-    if (appIdInput) {
-      appIdInput.value = localStorage.getItem('RAPIDIN_PAYPHONE_APPID') || '';
-    }
-    
-    window.savePayphoneToken = function() {
-      const token = document.getElementById('admin-payphone-token').value;
-      const appId = document.getElementById('admin-payphone-appid').value;
-      localStorage.setItem('RAPIDIN_PAYPHONE_TOKEN', token);
-      localStorage.setItem('RAPIDIN_PAYPHONE_APPID', appId);
-      window.rapidinAlert('¡Credenciales de Payphone (Token y App ID) guardadas correctamente!');
-    };
   </script>
 </body>
 </html>

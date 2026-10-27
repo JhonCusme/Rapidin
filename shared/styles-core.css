@@ -81,6 +81,9 @@ h1, h2, h3, h4, h5, h6 {
    ADAPTABLE A TODAS LAS PANTALLAS (iPhone, Android, tablet, PC)
    Estas reglas son compartidas por las cuatro apps.
    ========================================== */
+/* El atributo hidden debe ganar siempre, aunque la clase del elemento defina display:flex */
+[hidden] { display: none !important; }
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -114,6 +117,17 @@ input, select, textarea {
     padding-right: max(1.25rem, env(safe-area-inset-right));
   }
 }
+
+/* Filas de pestañas (admin): una sola línea que desliza si no cabe, en cualquier ancho */
+.tab-scroll-row {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+.tab-scroll-row::-webkit-scrollbar { display: none; }
+.tab-scroll-row > * { flex-shrink: 0; white-space: nowrap; }
 
 @media (max-width: 720px) {
   /* iOS hace zoom automático al enfocar un campo con letra menor a 16px y deja la página "cortada" */
@@ -243,6 +257,33 @@ button {
 }
 @keyframes toast-slide-out {
   to { transform: translateX(120%) scale(0.9); opacity: 0; }
+}
+
+
+/* Estas tres clases las usan admin, comercios y repartidor pero solo estaban en styles.css (que solo carga la app cliente):
+   sin ellas los campos de formulario salían blancos sobre el tema oscuro y los títulos de sección sin formato. */
+.coupon-input {
+  flex: 1;
+  padding: 0.6rem 0.85rem;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+}
+.coupon-input:focus { border-color: var(--brand-primary); }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.section-title {
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Modal base (backdrop + card + close button). Vivía solo en styles.css, que apps/user es

@@ -20,7 +20,9 @@ function checkAuthGate() {
     document.getElementById('main-app-content').style.display = 'block';
     loadDashboard();
     loadActiveDelivery();
+    loadActiveShipment();
     loadPendingJobs();
+    loadPendingShipments();
     initDriverMap();
     startLocationSharing();
   } else {
@@ -121,8 +123,8 @@ function initDriverMap() {
   if (!mapEl) return;
 
   driverMap = L.map('driver-map', { zoomControl: false }).setView([-12.0464, -77.0428], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; CARTO', maxZoom: 19
+  L.tileLayer(window.RAPIDIN_TILE_URL, {
+    attribution: window.RAPIDIN_TILE_ATTRIBUTION, maxZoom: 19
   }).addTo(driverMap);
 }
 
@@ -243,7 +245,7 @@ function renderPendingJobs() {
   const container = document.getElementById('driver-jobs-list');
   if (!container) return;
 
-  if (currentActiveDelivery) {
+  if (currentActiveDelivery || currentActiveShipment) {
     container.innerHTML = `
       <div style="text-align: center; padding: 2rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
         <p style="color: var(--text-secondary);">Termina tu entrega actual antes de aceptar otro pedido.</p>
@@ -307,6 +309,116 @@ window.acceptDelivery = async function(orderId) {
 };
 
 // ==========================================
+// ENVÍOS "MÁNDAME ALGO"
+// ==========================================
+let currentPendingShipments = [];
+let currentActiveShipment = null;
+const SHIPMENT_SIZES = { small: 'Pequeño', medium: 'Mediano', large: 'Grande' };
+
+async function loadPendingShipments() {
+  currentPendingShipments = await window.rapidinDB.getPendingShipments();
+  renderPendingShipments();
+}
+
+function renderPendingShipments() {
+  const container = document.getElementById('driver-shipments-list');
+  if (!container) return;
+
+  if (currentActiveDelivery || currentActiveShipment) {
+    container.innerHTML = `<div style="text-align: center; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);"><p style="color: var(--text-secondary);">Termina tu entrega actual para ver envíos disponibles.</p></div>`;
+    return;
+  }
+  if (!currentPendingShipments.length) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-box-open" style="font-size: 2.2rem; color: var(--text-muted); margin-bottom: 0.8rem;"></i>
+        <h3>No hay envíos disponibles</h3>
+        <p style="color: var(--text-secondary);">Cuando un cliente pida un envío, aparecerá aquí.</p>
+      </div>`;
+    return;
+  }
+  container.innerHTML = currentPendingShipments.map(s => `
+    <div class="card-job">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: var(--brand-secondary); color: #fff; margin-bottom: 0.4rem;">ENVÍO #${escapeHtml(s.id)}</span>
+          <p style="font-size: 0.85rem; margin-bottom: 0.3rem;"><i class="fa-solid fa-circle" style="color: #10B981; font-size: 0.6rem;"></i> <strong>Recoger:</strong> ${escapeHtml(s.origin_address)}</p>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-circle" style="color: #EF4444; font-size: 0.6rem;"></i> <strong>Entregar:</strong> ${escapeHtml(s.destination_address)}</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">${escapeHtml(SHIPMENT_SIZES[s.package_size] || s.package_size)}${s.package_description ? ' · ' + escapeHtml(s.package_description) : ''}${s.distance_km ? ' · ' + Number(s.distance_km).toFixed(1) + ' km' : ''}</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.4rem; font-weight: 900; color: #10B981;">${fmtMoneyDriver(s.driverPay)}</div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Pago estimado</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="badge" style="background: var(--brand-secondary); color: #fff; padding: 0.75rem 1.5rem; font-size: 0.9rem;" onclick="acceptShipment('${s.id}')">
+          <i class="fa-solid fa-motorcycle"></i> Aceptar envío
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadActiveShipment() {
+  currentActiveShipment = await window.rapidinDB.getMyActiveShipment();
+  renderActiveShipment();
+}
+
+function renderActiveShipment() {
+  const section = document.getElementById('active-shipment-section');
+  const card = document.getElementById('active-shipment-card');
+  if (!section || !card) return;
+  if (!currentActiveShipment) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  const s = currentActiveShipment;
+  const toPickup = s.status_step === 1;
+  card.innerHTML = `
+    <div class="card-job active-delivery">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+        <div>
+          <span class="badge" style="background: #10B981; color: #000; margin-bottom: 0.4rem;">${toPickup ? 'IR A RECOGER' : 'EN CAMINO'} #${escapeHtml(s.id)}</span>
+          <p style="font-size: 0.85rem; margin-bottom: 0.3rem;"><i class="fa-solid fa-circle" style="color: #10B981; font-size: 0.6rem;"></i> <strong>Recoger:</strong> ${escapeHtml(s.origin_address)}</p>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);"><i class="fa-solid fa-circle" style="color: #EF4444; font-size: 0.6rem;"></i> <strong>Entregar:</strong> ${escapeHtml(s.destination_address)}</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 1.4rem; font-weight: 900; color: #10B981;">${fmtMoneyDriver(s.driverPay)}</div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Tu pago</span>
+        </div>
+      </div>
+      <div style="background: var(--bg-main); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-size: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;"><span>Quien lo envía:</span><strong>${escapeHtml(s.customerName || 'Cliente')} · ${escapeHtml(s.customerPhone || '—')}</strong></div>
+        <div style="display: flex; justify-content: space-between;"><span>Quien lo recibe:</span><strong>${escapeHtml(s.recipient_name || '—')} · ${escapeHtml(s.recipient_phone || '—')}</strong></div>
+      </div>
+      <button class="badge" style="background: #10B981; color: #000; padding: 0.75rem 1.5rem; font-size: 0.9rem; width: 100%; justify-content: center; display: flex;" onclick="advanceShipment('${s.id}', ${s.status_step + 1})">
+        <i class="fa-solid fa-check"></i> ${toPickup ? 'Ya recogí el paquete' : 'Marcar entregado'}
+      </button>
+    </div>`;
+}
+
+window.acceptShipment = async function(id) {
+  const res = await window.rapidinDB.updateShipmentStatus(id, 1);
+  if (res.success) {
+    window.rapidinAlert('🛵 ¡Envío aceptado! Dirígete al punto de recogida.');
+    await loadActiveShipment(); // primero el estado activo: así las listas ya salen bloqueadas
+    await Promise.all([loadPendingShipments(), loadPendingJobs()]);
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo aceptar el envío.');
+    loadPendingShipments();
+  }
+};
+
+window.advanceShipment = async function(id, nextStep) {
+  const res = await window.rapidinDB.updateShipmentStatus(id, nextStep);
+  if (res.success) {
+    if (nextStep === 3) window.rapidinAlert('🎉 ¡Envío entregado! Tu pago fue agregado a tus ganancias.');
+    await loadActiveShipment();
+    await Promise.all([loadPendingShipments(), loadDashboard(), loadPendingJobs()]);
+  } else {
+    window.rapidinAlert(res.message || 'No se pudo actualizar el envío.');
+  }
+};
+
+// ==========================================
 // TIEMPO REAL
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -316,6 +428,20 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPendingJobs();
     if (currentActiveDelivery) loadActiveDelivery();
   });
+
+  window.rapidinSync.subscribe('SHIPMENT_CREATED', () => loadPendingShipments());
+  window.rapidinSync.subscribe('SHIPMENT_STATUS_CHANGED', () => {
+    loadPendingShipments();
+    loadActiveShipment();
+  });
+
+  // Latido: refresca cada 30 s (también mantiene al repartidor como "en línea" para la plataforma)
+  setInterval(() => {
+    if (!window.rapidinDB.getCurrentUser('driver')) return;
+    loadDashboard();
+    loadPendingJobs();
+    loadPendingShipments();
+  }, 30000);
 
   window.rapidinSync.subscribe('ORDER_CREATED', () => {
     // Un pedido recién creado no está listo para recoger todavía, pero refrescamos
