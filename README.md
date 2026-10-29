@@ -80,3 +80,19 @@ npm run cap:add:android
 npm run cap:sync
 npm run cap:open:android
 ```
+
+## Despliegue en producción
+
+1. Crea un servidor (VPS) con Docker y un dominio apuntando a él.
+2. Copia `.env.example` a `.env` y completa: `NODE_ENV=production`, `JWT_SECRET` (48+ caracteres aleatorios:
+   `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`), `ADMIN_SETUP_KEY`, `APP_BASE_URL`,
+   `ALLOWED_ORIGINS`, `TRUST_PROXY=1`, Twilio (SMS) y, para correos, `RESEND_API_KEY` + `MAIL_FROM`.
+3. `docker compose up -d --build` (la base de datos y las copias quedan en el volumen `rapidin-data`).
+4. Pon Caddy o Nginx con HTTPS delante del puerto 3000 (Socket.IO necesita pasar las conexiones WebSocket).
+5. Crea tu cuenta de admin desde el panel (`/apps/admin/index.html` → "Crear cuenta de administrador") y después
+   **borra `ADMIN_SETUP_KEY` del `.env`** para cerrar esa puerta.
+6. Comprueba `GET /api/health` (debe responder `{"ok":true}`).
+
+Copias de seguridad: en producción se crea una copia al arrancar y una cada 24 h en `BACKUP_DIR`, conservando las
+últimas 14. Copia ese directorio fuera del servidor con regularidad. Para restaurar, detén el servidor y reemplaza
+`rapidin.db` por la copia.

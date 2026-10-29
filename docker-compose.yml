@@ -1,0 +1,19 @@
+# Arranque: docker compose up -d --build
+# Antes: copia .env.example a .env y completa los secretos (JWT_SECRET, etc.).
+# Pon un proxy con HTTPS delante (Caddy o Nginx) apuntando al puerto 3000 y define TRUST_PROXY=1.
+services:
+  rapidin:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DB_PATH: /data/rapidin.db
+      BACKUP_DIR: /data/backups
+    ports:
+      - "3000:3000"
+    volumes:
+      - rapidin-data:/data
+
+volumes:
+  rapidin-data:

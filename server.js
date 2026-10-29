@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -37,6 +38,28 @@ if (!process.env.JWT_SECRET) {
 }
 
 const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY || null;
+
+// En producción el servidor se niega a arrancar con secretos débiles o de ejemplo:
+// un JWT_SECRET adivinable permite fabricar sesiones de cualquier usuario (incluido el admin).
+if (NODE_ENV === 'production') {
+  const looksWeak = (v) => !v || v.length < 32 || /dev_|change_?me|example|ejemplo|secret|1234/i.test(v);
+  const problems = [];
+  if (looksWeak(process.env.JWT_SECRET)) problems.push('JWT_SECRET debe tener al menos 32 caracteres aleatorios (no uses valores de ejemplo)');
+  if (ADMIN_SETUP_KEY && (ADMIN_SETUP_KEY.length < 16 || /dev_|change_?me|example|ejemplo|1234/i.test(ADMIN_SETUP_KEY))) {
+    problems.push('ADMIN_SETUP_KEY es débil o de ejemplo (usa 16+ caracteres aleatorios, o quítala cuando ya hayas creado tu admin)');
+  }
+  if (problems.length) {
+    console.error('❌ Configuración insegura para producción:\n - ' + problems.join('\n - '));
+    console.error('   Genera un secreto con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+    process.exit(1);
+  }
+}
+
+// Detrás de un proxy (Nginx, Caddy, Cloudflare) hay que confiar en X-Forwarded-For; si no, el límite de intentos
+// vería a todos los usuarios como una sola IP. TRUST_PROXY=1 (un proxy) o el número de saltos.
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', Number(process.env.TRUST_PROXY) || true);
+}
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || null;
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || null;
@@ -130,6 +153,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('❌ Error conectando a la base de datos:', err.message);
   } else {
     console.log('📦 Conectado a la Base de Datos SQLite (rapidin.db)');
+    // Base nueva (por ejemplo, el primer arranque en un servidor o contenedor): crea las tablas principales
+    // desde shared/schema.sql. Todas son CREATE TABLE IF NOT EXISTS, así que repetirlo es seguro.
+    // Modo serializado: el esquema inicial y todas las migraciones siguientes se ejecutan en orden
+    // (SQLite ya atiende una sentencia a la vez por conexión, así que no cuesta rendimiento).
+    db.serialize();
+    try {
+      const schemaSql = fs.readFileSync(path.join(__dirname, 'shared', 'schema.sql'), 'utf8');
+      schemaSql.split(';').map(x => x.trim()).filter(Boolean).forEach((stmt) => {
+        db.run(stmt, (e) => { if (e && !/already exists|duplicate column/i.test(e.message)) console.error('Esquema inicial:', e.message); });
+      });
+    } catch (e) { console.error('No se pudo leer shared/schema.sql:', e.message); }
     db.run("ALTER TABLE users ADD COLUMN active BOOLEAN DEFAULT 1", (err) => {});
     db.run("ALTER TABLE users ADD COLUMN photo_url TEXT", (err) => {});
     db.run("ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(100)", (err) => {});
@@ -359,6 +393,123 @@ async function computeOrderPricing({ storeId, items, couponCode, tip, userId }) 
 
   return { store, lines, subtotal, shipping: round2(shipping), discount, driverTip, total, coupon, minOrder: Number(store.min_order) || 0 };
 }
+
+
+// ==========================================
+// SALUD (para el balanceador / monitoreo)
+// ==========================================
+app.get('/api/health', (req, res) => {
+  db.get('SELECT 1 AS ok', [], (err) => {
+    if (err) return res.status(503).json({ ok: false, db: false });
+    res.json({ ok: true, db: true, uptimeSeconds: Math.round(process.uptime()) });
+  });
+});
+
+// ==========================================
+// COPIAS DE SEGURIDAD AUTOMÁTICAS DE LA BASE DE DATOS
+// ==========================================
+// VACUUM INTO crea una copia consistente aunque el servidor siga atendiendo pedidos.
+// Por defecto: una al arrancar y una cada 24 h, conservando las últimas 14 (solo en producción o con BACKUP_ENABLED=1).
+const BACKUP_DIR = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
+const BACKUP_KEEP = Math.max(1, Number(process.env.BACKUP_KEEP) || 14);
+const BACKUP_EVERY_HOURS = Math.max(1, Number(process.env.BACKUP_INTERVAL_HOURS) || 24);
+
+async function backupDatabase() {
+  try {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+    const target = path.join(BACKUP_DIR, `rapidin-${stamp}.db`);
+    if (fs.existsSync(target)) return;
+    await dbRun(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
+    const files = fs.readdirSync(BACKUP_DIR).filter(f => /^rapidin-.*\.db$/.test(f)).sort();
+    files.slice(0, Math.max(0, files.length - BACKUP_KEEP)).forEach(f => { try { fs.unlinkSync(path.join(BACKUP_DIR, f)); } catch (e) { /* ya no existe */ } });
+    console.log(`💾 Copia de seguridad creada: ${path.basename(target)}`);
+  } catch (e) {
+    console.error('❌ No se pudo crear la copia de seguridad:', e.message);
+  }
+}
+if (NODE_ENV === 'production' || process.env.BACKUP_ENABLED === '1') {
+  setTimeout(backupDatabase, 15000);
+  setInterval(backupDatabase, BACKUP_EVERY_HOURS * 3600 * 1000).unref();
+}
+
+// ==========================================
+// CORREO Y RECUPERACIÓN DE CONTRASEÑA
+// ==========================================
+// Correo por Resend (https://resend.com): RESEND_API_KEY y MAIL_FROM ("Rapidín <no-responder@tudominio.com>").
+// Sin clave, en desarrollo el enlace se imprime en la consola del servidor para poder probar el flujo.
+const APP_BASE_URL = (process.env.APP_BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+if (!process.env.RESEND_API_KEY && NODE_ENV === 'production') {
+  console.warn('⚠️  RESEND_API_KEY no configurado: no se podrán enviar correos (recuperación de contraseña).');
+}
+
+async function sendEmail(to, subject, html, devHint) {
+  if (!process.env.RESEND_API_KEY) {
+    if (NODE_ENV !== 'production') console.log(`✉️  [correo simulado] Para: ${to} | ${subject}${devHint ? ' | ' + devHint : ''}`);
+    return { sent: false, devMode: true };
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: process.env.MAIL_FROM || 'Rapidín <onboarding@resend.dev>', to: [to], subject, html })
+  });
+  if (!res.ok) throw new Error(`Resend respondió ${res.status}`);
+  return { sent: true };
+}
+
+const APP_PATH_BY_ROLE = { user: 'user', store: 'store', driver: 'driver', admin: 'admin' };
+
+db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+  id VARCHAR(60) PRIMARY KEY, user_id VARCHAR(50) NOT NULL, token_hash VARCHAR(64) NOT NULL,
+  expires_at TIMESTAMP NOT NULL, used_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)`);
+
+// Siempre responde igual exista o no la cuenta (para no revelar qué correos están registrados).
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  const generic = { success: true, message: 'Si ese correo tiene una cuenta, te enviamos un enlace para crear una contraseña nueva.' };
+  if (!isValidEmail(email)) return res.json(generic);
+  try {
+    const user = await dbGet('SELECT id, name, role, active FROM users WHERE LOWER(email) = ?', [email]);
+    if (user && user.active !== 0) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      await dbRun('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL', [user.id]);
+      await dbRun(`INSERT INTO password_resets (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, datetime('now', '+30 minutes'))`, [newId('rst'), user.id, tokenHash]);
+      const link = `${APP_BASE_URL}/apps/${APP_PATH_BY_ROLE[user.role] || 'user'}/index.html?reset=${token}`;
+      const safeName = String(user.name || '').replace(/[<>&"]/g, '');
+      try {
+        await sendEmail(email, 'Crea tu contraseña nueva en Rapidín',
+          `<p>Hola ${safeName},</p><p>Recibimos una solicitud para cambiar tu contraseña. Este enlace funciona durante 30 minutos:</p>
+           <p><a href="${link}">Crear contraseña nueva</a></p><p>Si no fuiste tú, ignora este correo: tu contraseña no cambia.</p>`,
+          `enlace: ${link}`);
+      } catch (mailErr) {
+        console.error('No se pudo enviar el correo de recuperación:', mailErr.message);
+      }
+    }
+  } catch (e) {
+    console.error('Error en forgot-password:', e);
+  }
+  res.json(generic);
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body || {};
+  if (typeof token !== 'string' || token.length < 32) return res.status(400).json({ success: false, message: 'El enlace no es válido.' });
+  if (!isValidPassword(password)) return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 6 caracteres.' });
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const row = await dbGet(`SELECT id, user_id FROM password_resets WHERE token_hash = ? AND used_at IS NULL AND expires_at > datetime('now')`, [tokenHash]);
+    if (!row) return res.status(400).json({ success: false, message: 'El enlace venció o ya se usó. Pide uno nuevo.' });
+    const hash = await bcrypt.hash(password, 10);
+    await dbRun('UPDATE users SET password_hash = ? WHERE id = ?', [hash, row.user_id]);
+    await dbRun('UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE user_id = ? AND used_at IS NULL', [row.user_id]);
+    res.json({ success: true, message: 'Listo. Ya puedes iniciar sesión con tu contraseña nueva.' });
+  } catch (e) {
+    console.error('Error en reset-password:', e);
+    res.status(500).json({ success: false, message: 'No se pudo cambiar la contraseña.' });
+  }
+});
 
 // Comisión de la plataforma, configurable en vivo por el Super Admin (fila única en platform_settings).
 function getPlatformCommissionRate() {

@@ -1,0 +1,13 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+backups
+db/rapidin.db
+npm-debug.log
+Dockerfile
+docker-compose.yml

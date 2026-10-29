@@ -6,3 +6,6 @@ database.sqlite
 .env
 .env.*
 !.env.example
+rapidin.db
+*.db
+backups/
